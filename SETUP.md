@@ -2,6 +2,13 @@
 
 ## 1. Supabase database
 
+Run both migrations in the [SQL Editor](https://supabase.com/dashboard/project/nzzstvvbrcdhuiqppdpv/sql/new):
+
+1. `supabase/migrations/20260523120000_wallet_ledger.sql`
+2. `supabase/migrations/20260523140000_notifications_onboarding.sql`
+
+Or via CLI:
+
 ```bash
 cd wallex2
 supabase login
@@ -55,6 +62,12 @@ npx vercel dev       # frontend + /api routes (Paystack verify, admin, wallets)
 npx vercel --prod
 ```
 
-Admin console: `/mikeadmin` (sign in with `mikomike420@gmail.com` via Google).
+Production URL: **https://wallex.online** (Vercel aliases `wallex2.vercel.app` redirect here).
 
-Buy / top-up: wallet **Receive** → **Top up with Paystack** (card, bank, transfer).
+Admin console: **https://wallex.online/mikeadmin** — transfer crypto between users, approve KYC, view ledger.
+
+Buy / top-up: wallet **Receive** → **Top up with Paystack** (no KYC).
+
+Send / sell: requires **verified KYC**. Receiving does not.
+
+Wallet-to-wallet: scan a `https://wallex.online/pay?...` QR or paste a Wallex wallet ID — recipient gets an in-app notification.

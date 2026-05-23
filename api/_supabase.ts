@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import type { VercelRequest } from "@vercel/node";
 
+export const WALLEX_ORIGIN = (process.env.VITE_APP_URL || "https://wallex.online").replace(/\/$/, "");
+
 export const walletAssets = [
   { wallet_key: "usdt", name: "USDT Wallet", symbol: "USDT", change: 0.4, color: "green" },
   { wallet_key: "xrp", name: "XRP Wallet", symbol: "XRP", change: 1.1, color: "blue" },
@@ -57,6 +59,38 @@ export function toClientWallet(row: any) {
 
 export function walletAddressForUserId(userId: string) {
   return `r${userId.replace(/-/g, "")}`;
+}
+
+export function buildWallexPayLink(wallet: string, symbol: string, walletKey: string, network = "TRC20") {
+  const params = new URLSearchParams({
+    account: wallet,
+    wallet: walletKey,
+    symbol,
+    network,
+  });
+  return `${WALLEX_ORIGIN}/pay?${params.toString()}`;
+}
+
+export function isKycVerified(status?: string) {
+  return status === "verified";
+}
+
+export async function createNotification(
+  authUserId: string,
+  payload: { type: string; title: string; body: string; amount?: number; token?: string; fromWallet?: string },
+) {
+  const supabase = adminClient();
+  const { error } = await supabase.from("notifications").insert({
+    auth_user_id: authUserId,
+    type: payload.type,
+    title: payload.title,
+    body: payload.body,
+    amount: payload.amount ?? null,
+    token: payload.token ?? null,
+    from_wallet: payload.fromWallet ?? null,
+  });
+
+  if (error) throw error;
 }
 
 export function normalizeKycStatus(status?: string) {
@@ -158,6 +192,6 @@ export async function buildClientWallets(userRow: any) {
     change: asset.change,
     color: asset.color,
     accountNumber: userRow.wallet,
-    address: userRow.wallet,
+    address: buildWallexPayLink(userRow.wallet, asset.symbol, asset.wallet_key),
   }));
 }

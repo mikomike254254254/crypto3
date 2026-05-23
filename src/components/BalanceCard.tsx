@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronDown, Eye, EyeOff, ArrowUpRight, ArrowDownLeft, MoreHorizontal, TrendingUp, TrendingDown, QrCode, Share2, Clock, Star, AlertCircle, X } from "lucide-react";
 import { Wallet } from "../types/crypto";
 import { useTheme } from "../context/ThemeContext";
+import { AnimatedNumber } from "./AnimatedNumber";
 
 interface BalanceCardProps {
   wallet: Wallet;
@@ -66,8 +67,14 @@ export function BalanceCard({ wallet, wallets, totalValue, selectedWallet, onWal
 
         <div className="flex items-center gap-2 mb-3">
           <div className="flex items-center gap-1.5">
-            <h2 className={`text-2xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-black'}`}>
-              {showBalance ? `$${formatBalance(totalValue)}` : '******'}
+            <h2 className={`text-2xl font-bold tracking-tight balance-pulse ${isDark ? 'text-white' : 'text-black'}`}>
+              {showBalance ? (
+                <>
+                  $<AnimatedNumber value={totalValue} format={(v) => formatBalance(v)} />
+                </>
+              ) : (
+                "******"
+              )}
             </h2>
             <button onClick={() => setShowBalance(!showBalance)} className={`p-1 rounded-full transition-all ${isDark ? 'hover:bg-neutral-800' : 'hover:bg-neutral-100'}`}>
               {showBalance ? <Eye className="w-4 h-4 text-gray-400" /> : <EyeOff className="w-4 h-4 text-gray-400" />}

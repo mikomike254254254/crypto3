@@ -47,13 +47,58 @@ export async function createWalletTransaction(
 }
 
 export async function fetchProfileFromBackend() {
-  return apiRequest<{ profile: { kyc_status?: string; full_name?: string; avatar_gradient?: string } }>("/api/profile");
+  return apiRequest<{
+    profile: {
+      kyc_status?: string;
+      full_name?: string;
+      avatar_gradient?: string;
+      avatar_character?: string;
+      onboarding_complete?: boolean;
+    };
+  }>("/api/profile");
 }
 
-export async function updateProfileInBackend(profile: { fullName?: string; avatarGradient?: string; kycStatus?: string }) {
-  return apiRequest<{ profile: { kyc_status?: string; full_name?: string; avatar_gradient?: string } }>("/api/profile", {
+export type WalletNotification = {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  amount?: number;
+  token?: string;
+  fromWallet?: string;
+  readAt?: string | null;
+  createdAt: string;
+};
+
+export async function updateProfileInBackend(profile: {
+  fullName?: string;
+  avatarGradient?: string;
+  avatarCharacter?: string;
+  kycStatus?: string;
+  onboardingComplete?: boolean;
+}) {
+  return apiRequest<{
+    profile: {
+      kyc_status?: string;
+      full_name?: string;
+      avatar_gradient?: string;
+      avatar_character?: string;
+      onboarding_complete?: boolean;
+    };
+  }>("/api/profile", {
     method: "POST",
     body: JSON.stringify(profile),
+  });
+}
+
+export async function fetchNotificationsFromBackend() {
+  return apiRequest<{ notifications: WalletNotification[] }>("/api/notifications");
+}
+
+export async function dismissNotification(id: string) {
+  return apiRequest<{ ok: boolean }>("/api/notifications", {
+    method: "POST",
+    body: JSON.stringify({ id }),
   });
 }
 

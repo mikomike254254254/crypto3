@@ -145,6 +145,12 @@ function CryptoRow({ crypto }: { crypto: Crypto }) {
   );
 }
 
+function formatMarketPrice(price: number) {
+  if (price >= 1000) return `$${price.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+  if (price >= 1) return `$${price.toFixed(2)}`;
+  return `$${price.toFixed(4)}`;
+}
+
 export function Markets({ cryptoData, activeTab, onTabChange }: MarketsProps) {
   const { isDark } = useTheme();
   const tabs = [
@@ -184,7 +190,21 @@ export function Markets({ cryptoData, activeTab, onTabChange }: MarketsProps) {
         ))}
       </div>
 
-      <div className={`rounded-xl px-3 border transition-colors ${isDark ? "bg-black border-neutral-700" : "bg-white shadow-sm border-neutral-100"}`}>
+      <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white/80 dark:bg-black dark:border-neutral-700">
+        <div className="marquee-track py-1">
+          {[...cryptoData, ...cryptoData].map((crypto, index) => (
+            <div key={`${crypto.id}-${index}`} className="flex items-center gap-2 px-4 py-2 shrink-0 border-r border-neutral-100 dark:border-neutral-800">
+              <span className="text-xs font-bold text-black dark:text-white">{crypto.symbol}</span>
+              <span className="text-xs text-neutral-500">{formatMarketPrice(crypto.price)}</span>
+              <span className={`text-[10px] font-semibold ${crypto.isUp ? "text-green-500" : "text-red-500"}`}>
+                {(crypto.change ?? 0) >= 0 ? "+" : ""}{(crypto.change ?? 0).toFixed(2)}%
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className={`rounded-xl px-3 border transition-colors mt-3 scroll-smooth-y max-h-72 overflow-y-auto ${isDark ? "bg-black border-neutral-700" : "bg-white shadow-sm border-neutral-100"}`}>
         {cryptoData.map((crypto) => (
           <CryptoRow key={crypto.id} crypto={crypto} />
         ))}

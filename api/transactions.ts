@@ -2,7 +2,9 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import {
   adminClient,
   buildClientWallets,
+  createNotification,
   ensureUserAccount,
+  isKycVerified,
   readTokenBalances,
   requireUser,
   upsertBalance,
@@ -26,10 +28,10 @@ function recipientCandidates(value: unknown) {
         values.add(item.toLowerCase());
       }
     });
-    values.add(url.href);
-    values.add(url.href.replace(/^https?:\/\//i, ""));
+    const hostPath = `${url.hostname}${url.pathname}`;
+    values.add(hostPath);
   } catch {
-    // Plain wallet addresses and Wallex account numbers are valid recipients too.
+    // Plain wallet addresses are valid recipients too.
   }
 
   return Array.from(values).filter(Boolean);
@@ -88,6 +90,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: "Invalid transaction payload." });
     }
 
+    if ((transactionType === "send" || transactionType === "withdraw") && !isKycVerified(userRow.kyc_status)) {
+      return res.status(403).json({ error: "KYC verification is required to send or sell crypto." });
+    }
+
     const balances = await readTokenBalances(userRow.wallet);
     const currentBalance = balances.get(token) || 0;
     const isDebit = transactionType === "withdraw" || transactionType === "send";
@@ -107,6 +113,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (error) throw error;
       recipient = (data || []).find((row) => row.wallet !== userRow.wallet) || null;
+
     }
 
     const toWallet = transactionType === "deposit"
@@ -138,6 +145,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await updateStoredBalance(userRow.wallet, token);
     if (recipient) {
       await updateStoredBalance(recipient.wallet, token);
+      if (recipient.auth_user_id) {
+        await createNotification(recipient.auth_user_id, {
+          type: "receive",
+          title: "Crypto received",
+          body: `${userRow.full_name || "A Wallex user"} sent you ${parsedAmount} ${token}`,
+          amount: parsedAmount,
+          token,
+          fromWallet: userRow.wallet,
+        });
+      }
     }
 
     const wallets = await buildClientWallets(userRow);

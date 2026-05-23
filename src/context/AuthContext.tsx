@@ -15,14 +15,10 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 function getAuthRedirectUrl() {
-  const configuredUrl = import.meta.env.VITE_APP_URL as string | undefined;
-  const currentOrigin = window.location.origin;
+  const configuredUrl = (import.meta.env.VITE_APP_URL as string | undefined)?.replace(/\/$/, "");
+  const currentOrigin = window.location.origin.replace(/\/$/, "");
 
-  if (
-    currentOrigin.includes("localhost") ||
-    currentOrigin.includes("127.0.0.1") ||
-    currentOrigin.includes(".vercel.app")
-  ) {
+  if (currentOrigin.includes("localhost") || currentOrigin.includes("127.0.0.1")) {
     return currentOrigin;
   }
 

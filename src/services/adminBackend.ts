@@ -20,6 +20,8 @@ export type AdminTransaction = {
   currency: string;
   status: string;
   reference?: string;
+  fromWallet?: string;
+  toWallet?: string;
   address?: string;
   createdAt: string;
   walletKey?: string;

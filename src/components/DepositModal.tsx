@@ -28,6 +28,8 @@ interface DepositModalProps {
   onDeposit?: (amount: number, walletId: string) => void;
   onSend?: (amount: number, walletId: string, address: string, network: string) => void | Promise<void>;
   onPaystackDeposit?: (wallets: WalletType[]) => void | Promise<void>;
+  kycVerified?: boolean;
+  onKYC?: () => void;
 }
 
 const networks = [
@@ -38,7 +40,7 @@ const networks = [
   { id: "MATIC", name: "Polygon", fee: "0.1 USDT", time: "~2 min", confirmations: "128" },
 ];
 
-export function DepositModal({ wallet, onClose, onDeposit: _onDeposit, onSend, onPaystackDeposit }: DepositModalProps) {
+export function DepositModal({ wallet, onClose, onDeposit: _onDeposit, onSend, onPaystackDeposit, kycVerified = true, onKYC }: DepositModalProps) {
   const { user } = useAuth();
   const [copied, setCopied] = useState("");
   const [activeTab, setActiveTab] = useState<"deposit" | "send">("deposit");
@@ -70,6 +72,11 @@ export function DepositModal({ wallet, onClose, onDeposit: _onDeposit, onSend, o
   };
 
   const handleSend = () => {
+    if (!kycVerified) {
+      onKYC?.();
+      return;
+    }
+
     const parsedAmount = Number(sendAmount);
     if (Number.isFinite(parsedAmount) && parsedAmount > 0 && sendAddress && onSend) {
       onSend(parsedAmount, wallet.id, sendAddress, selectedNetwork);
@@ -273,8 +280,18 @@ export function DepositModal({ wallet, onClose, onDeposit: _onDeposit, onSend, o
             </div>
           ) : (
             <div className="p-4">
+              {!kycVerified ? (
+                <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                  <p className="text-sm font-semibold text-amber-900">KYC required to send crypto</p>
+                  <p className="text-xs text-amber-700 mt-1">Receiving and buying do not require KYC. Complete verification to send or sell.</p>
+                  <button type="button" onClick={onKYC} className="mt-3 w-full rounded-xl bg-black text-white py-3 text-sm font-semibold">
+                    Verify KYC
+                  </button>
+                </div>
+              ) : null}
+
               <div className="mb-5">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">Recipient Address or Wallex Link</label>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">Recipient Wallex link or wallet ID</label>
                 <div className="relative">
                   <input
                     type="text"

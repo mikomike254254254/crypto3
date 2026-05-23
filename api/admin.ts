@@ -3,6 +3,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import {
   adminClient,
   balancesFromTransactions,
+  createNotification,
   normalizeKycStatus,
   readTokenBalances,
   requireUser,
@@ -10,7 +11,7 @@ import {
   walletAssets,
 } from "./_supabase.js";
 
-type AdminAction = "set_balance" | "award" | "create_transaction" | "update_kyc";
+type AdminAction = "set_balance" | "award" | "create_transaction" | "update_kyc" | "wallet_transfer";
 
 function adminEmails() {
   return (process.env.ADMIN_EMAILS || process.env.VITE_ADMIN_EMAILS || "")
@@ -126,7 +127,9 @@ async function readAdminData() {
       amount: Number(tx.amount),
       currency: tx.token,
       status: tx.status,
-      reference: tx.id,
+      reference: tx.note || tx.id,
+      fromWallet: tx.from_wallet,
+      toWallet: tx.to_wallet,
       address: tx.to_wallet,
       createdAt: tx.created_at,
       walletKey: String(tx.token || "").toLowerCase(),
@@ -147,11 +150,68 @@ async function findUserRow(userId: string) {
   return data;
 }
 
+async function findUserByWallet(wallet: string) {
+  const supabase = adminClient();
+  const { data, error } = await supabase.from("users").select("*").eq("wallet", wallet).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 async function writeAdminAction(action: AdminAction, body: any, adminUser: User) {
   const supabase = adminClient();
   const userRow = await findUserRow(String(body.userId || ""));
   const token = String(body.walletKey || "usdt").toUpperCase();
   const amount = Number(body.amount);
+
+  if (action === "wallet_transfer") {
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new Error("Amount must be a positive number.");
+    }
+
+    const toUserId = String(body.toUserId || "");
+    const toRow = toUserId ? await findUserRow(toUserId) : await findUserByWallet(String(body.toWallet || ""));
+    if (!toRow) {
+      throw new Error("Recipient wallet not found.");
+    }
+
+    const fromWallet = body.debitUser ? userRow.wallet : "system";
+    if (body.debitUser) {
+      const balances = await readTokenBalances(userRow.wallet);
+      if ((balances.get(token) || 0) < amount) {
+        throw new Error("Insufficient sender balance.");
+      }
+    }
+
+    const { error } = await supabase.from("transactions").insert({
+      from_wallet: fromWallet,
+      to_wallet: toRow.wallet,
+      amount,
+      token,
+      type: "transfer",
+      status: "completed",
+      note: body.note || `Admin transfer by ${adminUser.email || adminUser.id}`,
+    });
+
+    if (error) throw error;
+
+    if (body.debitUser) {
+      await upsertBalance(userRow.wallet, Number(((await readTokenBalances(userRow.wallet)).get(token) || 0).toFixed(8)));
+    }
+    await upsertBalance(toRow.wallet, Number(((await readTokenBalances(toRow.wallet)).get(token) || 0).toFixed(8)));
+
+    if (toRow.auth_user_id) {
+      await createNotification(toRow.auth_user_id, {
+        type: "receive",
+        title: "Crypto received",
+        body: `You received ${amount} ${token} in your Wallex wallet`,
+        amount,
+        token,
+        fromWallet,
+      });
+    }
+
+    return;
+  }
 
   if (action === "update_kyc") {
     const nextStatus = String(body.kycStatus || "");
@@ -226,7 +286,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (req.method === "POST") {
       const action = req.body?.action as AdminAction;
-      if (!["set_balance", "award", "create_transaction", "update_kyc"].includes(action)) {
+      if (!["set_balance", "award", "create_transaction", "update_kyc", "wallet_transfer"].includes(action)) {
         return res.status(400).json({ error: "Invalid admin action." });
       }
 

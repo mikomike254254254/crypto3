@@ -61,7 +61,9 @@ export function AdminPage() {
   const [amount, setAmount] = useState("");
   const [txType, setTxType] = useState("deposit");
   const [kycStatus, setKycStatus] = useState("verified");
-  const [actionMode, setActionMode] = useState<"set_balance" | "award" | "create_transaction">("award");
+  const [actionMode, setActionMode] = useState<"set_balance" | "award" | "create_transaction" | "wallet_transfer">("award");
+  const [toUserId, setToUserId] = useState("");
+  const [debitSender, setDebitSender] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -126,9 +128,11 @@ export function AdminPage() {
       const nextData = await runAdminAction({
         action: actionMode,
         userId: selectedUser.id,
+        toUserId: actionMode === "wallet_transfer" ? toUserId : undefined,
         walletKey,
         amount: Number(amount),
         type: txType,
+        debitUser: actionMode === "wallet_transfer" ? debitSender : undefined,
       });
       setData(nextData);
       setNotice("Admin action saved.");
@@ -358,9 +362,24 @@ export function AdminPage() {
                     </select>
                     <select value={actionMode} onChange={(event) => setActionMode(event.target.value as typeof actionMode)} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm">
                       <option value="award">Award crypto</option>
+                      <option value="wallet_transfer">Transfer to user wallet</option>
                       <option value="set_balance">Set balance</option>
                       <option value="create_transaction">Create transaction</option>
                     </select>
+                    {actionMode === "wallet_transfer" && (
+                      <>
+                        <select value={toUserId} onChange={(event) => setToUserId(event.target.value)} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm">
+                          <option value="">Select recipient</option>
+                          {data.users.filter((item) => item.id !== selectedUser?.id).map((item) => (
+                            <option key={item.id} value={item.id}>{item.email || item.name}</option>
+                          ))}
+                        </select>
+                        <label className="flex items-center gap-2 text-sm text-slate-600">
+                          <input type="checkbox" checked={debitSender} onChange={(event) => setDebitSender(event.target.checked)} />
+                          Debit selected user&apos;s balance (off = credit from system)
+                        </label>
+                      </>
+                    )}
                     <select value={walletKey} onChange={(event) => setWalletKey(event.target.value)} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm">
                       {(selectedUser?.wallets.length ? selectedUser.wallets : [{ id: "usdt", symbol: "USDT" } as any]).map((wallet) => (
                         <option key={wallet.id} value={wallet.id}>{wallet.symbol}</option>
@@ -405,18 +424,20 @@ export function AdminPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-slate-50 text-slate-500">
-                      <tr>
-                        <th className="p-4 text-left font-medium">Reference</th>
-                        <th className="p-4 text-left font-medium">Type</th>
-                        <th className="p-4 text-left font-medium">Amount</th>
-                        <th className="p-4 text-left font-medium">Status</th>
-                        <th className="p-4 text-left font-medium">Created</th>
-                      </tr>
+                        <tr>
+                          <th className="p-4 text-left font-medium">From</th>
+                          <th className="p-4 text-left font-medium">To</th>
+                          <th className="p-4 text-left font-medium">Type</th>
+                          <th className="p-4 text-left font-medium">Amount</th>
+                          <th className="p-4 text-left font-medium">Status</th>
+                          <th className="p-4 text-left font-medium">Created</th>
+                        </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {data.transactions.map((tx) => (
                         <tr key={tx.id} className="hover:bg-slate-50">
-                          <td className="p-4 font-mono text-xs text-slate-500">{tx.reference || tx.id.slice(0, 12)}</td>
+                          <td className="p-4 font-mono text-xs text-slate-500">{tx.fromWallet?.slice(0, 14) || "—"}</td>
+                          <td className="p-4 font-mono text-xs text-slate-500">{tx.toWallet?.slice(0, 14) || "—"}</td>
                           <td className="p-4 capitalize text-slate-950">{tx.type}</td>
                           <td className="p-4 font-semibold text-slate-950">{tx.amount} {tx.currency}</td>
                           <td className="p-4">
@@ -427,7 +448,7 @@ export function AdminPage() {
                       ))}
                       {!data.transactions.length && (
                         <tr>
-                          <td colSpan={5} className="p-10 text-center text-slate-400">No transactions yet</td>
+                          <td colSpan={6} className="p-10 text-center text-slate-400">No transactions yet</td>
                         </tr>
                       )}
                     </tbody>

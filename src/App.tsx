@@ -12,12 +12,23 @@ import { DepositModal } from "./components/DepositModal";
 import { WithdrawModal } from "./components/WithdrawModal";
 import { KYCModal } from "./components/KYCModal";
 import { LandingPage } from "./pages/LandingPage";
+import { OnboardingPage } from "./pages/OnboardingPage";
 import { AdminPage } from "./pages/AdminPage";
+import { NotificationBanner } from "./components/NotificationBanner";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { Crypto, Transaction, Wallet } from "./types/crypto";
 import { openSupportChat, setSupportVisibility } from "./lib/supportWidget";
-import { createWalletTransaction, fetchProfileFromBackend, fetchTransactionsFromBackend, fetchWalletsFromBackend, updateProfileInBackend } from "./services/walletBackend";
+import {
+  createWalletTransaction,
+  dismissNotification,
+  fetchNotificationsFromBackend,
+  fetchProfileFromBackend,
+  fetchTransactionsFromBackend,
+  fetchWalletsFromBackend,
+  updateProfileInBackend,
+  WalletNotification,
+} from "./services/walletBackend";
 
 function AppContent() {
   const { isDark } = useTheme();
@@ -28,15 +39,16 @@ function AppContent() {
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [showKYC, setShowKYC] = useState(false);
   const [kycStatus, setKycStatus] = useState<"not_started" | "pending" | "verified" | "rejected">("not_started");
+  const [onboardingComplete, setOnboardingComplete] = useState(true);
   const [selectedWallet, setSelectedWallet] = useState("usdt");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [notifications, setNotifications] = useState<WalletNotification[]>([]);
 
-  // Wallets state
   const [wallets, setWallets] = useState<Wallet[]>([
-    { id: "usdt", name: "USDT Wallet", symbol: "USDT", balance: 12573.00, change: 5.2, color: "green", accountNumber: "WLX-USDT-001", address: "wallex.online/usdt/wlx-usdt-001" },
-    { id: "xrp", name: "XRP Wallet", symbol: "XRP", balance: 10.79, change: -0.85, color: "blue", accountNumber: "WLX-XRP-001", address: "wallex.online/xrp/wlx-xrp-001" },
-    { id: "btc", name: "BTC Wallet", symbol: "BTC", balance: 0.4521, change: -2.1, color: "orange", accountNumber: "WLX-BTC-001", address: "wallex.online/btc/wlx-btc-001" },
-    { id: "eth", name: "ETH Wallet", symbol: "ETH", balance: 2.894, change: 3.8, color: "blue", accountNumber: "WLX-ETH-001", address: "wallex.online/eth/wlx-eth-001" },
+    { id: "usdt", name: "USDT Wallet", symbol: "USDT", balance: 0, change: 0.4, color: "green" },
+    { id: "xrp", name: "XRP Wallet", symbol: "XRP", balance: 0, change: 1.1, color: "blue" },
+    { id: "btc", name: "BTC Wallet", symbol: "BTC", balance: 0, change: -2.1, color: "orange" },
+    { id: "eth", name: "ETH Wallet", symbol: "ETH", balance: 0, change: 3.8, color: "blue" },
   ]);
 
   // Crypto data state
@@ -69,13 +81,36 @@ function AppContent() {
       .catch((error) => console.warn("Wallet backend unavailable, using local wallet state.", error));
 
     fetchProfileFromBackend()
-      .then(({ profile }) => setKycStatus((profile.kyc_status as "not_started" | "pending" | "verified" | "rejected") || "not_started"))
+      .then(({ profile }) => {
+        setKycStatus((profile.kyc_status as "not_started" | "pending" | "verified" | "rejected") || "not_started");
+        setOnboardingComplete(Boolean(profile.onboarding_complete));
+      })
       .catch((error) => console.warn("Profile backend unavailable, using local profile state.", error));
 
     fetchTransactionsFromBackend()
       .then(({ transactions: backendTransactions }) => setTransactions(backendTransactions))
       .catch((error) => console.warn("Transaction backend unavailable, using local transaction state.", error));
+
+    fetchNotificationsFromBackend()
+      .then(({ notifications: items }) => setNotifications(items))
+      .catch((error) => console.warn("Notifications unavailable.", error));
   }, [authLoading, user]);
+
+  useEffect(() => {
+    if (!user || !onboardingComplete) return;
+
+    const interval = window.setInterval(() => {
+      fetchNotificationsFromBackend()
+        .then(({ notifications: items }) => setNotifications(items))
+        .catch(() => undefined);
+
+      fetchTransactionsFromBackend()
+        .then(({ transactions: backendTransactions }) => setTransactions(backendTransactions))
+        .catch(() => undefined);
+    }, 20000);
+
+    return () => window.clearInterval(interval);
+  }, [onboardingComplete, user]);
 
   // Simulate price updates
   useEffect(() => {
@@ -154,10 +189,26 @@ function AppContent() {
     }
   };
 
-  const handleSend = async (amount: number, walletId: string, address: string, network: string) => {
+  const requireKycForSend = () => {
     if (kycStatus !== "verified") {
-      setShowDeposit(false);
       setShowKYC(true);
+      return false;
+    }
+    return true;
+  };
+
+  const handleDismissNotification = async (id: string) => {
+    setNotifications((current) => current.map((item) => (item.id === id ? { ...item, readAt: new Date().toISOString() } : item)));
+    try {
+      await dismissNotification(id);
+    } catch {
+      // keep UI dismissed locally
+    }
+  };
+
+  const handleSend = async (amount: number, walletId: string, address: string, network: string) => {
+    if (!requireKycForSend()) {
+      setShowDeposit(false);
       return;
     }
 
@@ -198,7 +249,10 @@ function AppContent() {
               <QuickActions
                 onAction={(action) => {
                   if (action === "buy") setShowDeposit(true);
-                  if (action === "sell") setShowWithdraw(true);
+                  if (action === "sell") {
+                    if (!requireKycForSend()) return;
+                    setShowWithdraw(true);
+                  }
                 }}
               />
             </div>
@@ -236,11 +290,25 @@ function AppContent() {
     return <LandingPage />;
   }
 
+  if (!onboardingComplete) {
+    return (
+      <OnboardingPage
+        skipAuth
+        initialEmail={user.email || ""}
+        onComplete={() => {
+          setOnboardingComplete(true);
+          fetchWalletsFromBackend().then(({ wallets: backendWallets }) => setWallets(backendWallets)).catch(() => undefined);
+        }}
+      />
+    );
+  }
+
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-neutral-950' : 'bg-neutral-200'}`}>
       <div className={`w-full min-h-screen relative transition-colors duration-300 ${isDark ? 'bg-black' : 'bg-neutral-100'}`}>
-        <div className={`min-h-screen overflow-y-auto pb-28 pt-1 transition-colors duration-300 ${isDark ? 'bg-black' : 'bg-neutral-100'}`}>
+        <div className={`min-h-screen overflow-y-auto pb-28 pt-1 transition-colors duration-300 scroll-smooth-y ${isDark ? 'bg-black' : 'bg-neutral-100'}`}>
           <div className="mx-auto w-full max-w-5xl">
+            <NotificationBanner notifications={notifications} onDismiss={handleDismissNotification} />
             {renderPage()}
           </div>
         </div>
@@ -252,6 +320,8 @@ function AppContent() {
             onClose={() => setShowDeposit(false)}
             onDeposit={handleDeposit}
             onSend={handleSend}
+            kycVerified={kycStatus === "verified"}
+            onKYC={() => { setShowDeposit(false); setShowKYC(true); }}
             onPaystackDeposit={async (backendWallets) => {
               setWallets(backendWallets);
               const { transactions: backendTransactions } = await fetchTransactionsFromBackend();

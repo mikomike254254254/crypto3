@@ -13,17 +13,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           ...userRow,
           user_id: user.id,
           kyc_status: normalizeKycStatus(userRow.kyc_status),
+          onboarding_complete: Boolean(userRow.onboarding_complete),
+          avatar_character: userRow.avatar_character,
         },
       });
     }
 
     if (req.method === "POST") {
-      const { fullName, avatarGradient, kycStatus } = req.body ?? {};
-      const patch: Record<string, string> = {};
+      const { fullName, avatarGradient, avatarCharacter, kycStatus, onboardingComplete } = req.body ?? {};
+      const patch: Record<string, string | boolean> = {};
 
       if (typeof fullName === "string") patch.full_name = fullName;
       if (typeof avatarGradient === "string") patch.avatar_gradient = avatarGradient;
+      if (typeof avatarCharacter === "string") patch.avatar_character = avatarCharacter;
       if (typeof kycStatus === "string") patch.kyc_status = toDatabaseKycStatus(kycStatus);
+      if (typeof onboardingComplete === "boolean") patch.onboarding_complete = onboardingComplete;
 
       const { data, error } = await supabase
         .from("users")
@@ -43,6 +47,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           ...data,
           user_id: user.id,
           kyc_status: normalizeKycStatus(data.kyc_status),
+          onboarding_complete: Boolean(data.onboarding_complete),
+          avatar_character: data.avatar_character,
         },
       });
     }
