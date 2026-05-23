@@ -20,7 +20,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem("theme", isDark ? "dark" : "light");
     document.documentElement.style.colorScheme = isDark ? "dark" : "light";
-    document.body.style.background = isDark ? "#000000" : "#d4d4d4";
+    document.body.style.background = isDark ? "#0a0a0a" : "#e5e5e5";
+    document.documentElement.classList.toggle("dark", isDark);
   }, [isDark]);
 
   const toggleTheme = () => {

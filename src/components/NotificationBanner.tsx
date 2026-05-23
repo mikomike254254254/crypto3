@@ -1,4 +1,5 @@
 import { Bell, X } from "lucide-react";
+import { useTheme } from "../context/ThemeContext";
 import type { WalletNotification } from "../services/walletBackend";
 
 interface NotificationBannerProps {
@@ -7,6 +8,7 @@ interface NotificationBannerProps {
 }
 
 export function NotificationBanner({ notifications, onDismiss }: NotificationBannerProps) {
+  const { isDark } = useTheme();
   const unread = notifications.filter((item) => !item.readAt).slice(0, 3);
   if (!unread.length) return null;
 
@@ -15,22 +17,24 @@ export function NotificationBanner({ notifications, onDismiss }: NotificationBan
       {unread.map((item) => (
         <div
           key={item.id}
-          className="rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-cyan-50 px-4 py-3 flex items-start gap-3 shadow-sm animate-in slide-in-from-top-2 duration-300"
+          className={`rounded-lg border px-4 py-3 flex items-start gap-3 ${
+            isDark ? "bg-neutral-900 border-neutral-700" : "bg-neutral-50 border-neutral-200"
+          }`}
         >
-          <div className="w-9 h-9 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
+          <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${isDark ? "bg-neutral-800 text-white" : "bg-black text-white"}`}>
             <Bell className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-emerald-950">{item.title}</p>
-            <p className="text-xs text-emerald-800 mt-0.5">{item.body}</p>
+            <p className={`text-sm font-semibold ${isDark ? "text-white" : "text-black"}`}>{item.title}</p>
+            <p className={`text-xs mt-0.5 ${isDark ? "text-neutral-400" : "text-gray-600"}`}>{item.body}</p>
           </div>
           <button
             type="button"
             onClick={() => onDismiss(item.id)}
-            className="p-1 rounded-full hover:bg-white/70"
+            className={`p-1 rounded-md ${isDark ? "hover:bg-neutral-800" : "hover:bg-neutral-200"}`}
             aria-label="Dismiss notification"
           >
-            <X className="w-4 h-4 text-emerald-700" />
+            <X className={`w-4 h-4 ${isDark ? "text-neutral-400" : "text-gray-500"}`} />
           </button>
         </div>
       ))}

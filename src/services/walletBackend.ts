@@ -105,6 +105,24 @@ export async function dismissNotification(id: string) {
   });
 }
 
+export async function markAllNotificationsRead() {
+  return apiRequest<{ ok: boolean }>("/api/notifications", {
+    method: "POST",
+    body: JSON.stringify({ markAllRead: true }),
+  });
+}
+
+export async function fetchReferralInfo() {
+  return apiRequest<{ code: string; link: string; referredBy: string | null; wallet: string }>("/api/referral");
+}
+
+export async function applyReferralCode(code: string) {
+  return apiRequest<{ ok: boolean; message: string; referredBy: string }>("/api/referral", {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  });
+}
+
 export async function submitKycToBackend(payload: {
   documentType: string;
   legalName: string;

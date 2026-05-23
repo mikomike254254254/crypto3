@@ -73,7 +73,7 @@ export function KYCModal({ onClose, onComplete }: KycModalProps) {
       <div className="w-full bg-white rounded-t-3xl max-h-[92%] overflow-hidden flex flex-col" style={{ boxShadow: "0 -10px 50px rgba(0, 0, 0, 0.25)" }}>
         <div className="sticky top-0 bg-white border-b border-neutral-100 px-4 py-4 flex items-center justify-between z-20">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-black flex items-center justify-center">
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -178,12 +178,12 @@ export function KYCModal({ onClose, onComplete }: KycModalProps) {
           {step === 4 && (
             <div className="space-y-5">
               {submitted ? (
-                <div className="bg-green-50 border border-green-200 rounded-xl p-6 flex flex-col items-center">
-                  <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center mb-4">
+                <div className="bg-neutral-100 border border-neutral-200 rounded-xl p-6 flex flex-col items-center">
+                  <div className="w-16 h-16 rounded-full bg-black flex items-center justify-center mb-4">
                     <Check className="w-8 h-8 text-white" />
                   </div>
-                  <h3 className="text-lg font-bold text-green-800">Verification Submitted</h3>
-                  <p className="text-sm text-green-700 mt-2 text-center">Your KYC photos are stored in Supabase and queued for review.</p>
+                  <h3 className="text-lg font-bold text-black">Verification Submitted</h3>
+                  <p className="text-sm text-neutral-600 mt-2 text-center">Your KYC photos are stored in Supabase and queued for review.</p>
                 </div>
               ) : (
                 <div className="bg-neutral-50 rounded-xl p-4 border border-neutral-200">

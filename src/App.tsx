@@ -20,14 +20,16 @@ import { NotificationBanner } from "./components/NotificationBanner";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { Crypto, Transaction, Wallet } from "./types/crypto";
-import { openSupportChat, setSupportVisibility } from "./lib/supportWidget";
+import { loadUserSettings } from "./lib/userSettings";
 import {
+  applyReferralCode,
   createWalletTransaction,
   dismissNotification,
   fetchNotificationsFromBackend,
   fetchProfileFromBackend,
   fetchTransactionsFromBackend,
   fetchWalletsFromBackend,
+  markAllNotificationsRead,
   updateProfileInBackend,
   WalletNotification,
 } from "./services/walletBackend";
@@ -50,6 +52,7 @@ function AppContent() {
   const [selectedWallet, setSelectedWallet] = useState("usdt");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [notifications, setNotifications] = useState<WalletNotification[]>([]);
+  const [displayCurrency, setDisplayCurrency] = useState("USD");
 
   const [wallets, setWallets] = useState<Wallet[]>([
     { id: "usdt", name: "USDT Wallet", symbol: "USDT", balance: 0, change: 0.4, color: "green" },
@@ -133,8 +136,14 @@ function AppContent() {
   const isPayRoute = window.location.pathname === "/pay" || window.location.pathname.startsWith("/pay/");
 
   useEffect(() => {
-    void setSupportVisibility(!user && !isAdminRoute);
-  }, [isAdminRoute, user]);
+    const ref = new URLSearchParams(window.location.search).get("ref");
+    if (ref) localStorage.setItem("wallex.pendingReferral", ref.toUpperCase());
+  }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    setDisplayCurrency(loadUserSettings(user.id).currency);
+  }, [user?.id]);
 
   if (window.location.pathname.startsWith("/admin")) {
     window.history.replaceState(null, "", "/mikeadmin");
@@ -209,6 +218,23 @@ function AppContent() {
     }
   };
 
+  const handleMarkAllNotificationsRead = async () => {
+    setNotifications((current) => current.map((item) => ({ ...item, readAt: item.readAt || new Date().toISOString() })));
+    try {
+      await markAllNotificationsRead();
+    } catch {
+      // ignore
+    }
+  };
+
+  const refreshWalletData = async () => {
+    await Promise.all([
+      fetchWalletsFromBackend().then(({ wallets: w }) => setWallets(w)).catch(() => undefined),
+      fetchTransactionsFromBackend().then(({ transactions: t }) => setTransactions(t)).catch(() => undefined),
+      fetchNotificationsFromBackend().then(({ notifications: n }) => setNotifications(n)).catch(() => undefined),
+    ]);
+  };
+
   const handleSend = async (amount: number, walletId: string, address: string, network: string) => {
     if (!requireKycForSend()) {
       setShowDeposit(false);
@@ -241,6 +267,7 @@ function AppContent() {
                 wallet={currentWallet}
                 wallets={wallets}
                 totalValue={totalWalletValue}
+                displayCurrency={displayCurrency}
                 selectedWallet={selectedWallet}
                 onWalletChange={setSelectedWallet}
                 onDeposit={() => setShowDeposit(true)}
@@ -272,7 +299,17 @@ function AppContent() {
       case 1:
         return <ExplorePage cryptoData={cryptoData} />;
       case 2:
-        return <WalletPage wallets={wallets} totalValue={totalWalletValue} transactions={transactions} onDeposit={() => setShowDeposit(true)} onWithdraw={() => setShowWithdraw(true)} kycVerified={kycStatus === "verified"} />;
+        return (
+          <WalletPage
+            wallets={wallets}
+            totalValue={totalWalletValue}
+            displayCurrency={displayCurrency}
+            transactions={transactions}
+            onDeposit={() => setShowDeposit(true)}
+            onWithdraw={() => setShowWithdraw(true)}
+            kycVerified={kycStatus === "verified"}
+          />
+        );
       case 3:
         return (
           <ProfilePage
@@ -294,14 +331,12 @@ function AppContent() {
         return (
           <SettingsPage
             user={user}
+            onCurrencyChange={setDisplayCurrency}
             onKYC={() => setShowKYC(true)}
             kycVerified={kycStatus === "verified"}
             onLogout={async () => {
               await signOut();
               window.location.href = "/";
-            }}
-            onSupport={() => {
-              window.location.assign("mailto:support@wallex.online?subject=Wallex%20support");
             }}
           />
         );
@@ -357,6 +392,12 @@ function AppContent() {
             })
             .catch(() => undefined);
           fetchWalletsFromBackend().then(({ wallets: backendWallets }) => setWallets(backendWallets)).catch(() => undefined);
+          const pendingRef = localStorage.getItem("wallex.pendingReferral");
+          if (pendingRef) {
+            applyReferralCode(pendingRef)
+              .then(() => localStorage.removeItem("wallex.pendingReferral"))
+              .catch(() => undefined);
+          }
         }}
       />
     );
@@ -384,15 +425,19 @@ function AppContent() {
   }
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-neutral-950' : 'bg-neutral-200'}`}>
-      <div className={`w-full min-h-screen relative transition-colors duration-300 ${isDark ? 'bg-black' : 'bg-neutral-100'}`}>
-        <div className={`min-h-screen overflow-y-auto pb-28 pt-1 transition-colors duration-300 scroll-smooth-y ${isDark ? 'bg-black' : 'bg-neutral-100'}`}>
+    <div className={`min-h-screen transition-colors duration-300 ${isDark ? "bg-neutral-950" : "bg-neutral-200"}`}>
+      <div className={`w-full min-h-screen relative transition-colors duration-300 ${isDark ? "bg-neutral-950" : "bg-neutral-100"}`}>
+        <div className={`min-h-screen overflow-y-auto pb-28 pt-1 transition-colors duration-300 scroll-smooth-y ${isDark ? "bg-neutral-950" : "bg-neutral-100"}`}>
           <div className="mx-auto w-full max-w-5xl">
             <NotificationBanner notifications={notifications} onDismiss={handleDismissNotification} />
             <Header
               walletId={currentWallet.accountNumber || currentWallet.address}
               avatarCharacterId={profileCharacter}
               avatarUrl={profileAvatarUrl}
+              notifications={notifications}
+              onDismissNotification={handleDismissNotification}
+              onMarkAllNotificationsRead={handleMarkAllNotificationsRead}
+              onSync={refreshWalletData}
             />
             {renderPage()}
           </div>

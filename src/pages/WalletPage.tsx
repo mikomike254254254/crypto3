@@ -3,10 +3,12 @@ import { ArrowDownToLine, ArrowUpFromLine, ArrowRightLeft, Clock, ChevronRight, 
 import { Wallet, Transaction } from "../types/crypto";
 import { useTheme } from "../context/ThemeContext";
 import { CryptoLogo } from "../components/CryptoLogo";
+import { formatFiat } from "../lib/currency";
 
 interface WalletPageProps {
   wallets: Wallet[];
   totalValue?: number;
+  displayCurrency?: string;
   transactions?: Transaction[];
   onDeposit: () => void;
   onWithdraw: () => void;
@@ -22,7 +24,7 @@ const mockTransactions: Transaction[] = [
   { id: '6', type: 'send', amount: 75.00, currency: 'USDT', date: '2024-01-11', status: 'failed', address: '0x9c8...b2e' },
 ];
 
-export function WalletPage({ wallets, totalValue, transactions = mockTransactions, onDeposit, onWithdraw }: WalletPageProps) {
+export function WalletPage({ wallets, totalValue, displayCurrency = "USD", transactions = mockTransactions, onDeposit, onWithdraw }: WalletPageProps) {
   const [selectedWallet, setSelectedWallet] = useState(0);
   const [isHidden, setIsHidden] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
@@ -58,15 +60,28 @@ export function WalletPage({ wallets, totalValue, transactions = mockTransaction
   };
 
   const getTransactionColor = (type: string) => {
+    if (isDark) {
+      switch (type) {
+        case "send":
+        case "withdraw":
+        case "sell":
+          return "bg-neutral-800 text-neutral-200";
+        default:
+          return "bg-neutral-800 text-white";
+      }
+    }
     switch (type) {
-      case 'send': return 'bg-red-100 text-red-600';
-      case 'withdraw': return 'bg-red-100 text-red-600';
-      case 'receive': return 'bg-green-100 text-green-600';
-      case 'deposit': return 'bg-green-100 text-green-600';
-      case 'swap': return 'bg-blue-100 text-blue-600';
-      case 'buy': return 'bg-green-100 text-green-600';
-      case 'sell': return 'bg-orange-100 text-orange-600';
-      default: return 'bg-gray-100 text-gray-600';
+      case "send":
+      case "withdraw":
+        return "bg-neutral-200 text-neutral-800";
+      case "receive":
+      case "deposit":
+      case "gas_fee":
+      case "kyc_bonus":
+      case "buy":
+        return "bg-neutral-100 text-black";
+      default:
+        return "bg-neutral-100 text-neutral-700";
     }
   };
 
@@ -81,10 +96,14 @@ export function WalletPage({ wallets, totalValue, transactions = mockTransaction
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'text-green-500';
-      case 'pending': return 'text-yellow-500';
-      case 'failed': return 'text-red-500';
-      default: return 'text-gray-500';
+      case "completed":
+        return isDark ? "text-neutral-300" : "text-neutral-600";
+      case "pending":
+        return isDark ? "text-amber-400" : "text-amber-700";
+      case "failed":
+        return isDark ? "text-red-400" : "text-red-600";
+      default:
+        return isDark ? "text-neutral-500" : "text-gray-500";
     }
   };
 
@@ -117,7 +136,7 @@ export function WalletPage({ wallets, totalValue, transactions = mockTransaction
           </button>
         </div>
         <h2 className="text-3xl font-bold text-white mb-4">
-          {isHidden ? '******' : `$${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+          {isHidden ? "******" : formatFiat(totalBalance, displayCurrency)}
         </h2>
         
         {/* Quick Actions - Fixed buttons */}
@@ -200,9 +219,7 @@ export function WalletPage({ wallets, totalValue, transactions = mockTransaction
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
                 <span className={`font-medium text-sm capitalize ${isDark ? "text-white" : "text-black"}`}>{transactionLabel(tx)}</span>
-                <span className={`font-semibold text-sm ${
-                  tx.type === 'send' || tx.type === 'sell' || tx.type === 'withdraw' ? 'text-red-500' : 'text-green-500'
-                }`}>
+                <span className={`font-semibold text-sm ${isDark ? "text-white" : "text-black"}`}>
                   {tx.type === 'send' || tx.type === 'sell' || tx.type === 'withdraw' ? '-' : '+'}
                   {tx.amount.toLocaleString()} {tx.currency}
                 </span>

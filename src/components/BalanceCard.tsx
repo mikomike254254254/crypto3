@@ -4,11 +4,13 @@ import { Wallet } from "../types/crypto";
 import { useTheme } from "../context/ThemeContext";
 import { AnimatedNumber } from "./AnimatedNumber";
 import { CryptoLogo } from "./CryptoLogo";
+import { formatFiat } from "../lib/currency";
 
 interface BalanceCardProps {
   wallet: Wallet;
   wallets: Wallet[];
   totalValue: number;
+  displayCurrency?: string;
   selectedWallet: string;
   onWalletChange: (id: string) => void;
   onDeposit: () => void;
@@ -16,7 +18,7 @@ interface BalanceCardProps {
   kycVerified: boolean;
 }
 
-export function BalanceCard({ wallet, wallets, totalValue, selectedWallet, onWalletChange, onDeposit, onWithdraw, kycVerified }: BalanceCardProps) {
+export function BalanceCard({ wallet, wallets, totalValue, displayCurrency = "USD", selectedWallet, onWalletChange, onDeposit, onWithdraw, kycVerified }: BalanceCardProps) {
   const [showBalance, setShowBalance] = useState(true);
   const [showWalletSelect, setShowWalletSelect] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -66,9 +68,7 @@ export function BalanceCard({ wallet, wallets, totalValue, selectedWallet, onWal
           <div className="flex items-center gap-1.5">
             <h2 className={`text-2xl font-bold tracking-tight balance-pulse ${isDark ? "text-white" : "text-white"}`}>
               {showBalance ? (
-                <>
-                  $<AnimatedNumber value={totalValue} format={(v) => formatBalance(v)} />
-                </>
+                <AnimatedNumber value={totalValue} format={(v) => formatFiat(v, displayCurrency)} />
               ) : (
                 "******"
               )}
@@ -77,9 +77,9 @@ export function BalanceCard({ wallet, wallets, totalValue, selectedWallet, onWal
               {showBalance ? <Eye className="w-4 h-4 text-white/60" /> : <EyeOff className="w-4 h-4 text-white/60" />}
             </button>
           </div>
-          <div className={`ml-auto px-2 py-1 rounded-full flex items-center gap-1 ${walletChange >= 0 ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-gradient-to-r from-red-500 to-rose-500'}`} style={{ boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)' }}>
-            {walletChange >= 0 ? <TrendingUp className="w-3 h-3 text-white" /> : <TrendingDown className="w-3 h-3 text-white" />}
-            <span className="text-[10px] text-white font-bold">{walletChange >= 0 ? '+' : ''}{walletChange.toFixed(2)}%</span>
+          <div className={`ml-auto px-2 py-1 rounded-md flex items-center gap-1 border ${walletChange >= 0 ? "bg-white/10 border-white/25 text-white" : "bg-white/10 border-white/25 text-white/90"}`}>
+            {walletChange >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+            <span className="text-[10px] font-bold">{walletChange >= 0 ? "+" : ""}{walletChange.toFixed(2)}%</span>
           </div>
         </div>
 
@@ -92,7 +92,14 @@ export function BalanceCard({ wallet, wallets, totalValue, selectedWallet, onWal
             <ArrowUpRight className="w-3.5 h-3.5" />
             <span className="text-xs font-semibold">Send</span>
           </button>
-          <button onClick={onDeposit} className="flex-1 bg-black text-white rounded-xl py-2.5 flex items-center justify-center gap-1.5 hover:bg-neutral-800 transition-all hover:scale-[1.02] active:scale-[0.98]" style={{ boxShadow: '0 2px 10px rgba(0, 0, 0, 0.3)' }}>
+          <button
+            onClick={onDeposit}
+            className={`flex-1 rounded-lg py-2.5 flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02] active:scale-[0.98] border-2 ${
+              isDark
+                ? "bg-transparent text-white border-white hover:bg-white/10"
+                : "bg-transparent text-white border-white hover:bg-white/10"
+            }`}
+          >
             <ArrowDownLeft className="w-3.5 h-3.5" />
             <span className="text-xs font-semibold">Receive</span>
           </button>

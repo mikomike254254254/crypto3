@@ -104,7 +104,7 @@ export function Markets({ cryptoData, activeTab, onTabChange }: MarketsProps) {
         {watchlistCoins.map((crypto) => (
           <div
             key={crypto.id}
-            className={`flex-shrink-0 flex items-center gap-2 rounded-full pl-1 pr-3 py-1 border shadow-sm ${
+            className={`watch-bubble-3d flex-shrink-0 flex items-center gap-2 rounded-full pl-1 pr-3 py-1.5 border ${
               isDark ? "bg-neutral-900 border-neutral-700" : "bg-white border-slate-200"
             }`}
           >

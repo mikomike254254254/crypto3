@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { SUPPORT_EMAIL, supportMailto } from "../../constants/support";
 
 const faqs = [
   {
@@ -57,6 +58,12 @@ export function FaqSection() {
           );
         })}
       </div>
+      <p className="text-center text-sm text-black/60 mt-8">
+        Still need help?{" "}
+        <a href={supportMailto()} className="font-semibold text-black underline">
+          {SUPPORT_EMAIL}
+        </a>
+      </p>
     </section>
   );
 }

@@ -24,6 +24,7 @@ import { SkyClouds } from "../components/SkyClouds";
 import { TestimonialsMarquee } from "../components/landing/TestimonialsMarquee";
 import { FaqSection } from "../components/landing/FaqSection";
 import { useLiveMarketPrices } from "../hooks/useLiveMarketPrices";
+import { SUPPORT_EMAIL, supportMailto } from "../constants/support";
 
 type AuthMode = "signup" | "signin";
 
@@ -372,8 +373,8 @@ export function LandingPage() {
             ))}
           </div>
           <div className="mt-10 text-center">
-            <a href="mailto:support@wallex.online" className="inline-flex rounded-2xl bg-black text-white px-6 py-3 text-sm font-semibold hover:bg-neutral-800">
-              support@wallex.online
+            <a href={supportMailto()} className="inline-flex rounded-2xl bg-black text-white px-6 py-3 text-sm font-semibold hover:bg-neutral-800">
+              {SUPPORT_EMAIL}
             </a>
           </div>
         </section>
@@ -393,7 +394,7 @@ export function LandingPage() {
               <button type="button" onClick={() => setAuthMode("signup")} className="font-semibold text-slate-950 hover:text-cyan-700">
                 Create wallet
               </button>
-              <a href="mailto:support@wallex.online" className="text-slate-500 hover:text-slate-950">
+              <a href={supportMailto()} className="text-slate-500 hover:text-slate-950">
                 Support
               </a>
             </div>

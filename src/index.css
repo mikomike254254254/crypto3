@@ -30,7 +30,21 @@ body {
 .marquee-track {
   display: flex;
   width: max-content;
-  animation: marquee-scroll 28s linear infinite;
+  animation: marquee-scroll 55s linear infinite;
+}
+
+.watch-bubble-3d {
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.12),
+    0 10px 20px -4px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  transform: translateZ(0);
+}
+
+.dark .watch-bubble-3d {
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 @keyframes testimonial-scroll {

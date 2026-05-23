@@ -24,15 +24,15 @@ import {
 import { useTheme } from "../context/ThemeContext";
 import { supabase } from "../lib/supabase";
 import { loadUserSettings, saveUserSettings } from "../lib/userSettings";
-import { updateProfileInBackend } from "../services/walletBackend";
+import { updateProfileInBackend, fetchReferralInfo, applyReferralCode } from "../services/walletBackend";
 import { canInstallPwa, isPwaInstalled, promptPwaInstall } from "../lib/pwaInstall";
+import { SUPPORT_EMAIL, supportMailto } from "../constants/support";
 
 interface SettingsPageProps {
   user: AuthUser | null;
   onCurrencyChange?: (currency: string) => void;
   onLogout?: () => void;
   onKYC?: () => void;
-  onSupport?: () => void;
   kycVerified?: boolean;
 }
 
@@ -51,7 +51,7 @@ const currencies = [
   { code: "AED", name: "UAE Dirham", symbol: "AED" },
 ];
 
-export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, onSupport, kycVerified }: SettingsPageProps) {
+export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, kycVerified }: SettingsPageProps) {
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -68,6 +68,10 @@ export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, onSuppor
   const [hideBalance, setHideBalance] = useState(false);
   const [pwaReady, setPwaReady] = useState(false);
   const [pwaInstalled, setPwaInstalled] = useState(false);
+  const [referralCode, setReferralCode] = useState("");
+  const [referralLink, setReferralLink] = useState("");
+  const [referralInput, setReferralInput] = useState("");
+  const [referralApplied, setReferralApplied] = useState<string | null>(null);
   const { isDark, toggleTheme } = useTheme();
 
   useEffect(() => {
@@ -78,6 +82,16 @@ export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, onSuppor
       setPwaInstalled(isPwaInstalled());
     }, 2000);
     return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    fetchReferralInfo()
+      .then(({ code, link, referredBy }) => {
+        setReferralCode(code);
+        setReferralLink(link);
+        setReferralApplied(referredBy);
+      })
+      .catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -242,8 +256,8 @@ export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, onSuppor
 
   const supportSettings = [
     { icon: HelpCircle, label: "Help Center", description: "FAQs on wallex.online", onClick: () => window.open("https://wallex.online/#faq", "_blank", "noopener,noreferrer") },
-    { icon: MessageCircle, label: "Contact Support", description: "support@wallex.online", onClick: () => window.location.assign("mailto:support@wallex.online?subject=Wallex%20support") },
-    { icon: Mail, label: "Feedback", description: "Send suggestions", onClick: () => window.location.assign("mailto:mikomike420@gmail.com?subject=Wallex%20feedback") },
+    { icon: MessageCircle, label: "Contact Support", description: SUPPORT_EMAIL, onClick: () => window.location.assign(supportMailto()) },
+    { icon: Mail, label: "Feedback", description: SUPPORT_EMAIL, onClick: () => window.location.assign(supportMailto("Wallex feedback")) },
     { icon: Info, label: "About", description: "App version & info", onClick: () => setShowAbout(true) },
   ];
 
@@ -268,7 +282,7 @@ export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, onSuppor
             event.stopPropagation();
             item.onChange();
           }}
-          className={`w-11 h-6 rounded-full transition-all relative flex-shrink-0 ${item.value ? "bg-green-500" : "bg-neutral-200"}`}
+          className={`w-11 h-6 rounded-full transition-all relative flex-shrink-0 ${item.value ? (isDark ? "bg-white" : "bg-black") : isDark ? "bg-neutral-700" : "bg-neutral-200"}`}
         >
           <div className={`w-5 h-5 rounded-full bg-white shadow-md absolute top-0.5 transition-all ${item.value ? "right-0.5" : "left-0.5"}`} />
         </button>
@@ -281,7 +295,7 @@ export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, onSuppor
   const renderSection = (title: string, items: any[]) => (
     <div className="mb-4">
       <h3 className={`text-xs font-semibold uppercase mb-2 px-1 ${isDark ? "text-neutral-500" : "text-gray-500"}`}>{title}</h3>
-      <div className={`rounded-2xl shadow-sm overflow-hidden ${isDark ? "bg-neutral-900 border border-neutral-800" : "bg-white"}`}>
+      <div className={`rounded-lg border overflow-hidden ${isDark ? "bg-neutral-900 border-neutral-800" : "bg-white border-neutral-200"}`}>
         {items.map((item, index) => renderSettingsItem(item, index, index === items.length - 1))}
       </div>
     </div>
@@ -291,7 +305,7 @@ export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, onSuppor
     <div className="px-4 pt-2 pb-6">
       <h1 className={`text-xl font-bold mb-4 ${isDark ? "text-white" : "text-black"}`}>Settings</h1>
 
-      {settingsNotice ? <div className="mb-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">{settingsNotice}</div> : null}
+      {settingsNotice ? <div className={`mb-3 rounded-lg border px-4 py-2 text-sm ${isDark ? "border-neutral-700 bg-neutral-900 text-neutral-200" : "border-neutral-200 bg-neutral-100 text-neutral-800"}`}>{settingsNotice}</div> : null}
       {settingsError ? <div className="mb-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">{settingsError}</div> : null}
 
       <button
@@ -316,6 +330,63 @@ export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, onSuppor
         </div>
       </button>
 
+      <div className="mb-4">
+        <h3 className={`text-xs font-semibold uppercase mb-2 px-1 ${isDark ? "text-neutral-500" : "text-gray-500"}`}>Referral</h3>
+        <div className={`rounded-lg border p-4 space-y-3 ${isDark ? "bg-neutral-900 border-neutral-800" : "bg-white border-neutral-200"}`}>
+          <div>
+            <p className={`text-xs ${isDark ? "text-neutral-400" : "text-gray-500"}`}>Your code</p>
+            <div className="flex gap-2 mt-1">
+              <code className={`flex-1 rounded-md px-3 py-2 text-sm font-mono ${isDark ? "bg-neutral-950 text-white" : "bg-neutral-100 text-black"}`}>
+                {referralCode || "—"}
+              </code>
+              <button
+                type="button"
+                onClick={() => {
+                  if (referralLink) {
+                    navigator.clipboard.writeText(referralLink);
+                    setSettingsNotice("Referral link copied.");
+                  }
+                }}
+                className="rounded-md bg-black text-white px-3 py-2 text-xs font-semibold"
+              >
+                Copy link
+              </button>
+            </div>
+          </div>
+          {referralApplied ? (
+            <p className={`text-xs ${isDark ? "text-neutral-400" : "text-gray-600"}`}>Referred by: {referralApplied}</p>
+          ) : (
+            <div>
+              <p className={`text-xs mb-1 ${isDark ? "text-neutral-400" : "text-gray-500"}`}>Have a friend&apos;s code?</p>
+              <div className="flex gap-2">
+                <input
+                  value={referralInput}
+                  onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
+                  placeholder="WLX..."
+                  className={`flex-1 rounded-md border px-3 py-2 text-sm ${isDark ? "bg-neutral-950 border-neutral-700 text-white" : "bg-white border-neutral-200"}`}
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setSettingsError("");
+                    try {
+                      const res = await applyReferralCode(referralInput);
+                      setReferralApplied(res.referredBy);
+                      setSettingsNotice(res.message);
+                    } catch (err) {
+                      setSettingsError(err instanceof Error ? err.message : "Invalid code");
+                    }
+                  }}
+                  className="rounded-md bg-black text-white px-3 py-2 text-xs font-semibold"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       {renderSection("Account", accountSettings)}
       {renderSection("Security", securitySettings)}
       {renderSection("Privacy", privacySettings)}
@@ -334,7 +405,7 @@ export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, onSuppor
               <p className={`text-sm font-medium ${isDark ? "text-white" : "text-black"}`}>Dark Mode</p>
               <p className={`text-xs ${isDark ? "text-neutral-400" : "text-gray-500"}`}>Switch to dark theme</p>
             </div>
-            <button onClick={toggleTheme} className={`w-11 h-6 rounded-full transition-all relative ${isDark ? "bg-green-500" : "bg-neutral-200"}`}>
+            <button onClick={toggleTheme} className={`w-11 h-6 rounded-full transition-all relative ${isDark ? "bg-white" : "bg-black"}`}>
               <div className={`w-5 h-5 rounded-full bg-white shadow-md absolute top-0.5 transition-all ${isDark ? "right-0.5" : "left-0.5"}`} />
             </button>
           </div>
@@ -407,7 +478,7 @@ export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, onSuppor
                     <p className={`text-xs ${isDark ? "text-neutral-400" : "text-gray-500"}`}>{currency.code} - {currency.symbol}</p>
                   </div>
                   {selectedCurrency === currency.code && (
-                    <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                    <div className="w-6 h-6 rounded-full bg-black flex items-center justify-center">
                       <Check className="w-4 h-4 text-white" />
                     </div>
                   )}
