@@ -22,10 +22,13 @@ supabase db push
 2. Enable Google and paste your **Client ID** and **Client Secret** from Google Cloud Console.
 3. Under **Authentication → URL Configuration**, set **Site URL** to `https://wallex.online` (or your Vercel URL).
 4. Add **Redirect URLs**:
-   - `https://wallex.online`
-   - `https://wallex.online/mikeadmin`
-   - `https://<your-vercel-app>.vercel.app`
-   - `http://localhost:5173`
+   - `https://wallex.online` (primary — use this as **Site URL**)
+   - `https://wallex.online/**` (redirect allow list)
+   - `http://localhost:5173` (local dev only)
+
+   Remove old preview URLs like `wallex-online-new.vercel.app` from Supabase redirect URLs.
+
+In **Authentication → Providers → Email**, enable **Confirm email** and prefer **OTP** (6-digit code) so sign-up sends a verification code to the user's inbox.
 
 In Google Cloud Console → OAuth client → **Authorized redirect URIs**, add:
 

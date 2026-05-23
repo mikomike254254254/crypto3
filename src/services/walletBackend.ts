@@ -124,3 +124,10 @@ export async function verifyPaystackDeposit(reference: string, walletId: string)
     body: JSON.stringify({ reference, walletId }),
   });
 }
+
+export async function swapWalletAssets(fromWalletKey: string, toWalletKey: string, amount: number) {
+  return apiRequest<{ wallets: Wallet[]; received: number; receivedToken: string }>("/api/swap", {
+    method: "POST",
+    body: JSON.stringify({ fromWalletKey, toWalletKey, amount }),
+  });
+}

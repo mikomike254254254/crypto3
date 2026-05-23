@@ -13,6 +13,12 @@
       "has": [{ "type": "host", "value": "wallex2-mikomike280s-projects.vercel.app" }],
       "destination": "https://wallex.online/:path*",
       "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "wallex-online-new.vercel.app" }],
+      "destination": "https://wallex.online/:path*",
+      "permanent": true
     }
   ],
   "rewrites": [

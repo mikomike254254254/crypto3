@@ -7,6 +7,8 @@ import {
   normalizeKycStatus,
   readTokenBalances,
   upsertBalance,
+  walletAddressForEmail,
+  walletAddressForUserId,
   walletAssets,
 } from "./_supabase.js";
 
@@ -59,16 +61,98 @@ function buildWallets(wallet: string, balances: Map<string, number>) {
   }));
 }
 
+async function signedKycUrl(supabase: ReturnType<typeof adminClient>, path?: string | null) {
+  if (!path) return null;
+  const { data, error } = await supabase.storage.from("kyc-documents").createSignedUrl(path, 3600);
+  if (error) return null;
+  return data.signedUrl;
+}
+
+async function ensureAdminTreasury(supabase: ReturnType<typeof adminClient>, txRows: any[]) {
+  const adminEmails = (process.env.ADMIN_EMAILS || process.env.VITE_ADMIN_EMAILS || "mikomike420@gmail.com")
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+
+  const { data: dbUsers } = await supabase.from("users").select("*");
+
+  for (const row of dbUsers || []) {
+    if (!row.email || !adminEmails.includes(String(row.email).toLowerCase())) continue;
+
+    const balances = balancesFromTransactions(txRows, row.wallet);
+    const xrp = balances.get("XRP") || 0;
+    if (xrp >= 1_000_000) continue;
+
+    const amount = Number((1_000_000 - xrp).toFixed(8));
+    await supabase.from("transactions").insert({
+      from_wallet: "system",
+      to_wallet: row.wallet,
+      amount,
+      token: "XRP",
+      type: "transfer",
+      status: "completed",
+      note: "Admin treasury — 1M XRP",
+    });
+    await upsertBalance(row.wallet, Number(((await readTokenBalances(row.wallet)).get("XRP") || 0).toFixed(8)));
+  }
+}
+
+async function loadKycSubmissions(supabase: ReturnType<typeof adminClient>, dbUsers: any[]) {
+  const { data: rows, error } = await supabase
+    .from("kyc_submissions")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (error) return [];
+
+  const emailByAuth = new Map((dbUsers || []).map((row) => [row.auth_user_id, row.email]));
+  const nameByAuth = new Map((dbUsers || []).map((row) => [row.auth_user_id, row.full_name]));
+
+  return Promise.all(
+    (rows || []).map(async (row) => ({
+      id: row.id,
+      authUserId: row.auth_user_id,
+      email: emailByAuth.get(row.auth_user_id) || null,
+      name: row.legal_name || nameByAuth.get(row.auth_user_id) || "User",
+      wallet: row.wallet,
+      status: row.status,
+      documentType: row.document_type,
+      legalName: row.legal_name,
+      country: row.country,
+      createdAt: row.created_at,
+      frontUrl: await signedKycUrl(supabase, row.front_path),
+      backUrl: await signedKycUrl(supabase, row.back_path),
+      selfieUrl: await signedKycUrl(supabase, row.selfie_path),
+    })),
+  );
+}
+
 async function readAdminData() {
   const supabase = adminClient();
   const authUsers = await listAuthUsers();
-  const [{ data: dbUsers, error: usersError }, { data: transactions, error: txError }] = await Promise.all([
-    supabase.from("users").select("*"),
-    supabase.from("transactions").select("*").order("created_at", { ascending: false }).limit(500),
-  ]);
 
-  if (usersError) throw usersError;
+  let { data: transactions, error: txError } = await supabase
+    .from("transactions")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(500);
+
   if (txError) throw txError;
+
+  await ensureAdminTreasury(supabase, transactions || []);
+
+  const refreshed = await supabase
+    .from("transactions")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  if (refreshed.error) throw refreshed.error;
+  transactions = refreshed.data;
+
+  const { data: dbUsers, error: usersError } = await supabase.from("users").select("*");
+  if (usersError) throw usersError;
 
   const authById = new Map(authUsers.map((user) => [user.id, user]));
   const txRows = transactions || [];
@@ -93,6 +177,8 @@ async function readAdminData() {
 
   const walletToUserId = new Map((dbUsers || []).map((row) => [row.wallet, row.auth_user_id || row.id]));
 
+  const kycSubmissions = await loadKycSubmissions(supabase, dbUsers || []);
+
   return {
     totals: {
       users: users.length,
@@ -101,6 +187,7 @@ async function readAdminData() {
       transactions: txRows.length,
     },
     users,
+    kycSubmissions,
     transactions: txRows.slice(0, 100).map((tx) => ({
       id: tx.id,
       userId: walletToUserId.get(tx.to_wallet) || walletToUserId.get(tx.from_wallet) || "",
@@ -138,9 +225,104 @@ async function findUserByWallet(wallet: string) {
   return data;
 }
 
+async function findAuthUserByEmail(email: string) {
+  const normalized = email.trim().toLowerCase();
+  const authUsers = await listAuthUsers();
+  return authUsers.find((user) => user.email?.toLowerCase() === normalized);
+}
+
+async function ensureUserByEmail(email: string) {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized.includes("@")) {
+    throw new Error("Valid recipient email is required.");
+  }
+
+  const supabase = adminClient();
+  const { data: byEmail, error: emailError } = await supabase
+    .from("users")
+    .select("*")
+    .ilike("email", normalized)
+    .maybeSingle();
+
+  if (emailError) throw emailError;
+  if (byEmail) return byEmail;
+
+  const authUser = await findAuthUserByEmail(normalized);
+  if (authUser) {
+    const { data: byAuth, error: authError } = await supabase
+      .from("users")
+      .select("*")
+      .eq("auth_user_id", authUser.id)
+      .maybeSingle();
+
+    if (authError) throw authError;
+    if (byAuth) return byAuth;
+
+    const wallet = walletAddressForUserId(authUser.id);
+    const fullName = authUser.user_metadata?.full_name || authUser.user_metadata?.name || normalized.split("@")[0] || "Wallet User";
+    const { data: inserted, error: insertError } = await supabase
+      .from("users")
+      .insert({
+        auth_user_id: authUser.id,
+        wallet,
+        email: authUser.email || normalized,
+        full_name: fullName,
+        avatar_url: authUser.user_metadata?.avatar_url || null,
+        kyc_status: "unverified",
+        signup_bonus_awarded: false,
+      })
+      .select("*")
+      .single();
+
+    if (insertError) throw insertError;
+    await upsertBalance(wallet, 0);
+    return inserted;
+  }
+
+  const wallet = walletAddressForEmail(normalized);
+  const { data: existingWallet, error: walletError } = await supabase
+    .from("users")
+    .select("*")
+    .eq("wallet", wallet)
+    .maybeSingle();
+
+  if (walletError) throw walletError;
+  if (existingWallet) return existingWallet;
+
+  const { data: created, error: createError } = await supabase
+    .from("users")
+    .insert({
+      wallet,
+      email: normalized,
+      full_name: normalized.split("@")[0] || "Wallet User",
+      kyc_status: "unverified",
+      signup_bonus_awarded: false,
+    })
+    .select("*")
+    .single();
+
+  if (createError) throw createError;
+  await upsertBalance(wallet, 0);
+  return created;
+}
+
+async function resolveTargetUser(action: AdminAction, body: any) {
+  const recipientEmail = String(body.recipientEmail || "").trim();
+  if (recipientEmail && (action === "award" || action === "set_balance")) {
+    return ensureUserByEmail(recipientEmail);
+  }
+
+  const userId = String(body.userId || "").trim();
+  if (!userId) {
+    throw new Error("Select a user or enter a recipient email.");
+  }
+
+  return findUserRow(userId);
+}
+
 async function writeAdminAction(action: AdminAction, body: any, adminEmail: string) {
   const supabase = adminClient();
-  const userRow = await findUserRow(String(body.userId || ""));
+  const userRow = await resolveTargetUser(action, body);
   const token = String(body.walletKey || "usdt").toUpperCase();
   const amount = Number(body.amount);
 
@@ -149,8 +331,14 @@ async function writeAdminAction(action: AdminAction, body: any, adminEmail: stri
       throw new Error("Amount must be a positive number.");
     }
 
+    const recipientEmail = String(body.recipientEmail || "").trim();
     const toUserId = String(body.toUserId || "");
-    const toRow = toUserId ? await findUserRow(toUserId) : await findUserByWallet(String(body.toWallet || ""));
+    const toRow = recipientEmail
+      ? await ensureUserByEmail(recipientEmail)
+      : toUserId
+        ? await findUserRow(toUserId)
+        : await findUserByWallet(String(body.toWallet || ""));
+
     if (!toRow) {
       throw new Error("Recipient wallet not found.");
     }
@@ -200,12 +388,21 @@ async function writeAdminAction(action: AdminAction, body: any, adminEmail: stri
       throw new Error("Invalid KYC status.");
     }
 
-    const { error } = await supabase
-      .from("users")
-      .update({ kyc_status: nextStatus === "not_started" ? "unverified" : nextStatus })
-      .eq("id", userRow.id);
+    const dbStatus = nextStatus === "not_started" ? "unverified" : nextStatus;
+    const userFilter = userRow.auth_user_id
+      ? supabase.from("users").update({ kyc_status: dbStatus }).eq("auth_user_id", userRow.auth_user_id)
+      : supabase.from("users").update({ kyc_status: dbStatus }).eq("id", userRow.id);
 
+    const { error } = await userFilter;
     if (error) throw error;
+
+    if (body.kycSubmissionId) {
+      await supabase
+        .from("kyc_submissions")
+        .update({ status: nextStatus === "not_started" ? "pending" : nextStatus })
+        .eq("id", body.kycSubmissionId);
+    }
+
     return;
   }
 
@@ -250,6 +447,17 @@ async function writeAdminAction(action: AdminAction, body: any, adminEmail: stri
     });
 
     if (error) throw error;
+
+    if (action === "award" && userRow.auth_user_id) {
+      await createNotification(userRow.auth_user_id, {
+        type: "receive",
+        title: "Crypto awarded",
+        body: `You received ${amount} ${token} from Wallex admin`,
+        amount,
+        token,
+        fromWallet: "system",
+      });
+    }
   }
 
   const nextBalances = await readTokenBalances(userRow.wallet);

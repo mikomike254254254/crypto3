@@ -1,7 +1,15 @@
 import { createClient } from "@supabase/supabase-js";
 import type { VercelRequest } from "@vercel/node";
 
-export const WALLEX_ORIGIN = (process.env.VITE_APP_URL || "https://wallex.online").replace(/\/$/, "");
+function resolveWallexOrigin() {
+  const configured = (process.env.VITE_APP_URL || "").replace(/\/$/, "");
+  if (configured && !/\.vercel\.app$/i.test(configured) && !configured.includes("wallex-online-new")) {
+    return configured;
+  }
+  return "https://wallex.online";
+}
+
+export const WALLEX_ORIGIN = resolveWallexOrigin();
 
 export const walletAssets = [
   { wallet_key: "usdt", name: "USDT Wallet", symbol: "USDT", change: 0.4, color: "green" },
@@ -9,6 +17,13 @@ export const walletAssets = [
   { wallet_key: "btc", name: "BTC Wallet", symbol: "BTC", change: -2.1, color: "orange" },
   { wallet_key: "eth", name: "ETH Wallet", symbol: "ETH", change: 3.8, color: "blue" },
 ];
+
+export const SWAP_RATES_USD: Record<string, number> = {
+  USDT: 1,
+  XRP: 0.52,
+  BTC: 67432,
+  ETH: 3521,
+};
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -59,6 +74,15 @@ export function toClientWallet(row: any) {
 
 export function walletAddressForUserId(userId: string) {
   return `r${userId.replace(/-/g, "")}`;
+}
+
+export function walletAddressForEmail(email: string) {
+  const normalized = email.trim().toLowerCase();
+  let hash = 0;
+  for (let i = 0; i < normalized.length; i += 1) {
+    hash = (hash * 31 + normalized.charCodeAt(i)) >>> 0;
+  }
+  return `e${hash.toString(16).padStart(12, "0")}`;
 }
 
 export function buildWallexPayLink(wallet: string, symbol: string, walletKey: string, network = "TRC20") {

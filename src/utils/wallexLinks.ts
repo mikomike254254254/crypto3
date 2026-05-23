@@ -1,6 +1,8 @@
 import { Wallet } from "../types/crypto";
 
-export const WALLEX_ORIGIN = (import.meta.env.VITE_APP_URL as string | undefined)?.replace(/\/$/, "") || "https://wallex.online";
+import { getWallexOrigin } from "./canonicalOrigin";
+
+export const WALLEX_ORIGIN = getWallexOrigin();
 
 export function getAccountNumber(wallet: Wallet) {
   return wallet.accountNumber || `WLX-${wallet.symbol}-${wallet.id}`.toUpperCase();

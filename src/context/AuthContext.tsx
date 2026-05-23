@@ -1,35 +1,22 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
+import { buildWallexRedirectUrl, getWallexOrigin } from "../utils/canonicalOrigin";
 
 interface AuthContextValue {
   user: User | null;
   session: Session | null;
   loading: boolean;
   signUpWithEmail: (email: string, password: string, name: string) => Promise<{ requiresEmailConfirmation: boolean }>;
+  sendSignUpOtp: (email: string) => Promise<void>;
+  verifySignUpOtp: (email: string, token: string) => Promise<void>;
+  completeSignUpProfile: (password: string, name: string) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signInWithGoogle: (redirectPath?: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-
-function getAuthRedirectUrl() {
-  const configuredUrl = (import.meta.env.VITE_APP_URL as string | undefined)?.replace(/\/$/, "");
-  const currentOrigin = window.location.origin.replace(/\/$/, "");
-
-  if (currentOrigin.includes("localhost") || currentOrigin.includes("127.0.0.1")) {
-    return currentOrigin;
-  }
-
-  return configuredUrl || "https://wallex.online";
-}
-
-function buildRedirectUrl(redirectPath = "/") {
-  const base = getAuthRedirectUrl().replace(/\/$/, "");
-  const path = redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`;
-  return `${base}${path}`;
-}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -59,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password,
         options: {
           data: { full_name: name },
-          emailRedirectTo: getAuthRedirectUrl(),
+          emailRedirectTo: getWallexOrigin(),
         },
       });
 
@@ -68,6 +55,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       return { requiresEmailConfirmation: !data.session };
+    },
+    sendSignUpOtp: async (email) => {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          shouldCreateUser: true,
+          emailRedirectTo: getWallexOrigin(),
+        },
+      });
+
+      if (error) throw error;
+    },
+    verifySignUpOtp: async (email, token) => {
+      const { error } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: token.trim(),
+        type: "email",
+      });
+
+      if (error) throw error;
+    },
+    completeSignUpProfile: async (password, name) => {
+      const { error } = await supabase.auth.updateUser({
+        password,
+        data: { full_name: name },
+      });
+
+      if (error) throw error;
     },
     signInWithEmail: async (email, password) => {
       const { error } = await supabase.auth.signInWithPassword({
@@ -83,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: buildRedirectUrl(redirectPath),
+          redirectTo: buildWallexRedirectUrl(redirectPath),
           queryParams: {
             access_type: "offline",
             prompt: "consent",

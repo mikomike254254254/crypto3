@@ -51,17 +51,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: "KYC document type, document photos, and selfie are required." });
     }
 
+    const folder = userRow.wallet || user.id;
     const [frontPath, backPath, selfiePath] = await Promise.all([
-      uploadImage(userRow.wallet, "front", frontImage),
-      uploadImage(userRow.wallet, "back", backImage),
-      uploadImage(userRow.wallet, "selfie", selfieImage),
+      uploadImage(folder, "front", frontImage),
+      uploadImage(folder, "back", backImage),
+      uploadImage(folder, "selfie", selfieImage),
     ]);
 
     const { data, error } = await supabase
       .from("kyc_submissions")
       .insert({
-        wallet: userRow.wallet,
         auth_user_id: user.id,
+        wallet: userRow.wallet,
+        document_type: documentType,
+        legal_name: legalName || userRow.full_name,
+        date_of_birth: dateOfBirth || null,
+        country: country || null,
+        address: address || null,
+        front_path: frontPath,
+        back_path: backPath,
+        selfie_path: selfiePath,
         status: "pending",
       })
       .select("*")

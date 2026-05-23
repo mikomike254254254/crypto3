@@ -27,6 +27,22 @@ export type AdminTransaction = {
   walletKey?: string;
 };
 
+export type AdminKycSubmission = {
+  id: string;
+  authUserId?: string;
+  email?: string | null;
+  name: string;
+  wallet?: string;
+  status: string;
+  documentType?: string;
+  legalName?: string;
+  country?: string;
+  createdAt: string;
+  frontUrl?: string | null;
+  backUrl?: string | null;
+  selfieUrl?: string | null;
+};
+
 export type AdminDashboardData = {
   totals: {
     users: number;
@@ -36,6 +52,7 @@ export type AdminDashboardData = {
   };
   users: AdminUser[];
   transactions: AdminTransaction[];
+  kycSubmissions: AdminKycSubmission[];
 };
 
 export async function loginAdminPanel(email: string, password: string) {

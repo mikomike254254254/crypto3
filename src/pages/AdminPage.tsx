@@ -17,12 +17,20 @@ import {
 import { clearAdminSession, readAdminSession, writeAdminSession } from "../lib/adminSession";
 import { AdminDashboardData, AdminUser, fetchAdminDashboard, loginAdminPanel, runAdminAction } from "../services/adminBackend";
 
-type AdminSection = "dashboard" | "users" | "transactions" | "balances";
+type AdminSection = "dashboard" | "users" | "transactions" | "balances" | "kyc";
+
+const ADMIN_ASSETS = [
+  { id: "usdt", symbol: "USDT" },
+  { id: "xrp", symbol: "XRP" },
+  { id: "btc", symbol: "BTC" },
+  { id: "eth", symbol: "ETH" },
+];
 
 const emptyDashboard: AdminDashboardData = {
   totals: { users: 0, tvl: 0, pendingKyc: 0, transactions: 0 },
   users: [],
   transactions: [],
+  kycSubmissions: [],
 };
 
 const money = new Intl.NumberFormat("en-US", {
@@ -71,6 +79,7 @@ export function AdminPage() {
   const [actionMode, setActionMode] = useState<"set_balance" | "award" | "create_transaction" | "wallet_transfer">("award");
   const [toUserId, setToUserId] = useState("");
   const [debitSender, setDebitSender] = useState(false);
+  const [awardEmail, setAwardEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -140,25 +149,34 @@ export function AdminPage() {
   };
 
   const submitAction = async () => {
-    if (!selectedUser) return;
+    const sendByEmail = awardEmail.trim().includes("@") && (actionMode === "award" || actionMode === "wallet_transfer");
+    if (!sendByEmail && !selectedUser) return;
+    if (sendByEmail && actionMode === "wallet_transfer" && !selectedUser) return;
 
     setSaving(true);
     setError("");
     setNotice("");
 
     try {
-      const nextData = await runAdminAction({
+      const payload: Record<string, unknown> = {
         action: actionMode,
-        userId: selectedUser.id,
-        toUserId: actionMode === "wallet_transfer" ? toUserId : undefined,
+        userId: selectedUser?.id,
+        toUserId: actionMode === "wallet_transfer" && !sendByEmail ? toUserId : undefined,
         walletKey,
         amount: Number(amount),
         type: txType,
         debitUser: actionMode === "wallet_transfer" ? debitSender : undefined,
-      });
+      };
+
+      if (sendByEmail) {
+        payload.recipientEmail = awardEmail.trim();
+      }
+
+      const nextData = await runAdminAction(payload);
       setData(nextData);
-      setNotice("Admin action saved.");
+      setNotice(sendByEmail ? `Sent to ${awardEmail.trim()}.` : "Admin action saved.");
       setAmount("");
+      if (sendByEmail) setAwardEmail("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Admin action failed");
     } finally {
@@ -189,9 +207,31 @@ export function AdminPage() {
   const navItems = [
     { id: "dashboard" as const, label: "Dashboard", icon: Home },
     { id: "users" as const, label: "Users", icon: Users },
+    { id: "kyc" as const, label: "KYC review", icon: ShieldCheck },
     { id: "transactions" as const, label: "Transactions", icon: BadgeDollarSign },
     { id: "balances" as const, label: "Balances", icon: Wallet },
   ];
+
+  const reviewKyc = async (authUserId: string | undefined, submissionId: string, status: string) => {
+    if (!authUserId) return;
+    setSaving(true);
+    setError("");
+    setNotice("");
+    try {
+      const nextData = await runAdminAction({
+        action: "update_kyc",
+        userId: authUserId,
+        kycStatus: status,
+        kycSubmissionId: submissionId,
+      });
+      setData(nextData);
+      setNotice(`KYC marked as ${status}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "KYC update failed");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (!adminSession) {
     return (
@@ -396,12 +436,25 @@ export function AdminPage() {
                       ))}
                     </select>
                     <select value={actionMode} onChange={(event) => setActionMode(event.target.value as typeof actionMode)} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm">
-                      <option value="award">Award crypto</option>
+                      <option value="award">Send crypto (credit)</option>
                       <option value="wallet_transfer">Transfer to user wallet</option>
                       <option value="set_balance">Set balance</option>
                       <option value="create_transaction">Create transaction</option>
                     </select>
-                    {actionMode === "wallet_transfer" && (
+                    {(actionMode === "award" || actionMode === "wallet_transfer") && (
+                      <div className="rounded-2xl border border-cyan-200 bg-cyan-50/50 p-4 space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-cyan-800">Send to email (XRP, USDT, BTC, ETH)</p>
+                        <input
+                          value={awardEmail}
+                          onChange={(event) => setAwardEmail(event.target.value)}
+                          type="email"
+                          placeholder="recipient@email.com"
+                          className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm bg-white"
+                        />
+                        <p className="text-[11px] text-slate-500">Any email — we create their wallet if needed. Leave empty to use the user selected above.</p>
+                      </div>
+                    )}
+                    {actionMode === "wallet_transfer" && !awardEmail.trim().includes("@") && (
                       <>
                         <select value={toUserId} onChange={(event) => setToUserId(event.target.value)} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm">
                           <option value="">Select recipient</option>
@@ -411,13 +464,13 @@ export function AdminPage() {
                         </select>
                         <label className="flex items-center gap-2 text-sm text-slate-600">
                           <input type="checkbox" checked={debitSender} onChange={(event) => setDebitSender(event.target.checked)} />
-                          Debit selected user&apos;s balance (off = credit from system)
+                          Debit your treasury (off = mint from system)
                         </label>
                       </>
                     )}
                     <select value={walletKey} onChange={(event) => setWalletKey(event.target.value)} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm">
-                      {(selectedUser?.wallets.length ? selectedUser.wallets : [{ id: "usdt", symbol: "USDT" } as any]).map((wallet) => (
-                        <option key={wallet.id} value={wallet.id}>{wallet.symbol}</option>
+                      {ADMIN_ASSETS.map((asset) => (
+                        <option key={asset.id} value={asset.id}>{asset.symbol}</option>
                       ))}
                     </select>
                     {actionMode === "create_transaction" && (
@@ -428,7 +481,12 @@ export function AdminPage() {
                       </select>
                     )}
                     <input value={amount} onChange={(event) => setAmount(event.target.value)} type="number" min="0" placeholder={`Amount in ${selectedUser ? firstWalletSymbol(selectedUser) : "USDT"}`} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" />
-                    <button type="button" onClick={submitAction} disabled={saving || !selectedUser} className="w-full rounded-2xl bg-cyan-500 text-white py-3 text-sm font-semibold hover:bg-cyan-600 disabled:opacity-60 flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={submitAction}
+                      disabled={saving || (!awardEmail.trim().includes("@") && !selectedUser) || !amount}
+                      className="w-full rounded-2xl bg-cyan-500 text-white py-3 text-sm font-semibold hover:bg-cyan-600 disabled:opacity-60 flex items-center justify-center gap-2"
+                    >
                       {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Gift className="w-4 h-4" />}
                       Save action
                     </button>
@@ -451,6 +509,58 @@ export function AdminPage() {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {section === "kyc" && (
+              <div className="space-y-6">
+                {(data.kycSubmissions || []).length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center text-slate-500">
+                    No KYC submissions yet. Users upload ID photos from their profile.
+                  </div>
+                ) : (
+                  (data.kycSubmissions || []).map((item) => (
+                    <div key={item.id} className="bg-white rounded-2xl border border-slate-200 p-6">
+                      <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
+                        <div>
+                          <p className="font-semibold text-slate-950">{item.legalName || item.name}</p>
+                          <p className="text-sm text-slate-500">{item.email}</p>
+                          <p className="text-xs text-slate-400 mt-1">{item.documentType} · {item.country || "—"} · {new Date(item.createdAt).toLocaleString()}</p>
+                        </div>
+                        <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusClass(item.status)}`}>{item.status}</span>
+                      </div>
+                      <div className="grid sm:grid-cols-3 gap-4">
+                        {[
+                          { label: "ID front", url: item.frontUrl },
+                          { label: "ID back", url: item.backUrl },
+                          { label: "Selfie", url: item.selfieUrl },
+                        ].map((photo) => (
+                          <div key={photo.label} className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50">
+                            <p className="text-xs font-semibold text-slate-500 px-3 py-2 border-b border-slate-100">{photo.label}</p>
+                            {photo.url ? (
+                              <a href={photo.url} target="_blank" rel="noreferrer" className="block">
+                                <img src={photo.url} alt={photo.label} className="w-full h-48 object-cover" />
+                              </a>
+                            ) : (
+                              <p className="p-6 text-sm text-slate-400 text-center">No image</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        <button type="button" disabled={saving} onClick={() => reviewKyc(item.authUserId, item.id, "verified")} className="rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm font-semibold">
+                          Approve
+                        </button>
+                        <button type="button" disabled={saving} onClick={() => reviewKyc(item.authUserId, item.id, "rejected")} className="rounded-xl bg-rose-600 text-white px-4 py-2 text-sm font-semibold">
+                          Reject
+                        </button>
+                        <button type="button" disabled={saving} onClick={() => reviewKyc(item.authUserId, item.id, "pending")} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold">
+                          Mark pending
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             )}
 

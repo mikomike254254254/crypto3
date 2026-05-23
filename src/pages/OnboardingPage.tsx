@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { WALLEX_CHARACTERS } from "../constants/characters";
+import { WallexAvatar } from "../components/WallexAvatar";
 import { updateProfileInBackend } from "../services/walletBackend";
 
 interface OnboardingPageProps {
@@ -197,7 +198,7 @@ export function OnboardingPage({ onComplete, initialEmail = "", skipAuth = false
           )}
 
           <h1 className="text-2xl font-bold text-slate-950">Choose your crypto character</h1>
-          <p className="text-sm text-slate-500 mt-1 mb-6">Six cartoon heroes — pick the one that matches your style.</p>
+          <p className="text-sm text-slate-500 mt-1 mb-6">Pick your cartoon wallet hero — no emojis, just Wallex characters.</p>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
             {WALLEX_CHARACTERS.map((character) => (
@@ -205,18 +206,20 @@ export function OnboardingPage({ onComplete, initialEmail = "", skipAuth = false
                 key={character.id}
                 type="button"
                 onClick={() => setSelectedCharacter(character.id)}
-                className={`rounded-3xl p-4 text-left transition-all border-2 ${
-                  selectedCharacter === character.id ? "border-slate-950 shadow-lg scale-[1.02]" : "border-transparent hover:scale-[1.01]"
-                } bg-gradient-to-br ${character.gradient}`}
+                className={`rounded-3xl p-3 flex flex-col items-center gap-2 transition-all border-2 bg-white ${
+                  selectedCharacter === character.id ? "border-slate-950 shadow-lg scale-[1.03]" : "border-slate-200 hover:border-slate-300"
+                }`}
               >
-                <div className="text-4xl mb-2 drop-shadow-sm">{character.emoji}</div>
-                <p className="text-sm font-bold text-white">{character.name}</p>
-                <p className="text-[11px] text-white/80">{character.tagline}</p>
-                {selectedCharacter === character.id && (
-                  <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-black/30 px-2 py-0.5 text-[10px] text-white font-semibold">
-                    <Check className="w-3 h-3" /> Selected
-                  </div>
-                )}
+                <WallexAvatar
+                  character={character}
+                  size={72}
+                  selected={selectedCharacter === character.id}
+                  animate={selectedCharacter === character.id}
+                />
+                <div className="text-center">
+                  <p className="text-sm font-bold text-slate-950">{character.name}</p>
+                  <p className="text-[11px] text-slate-500">{character.tagline}</p>
+                </div>
               </button>
             ))}
           </div>

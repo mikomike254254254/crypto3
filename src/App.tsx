@@ -11,6 +11,7 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { DepositModal } from "./components/DepositModal";
 import { WithdrawModal } from "./components/WithdrawModal";
 import { KYCModal } from "./components/KYCModal";
+import { SwapModal } from "./components/SwapModal";
 import { LandingPage } from "./pages/LandingPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import { AdminPage } from "./pages/AdminPage";
@@ -38,6 +39,7 @@ function AppContent() {
   const [showDeposit, setShowDeposit] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [showKYC, setShowKYC] = useState(false);
+  const [showSwap, setShowSwap] = useState(false);
   const [kycStatus, setKycStatus] = useState<"not_started" | "pending" | "verified" | "rejected">("not_started");
   const [onboardingComplete, setOnboardingComplete] = useState(true);
   const [selectedWallet, setSelectedWallet] = useState("usdt");
@@ -253,6 +255,7 @@ function AppContent() {
                     if (!requireKycForSend()) return;
                     setShowWithdraw(true);
                   }
+                  if (action === "swap") setShowSwap(true);
                 }}
               />
             </div>
@@ -351,6 +354,18 @@ function AppContent() {
           <KYCModal 
             onClose={() => setShowKYC(false)} 
             onComplete={handleKYCComplete}
+          />
+        )}
+        {showSwap && (
+          <SwapModal
+            wallets={wallets}
+            onClose={() => setShowSwap(false)}
+            onSwapped={(nextWallets) => {
+              setWallets(nextWallets);
+              fetchTransactionsFromBackend()
+                .then(({ transactions: backendTransactions }) => setTransactions(backendTransactions))
+                .catch(() => undefined);
+            }}
           />
         )}
       </div>
