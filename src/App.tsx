@@ -272,7 +272,15 @@ function AppContent() {
       case 3:
         return <ProfilePage user={user} wallets={wallets} transactions={transactions} totalValue={totalWalletValue} kycStatus={kycStatus} onKYC={() => setShowKYC(true)} />;
       case 4:
-        return <SettingsPage onKYC={() => setShowKYC(true)} kycVerified={kycStatus === "verified"} onLogout={signOut} onSupport={() => { void openSupportChat(); }} />;
+        return (
+          <SettingsPage
+            user={user}
+            onKYC={() => setShowKYC(true)}
+            kycVerified={kycStatus === "verified"}
+            onLogout={signOut}
+            onSupport={() => { void openSupportChat(); }}
+          />
+        );
       default:
         return null;
     }

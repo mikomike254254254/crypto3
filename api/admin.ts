@@ -1,68 +1,49 @@
-import type { User } from "@supabase/supabase-js";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { verifyAdminPanelToken } from "./adminAuth.js";
 import {
   adminClient,
   balancesFromTransactions,
   createNotification,
   normalizeKycStatus,
   readTokenBalances,
-  requireUser,
   upsertBalance,
   walletAssets,
 } from "./_supabase.js";
 
 type AdminAction = "set_balance" | "award" | "create_transaction" | "update_kyc" | "wallet_transfer";
 
-function adminEmails() {
-  return (process.env.ADMIN_EMAILS || process.env.VITE_ADMIN_EMAILS || "")
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean);
-}
-
-async function adminEmailsFromTable() {
-  const supabase = adminClient();
-  const { data, error } = await supabase.from("admins").select("email");
-  if (error) throw error;
-  return (data || [])
-    .map((row) => String(row.email || "").trim().toLowerCase())
-    .filter(Boolean);
-}
-
-async function requireAdmin(req: VercelRequest) {
-  const user = await requireUser(req);
-  const email = user.email?.toLowerCase();
-  const allowedEmails = new Set([
-    ...adminEmails(),
-    ...(await adminEmailsFromTable()),
-  ]);
-
-  if (!email || !allowedEmails.has(email)) {
-    throw new Error("Admin access denied for this Google account.");
+function requireAdminPanel(req: VercelRequest) {
+  const token = String(req.headers["x-admin-token"] || "");
+  const session = verifyAdminPanelToken(token);
+  if (!session) {
+    throw new Error("Admin access denied. Sign in at /mikeadmin with your admin password.");
   }
-
-  return user;
+  return session;
 }
 
-function userLabel(user: User) {
-  return user.user_metadata?.full_name || user.email?.split("@")[0] || "Wallet user";
+function userLabel(name?: string, email?: string) {
+  return name || email?.split("@")[0] || "Wallet user";
 }
 
 async function listAuthUsers() {
   const supabase = adminClient();
-  const users: User[] = [];
-  let page = 1;
+  try {
+    const users: { id: string; email?: string; user_metadata?: Record<string, string> }[] = [];
+    let page = 1;
 
-  while (page <= 10) {
-    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 100 });
-    if (error) throw error;
+    while (page <= 10) {
+      const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 100 });
+      if (error) throw error;
 
-    users.push(...data.users);
-    if (data.users.length < 100) break;
-    page += 1;
+      users.push(...data.users);
+      if (data.users.length < 100) break;
+      page += 1;
+    }
+
+    return users;
+  } catch {
+    return [];
   }
-
-  return users;
 }
 
 function buildWallets(wallet: string, balances: Map<string, number>) {
@@ -101,7 +82,7 @@ async function readAdminData() {
     return {
       id: row.auth_user_id || row.id,
       email: row.email || authUser?.email,
-      name: row.full_name || (authUser ? userLabel(authUser) : "Wallet user"),
+      name: row.full_name || (authUser ? userLabel(authUser.user_metadata?.full_name, authUser.email) : "Wallet user"),
       walletAddress: row.wallet,
       kycStatus: normalizeKycStatus(row.kyc_status),
       createdAt: row.created_at,
@@ -157,7 +138,7 @@ async function findUserByWallet(wallet: string) {
   return data;
 }
 
-async function writeAdminAction(action: AdminAction, body: any, adminUser: User) {
+async function writeAdminAction(action: AdminAction, body: any, adminEmail: string) {
   const supabase = adminClient();
   const userRow = await findUserRow(String(body.userId || ""));
   const token = String(body.walletKey || "usdt").toUpperCase();
@@ -189,7 +170,7 @@ async function writeAdminAction(action: AdminAction, body: any, adminUser: User)
       token,
       type: "transfer",
       status: "completed",
-      note: body.note || `Admin transfer by ${adminUser.email || adminUser.id}`,
+      note: body.note || `Admin transfer by ${adminEmail}`,
     });
 
     if (error) throw error;
@@ -245,7 +226,7 @@ async function writeAdminAction(action: AdminAction, body: any, adminUser: User)
         token,
         type: "transfer",
         status: "completed",
-        note: `Admin balance set by ${adminUser.email || adminUser.id}`,
+        note: `Admin balance set by ${adminEmail}`,
       });
 
       if (error) throw error;
@@ -265,7 +246,7 @@ async function writeAdminAction(action: AdminAction, body: any, adminUser: User)
       token,
       type: action === "award" || rawType === "receive" || rawType === "send" ? "transfer" : rawType,
       status: body.status || "completed",
-      note: body.note || `Admin action by ${adminUser.email || adminUser.id}`,
+      note: body.note || `Admin action by ${adminEmail}`,
     });
 
     if (error) throw error;
@@ -277,7 +258,7 @@ async function writeAdminAction(action: AdminAction, body: any, adminUser: User)
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    const adminUser = await requireAdmin(req);
+    const adminSession = requireAdminPanel(req);
 
     if (req.method === "GET") {
       const data = await readAdminData();
@@ -290,7 +271,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: "Invalid admin action." });
       }
 
-      await writeAdminAction(action, req.body, adminUser);
+      await writeAdminAction(action, req.body, adminSession.email);
       const data = await readAdminData();
       return res.status(200).json(data);
     }

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { User as AuthUser } from "@supabase/supabase-js";
 import {
   Bell,
   Check,
@@ -17,12 +18,16 @@ import {
   Moon,
   Smartphone,
   Trash2,
-  User,
+  User as UserIcon,
   X,
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
+import { supabase } from "../lib/supabase";
+import { loadUserSettings, saveUserSettings } from "../lib/userSettings";
+import { updateProfileInBackend } from "../services/walletBackend";
 
 interface SettingsPageProps {
+  user: AuthUser | null;
   onCurrencyChange?: (currency: string) => void;
   onLogout?: () => void;
   onKYC?: () => void;
@@ -45,9 +50,15 @@ const currencies = [
   { code: "AED", name: "UAE Dirham", symbol: "AED" },
 ];
 
-export function SettingsPage({ onCurrencyChange, onLogout, onKYC, onSupport, kycVerified }: SettingsPageProps) {
+export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, onSupport, kycVerified }: SettingsPageProps) {
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [profileName, setProfileName] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [settingsNotice, setSettingsNotice] = useState("");
+  const [settingsError, setSettingsError] = useState("");
   const [selectedCurrency, setSelectedCurrency] = useState("USD");
   const [notifications, setNotifications] = useState(true);
   const [biometric, setBiometric] = useState(true);
@@ -56,15 +67,63 @@ export function SettingsPage({ onCurrencyChange, onLogout, onKYC, onSupport, kyc
   const [hideBalance, setHideBalance] = useState(false);
   const { isDark, toggleTheme } = useTheme();
 
+  useEffect(() => {
+    if (!user?.id) return;
+    const saved = loadUserSettings(user.id);
+    setSelectedCurrency(saved.currency);
+    setNotifications(saved.notifications);
+    setPriceAlerts(saved.priceAlerts);
+    setTransactionAlerts(saved.transactionAlerts);
+    setHideBalance(saved.hideBalance);
+    setBiometric(saved.biometric);
+    setProfileName(user.user_metadata?.full_name || "");
+  }, [user?.id]);
+
+  const persist = (patch: Parameters<typeof saveUserSettings>[1]) => {
+    if (!user?.id) return;
+    saveUserSettings(user.id, patch);
+    setSettingsNotice("Settings saved.");
+    window.setTimeout(() => setSettingsNotice(""), 2500);
+  };
+
   const handleCurrencySelect = (code: string) => {
     setSelectedCurrency(code);
+    persist({ currency: code });
     onCurrencyChange?.(code);
     setShowCurrencyModal(false);
   };
 
+  const saveProfile = async () => {
+    setSettingsError("");
+    try {
+      await updateProfileInBackend({ fullName: profileName.trim() });
+      await supabase.auth.updateUser({ data: { full_name: profileName.trim() } });
+      setShowProfileModal(false);
+      setSettingsNotice("Profile updated.");
+    } catch (err) {
+      setSettingsError(err instanceof Error ? err.message : "Could not update profile");
+    }
+  };
+
+  const savePassword = async () => {
+    if (newPassword.length < 6) {
+      setSettingsError("Password must be at least 6 characters.");
+      return;
+    }
+    setSettingsError("");
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      setSettingsError(error.message);
+      return;
+    }
+    setNewPassword("");
+    setShowPasswordModal(false);
+    setSettingsNotice("Password updated.");
+  };
+
   const accountSettings = [
-    { icon: User, label: "Personal Info", description: "Name, email, phone number" },
-    { icon: CreditCard, label: "Payment Methods", description: "Cards & bank accounts" },
+    { icon: UserIcon, label: "Personal Info", description: user?.email || "Update your display name", onClick: () => setShowProfileModal(true) },
+    { icon: CreditCard, label: "Payment Methods", description: "Paystack top-up in wallet", onClick: () => setSettingsNotice("Use Receive → Top up with Paystack in your wallet.") },
     {
       icon: FileText,
       label: "Documents",
@@ -74,14 +133,18 @@ export function SettingsPage({ onCurrencyChange, onLogout, onKYC, onSupport, kyc
   ];
 
   const securitySettings = [
-    { icon: Lock, label: "Change Password", description: "Update your password" },
+    { icon: Lock, label: "Change Password", description: "Update your login password", onClick: () => setShowPasswordModal(true) },
     {
       icon: Smartphone,
       label: "Two-Factor Auth",
       description: "Extra security layer",
       toggle: true,
       value: biometric,
-      onChange: () => setBiometric(!biometric),
+      onChange: () => {
+        const next = !biometric;
+        setBiometric(next);
+        persist({ biometric: next });
+      },
     },
     { icon: Globe, label: "Auto-Lock", description: "5 min" },
   ];
@@ -93,7 +156,11 @@ export function SettingsPage({ onCurrencyChange, onLogout, onKYC, onSupport, kyc
       description: "Hide amounts on balance screens",
       toggle: true,
       value: hideBalance,
-      onChange: () => setHideBalance(!hideBalance),
+      onChange: () => {
+        const next = !hideBalance;
+        setHideBalance(next);
+        persist({ hideBalance: next });
+      },
     },
   ];
 
@@ -104,7 +171,11 @@ export function SettingsPage({ onCurrencyChange, onLogout, onKYC, onSupport, kyc
       description: "General alerts",
       toggle: true,
       value: notifications,
-      onChange: () => setNotifications(!notifications),
+      onChange: () => {
+        const next = !notifications;
+        setNotifications(next);
+        persist({ notifications: next });
+      },
     },
     {
       icon: DollarSign,
@@ -112,7 +183,11 @@ export function SettingsPage({ onCurrencyChange, onLogout, onKYC, onSupport, kyc
       description: "Crypto price changes",
       toggle: true,
       value: priceAlerts,
-      onChange: () => setPriceAlerts(!priceAlerts),
+      onChange: () => {
+        const next = !priceAlerts;
+        setPriceAlerts(next);
+        persist({ priceAlerts: next });
+      },
     },
     {
       icon: CreditCard,
@@ -120,7 +195,11 @@ export function SettingsPage({ onCurrencyChange, onLogout, onKYC, onSupport, kyc
       description: "Send & receive notifications",
       toggle: true,
       value: transactionAlerts,
-      onChange: () => setTransactionAlerts(!transactionAlerts),
+      onChange: () => {
+        const next = !transactionAlerts;
+        setTransactionAlerts(next);
+        persist({ transactionAlerts: next });
+      },
     },
   ];
 
@@ -174,6 +253,9 @@ export function SettingsPage({ onCurrencyChange, onLogout, onKYC, onSupport, kyc
   return (
     <div className="px-4 pt-2 pb-6">
       <h1 className={`text-xl font-bold mb-4 ${isDark ? "text-white" : "text-black"}`}>Settings</h1>
+
+      {settingsNotice ? <div className="mb-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">{settingsNotice}</div> : null}
+      {settingsError ? <div className="mb-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">{settingsError}</div> : null}
 
       <button
         onClick={() => setShowCurrencyModal(true)}
@@ -313,6 +395,33 @@ export function SettingsPage({ onCurrencyChange, onLogout, onKYC, onSupport, kyc
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showProfileModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
+          <div className={`w-full rounded-t-3xl p-5 ${isDark ? "bg-neutral-950" : "bg-white"}`}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-black"}`}>Personal info</h2>
+              <button type="button" onClick={() => setShowProfileModal(false)} className="p-2 rounded-full hover:bg-neutral-100"><X className="w-5 h-5" /></button>
+            </div>
+            <p className={`text-sm mb-3 ${isDark ? "text-neutral-400" : "text-gray-500"}`}>Email: {user?.email}</p>
+            <input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Display name" className={`w-full rounded-xl border px-4 py-3 text-sm mb-4 ${isDark ? "bg-neutral-900 border-neutral-700 text-white" : "border-neutral-200"}`} />
+            <button type="button" onClick={saveProfile} className="w-full rounded-xl bg-black text-white py-3 text-sm font-semibold">Save profile</button>
+          </div>
+        </div>
+      )}
+
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
+          <div className={`w-full rounded-t-3xl p-5 ${isDark ? "bg-neutral-950" : "bg-white"}`}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-black"}`}>Change password</h2>
+              <button type="button" onClick={() => setShowPasswordModal(false)} className="p-2 rounded-full hover:bg-neutral-100"><X className="w-5 h-5" /></button>
+            </div>
+            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password (6+ chars)" className={`w-full rounded-xl border px-4 py-3 text-sm mb-4 ${isDark ? "bg-neutral-900 border-neutral-700 text-white" : "border-neutral-200"}`} />
+            <button type="button" onClick={savePassword} className="w-full rounded-xl bg-black text-white py-3 text-sm font-semibold">Update password</button>
           </div>
         </div>
       )}

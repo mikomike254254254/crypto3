@@ -1,4 +1,4 @@
-import { supabase } from "../lib/supabase";
+import { readAdminSession } from "../lib/adminSession";
 import { Wallet } from "../types/crypto";
 
 export type AdminUser = {
@@ -38,16 +38,30 @@ export type AdminDashboardData = {
   transactions: AdminTransaction[];
 };
 
-async function authHeaders(): Promise<Record<string, string>> {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  return token ? { Authorization: `Bearer ${token}` } : {};
+export async function loginAdminPanel(email: string, password: string) {
+  const response = await fetch("/api/admin/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error || "Admin login failed");
+  }
+
+  return response.json() as Promise<{ token: string; email: string; expiresAt: number }>;
 }
 
 async function adminRequest(init: RequestInit = {}) {
+  const session = readAdminSession();
+  if (!session) {
+    throw new Error("Admin access denied. Sign in at /mikeadmin with your admin password.");
+  }
+
   const headers = new Headers(init.headers);
   headers.set("Content-Type", "application/json");
-  Object.entries(await authHeaders()).forEach(([key, value]) => headers.set(key, value));
+  headers.set("X-Admin-Token", session.token);
 
   const response = await fetch("/api/admin", { ...init, headers });
   if (!response.ok) {

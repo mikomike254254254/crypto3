@@ -5,15 +5,17 @@ import {
   Gift,
   Home,
   Loader2,
+  Lock,
   LogOut,
+  Mail,
   RefreshCw,
   Search,
   ShieldCheck,
   Users,
   Wallet,
 } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
-import { AdminDashboardData, AdminUser, fetchAdminDashboard, runAdminAction } from "../services/adminBackend";
+import { clearAdminSession, readAdminSession, writeAdminSession } from "../lib/adminSession";
+import { AdminDashboardData, AdminUser, fetchAdminDashboard, loginAdminPanel, runAdminAction } from "../services/adminBackend";
 
 type AdminSection = "dashboard" | "users" | "transactions" | "balances";
 
@@ -52,7 +54,12 @@ function walletUsdValue(user: AdminUser) {
 }
 
 export function AdminPage() {
-  const { user, loading: authLoading, signInWithGoogle, signOut } = useAuth();
+  const [adminSession, setAdminSession] = useState(readAdminSession());
+  const [loginEmail, setLoginEmail] = useState("mikomike420@gmail.com");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+
   const [section, setSection] = useState<AdminSection>("dashboard");
   const [data, setData] = useState<AdminDashboardData>(emptyDashboard);
   const [query, setQuery] = useState("");
@@ -68,7 +75,6 @@ export function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [accessDenied, setAccessDenied] = useState(false);
 
   const selectedUser = useMemo(
     () => data.users.find((item) => item.id === selectedUserId) || data.users[0],
@@ -82,40 +88,56 @@ export function AdminPage() {
       [item.name, item.email, item.walletAddress, item.kycStatus].some((value) => value?.toLowerCase().includes(needle)),
     );
   }, [data.users, query]);
+
   const dashboardTvl = data.users.reduce((sum, item) => sum + walletUsdValue(item), 0);
 
   const loadDashboard = () => {
-    if (!user) return;
+    if (!adminSession) return;
 
     setLoading(true);
     setError("");
-    setAccessDenied(false);
     fetchAdminDashboard()
       .then((nextData) => {
         setData(nextData);
         setSelectedUserId((current) => current || nextData.users[0]?.id || "");
       })
-      .catch((err) => {
-        const message = err instanceof Error ? err.message : "Admin data could not be loaded";
-        if (message.toLowerCase().includes("denied")) {
-          setAccessDenied(true);
-        }
-        setError(message);
-      })
+      .catch((err) => setError(err instanceof Error ? err.message : "Admin data could not be loaded"))
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    if (!authLoading && user) {
+    if (adminSession) {
       loadDashboard();
     }
-  }, [authLoading, user]);
+  }, [adminSession?.token]);
 
   useEffect(() => {
     if (selectedUser?.wallets[0]?.id) {
       setWalletKey(selectedUser.wallets[0].id);
     }
   }, [selectedUser?.id]);
+
+  const handleLogin = async () => {
+    setLoginLoading(true);
+    setLoginError("");
+    try {
+      const session = await loginAdminPanel(loginEmail, loginPassword);
+      const next = { email: session.email, token: session.token, expiresAt: session.expiresAt };
+      writeAdminSession(next);
+      setAdminSession(next);
+      setLoginPassword("");
+    } catch (err) {
+      setLoginError(err instanceof Error ? err.message : "Admin login failed");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    clearAdminSession();
+    setAdminSession(null);
+    setData(emptyDashboard);
+  };
 
   const submitAction = async () => {
     if (!selectedUser) return;
@@ -171,46 +193,65 @@ export function AdminPage() {
     { id: "balances" as const, label: "Balances", icon: Wallet },
   ];
 
-  if (authLoading) {
+  if (!adminSession) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-cyan-600" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-6">
-        <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
-          <div className="w-12 h-12 rounded-2xl bg-black overflow-hidden flex items-center justify-center mb-6">
-            <img src="/wallex-logo.jpg" alt="Wallex" className="w-full h-full object-cover" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 flex items-center justify-center p-6">
+        <div className="w-full max-w-md bg-white/95 backdrop-blur rounded-3xl border border-slate-200 p-8 shadow-2xl">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-black overflow-hidden">
+              <img src="/wallex-logo.jpg" alt="Wallex" className="w-full h-full object-cover" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-semibold text-slate-950">Wallex Admin</h1>
+              <p className="text-xs text-slate-500">wallex.online/mikeadmin</p>
+            </div>
           </div>
-          <h1 className="text-2xl font-semibold text-slate-950">Wallex Admin</h1>
-          <p className="text-sm text-slate-500 mt-2">Sign in with an approved Google admin account to manage users, balances, KYC, and transactions.</p>
-          <button
-            onClick={() => signInWithGoogle("/mikeadmin")}
-            className="mt-6 w-full rounded-2xl bg-slate-950 text-white py-3 text-sm font-semibold hover:bg-slate-800 flex items-center justify-center gap-2"
-          >
-            <ShieldCheck className="w-4 h-4" />
-            Continue with Google
-          </button>
-          <p className="mt-4 text-xs text-slate-400 text-center">Use mikomike420@gmail.com or another email listed in ADMIN_EMAILS.</p>
-        </div>
-      </div>
-    );
-  }
 
-  if (accessDenied) {
-    return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-6">
-        <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200 p-8 shadow-sm text-center">
-          <ShieldCheck className="w-12 h-12 text-amber-500 mx-auto" />
-          <h1 className="text-2xl font-semibold text-slate-950 mt-4">Admin access denied</h1>
-          <p className="text-sm text-slate-500 mt-2">{user.email} is not on the admin allow list. Contact the project owner to add your email to ADMIN_EMAILS.</p>
-          <button onClick={() => signOut()} className="mt-6 w-full rounded-2xl border border-slate-200 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-            Sign out
-          </button>
+          <p className="text-sm text-slate-600 mb-6">Secure operations console. Authorized staff only — password required.</p>
+
+          {loginError ? <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{loginError}</div> : null}
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Admin email</label>
+              <div className="relative mt-2">
+                <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                <input
+                  type="email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 py-3 pl-11 pr-4 text-sm"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Admin password</label>
+              <div className="relative mt-2">
+                <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                <input
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                  placeholder="Enter admin password"
+                  className="w-full rounded-2xl border border-slate-200 py-3 pl-11 pr-4 text-sm"
+                />
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleLogin}
+              disabled={loginLoading}
+              className="w-full rounded-2xl bg-slate-950 text-white py-3.5 text-sm font-semibold hover:bg-slate-800 disabled:opacity-60 flex items-center justify-center gap-2"
+            >
+              {loginLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+              Sign in to admin
+            </button>
+          </div>
+
+          <a href="/" className="mt-6 block text-center text-sm text-cyan-700 hover:text-cyan-900 font-medium">
+            ← Back to wallex.online
+          </a>
         </div>
       </div>
     );
@@ -221,12 +262,12 @@ export function AdminPage() {
       <div className="flex min-h-screen">
         <aside className="hidden md:flex w-72 bg-white border-r border-slate-200 p-6 flex-col">
           <div className="flex items-center gap-3 mb-10">
-            <div className="w-11 h-11 bg-black rounded-2xl overflow-hidden flex items-center justify-center">
+            <div className="w-11 h-11 bg-black rounded-2xl overflow-hidden">
               <img src="/wallex-logo.jpg" alt="Wallex" className="w-full h-full object-cover" />
             </div>
             <div>
               <h1 className="text-2xl font-semibold text-slate-950">Wallex</h1>
-              <p className="text-xs text-slate-500">Admin console</p>
+              <p className="text-xs text-slate-500">Admin · {adminSession.email}</p>
             </div>
           </div>
           <nav className="space-y-1 flex-1">
@@ -235,6 +276,7 @@ export function AdminPage() {
               return (
                 <button
                   key={item.id}
+                  type="button"
                   onClick={() => setSection(item.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left text-sm font-medium transition ${section === item.id ? "bg-cyan-100 text-slate-950" : "text-slate-500 hover:bg-slate-50"}`}
                 >
@@ -244,7 +286,7 @@ export function AdminPage() {
               );
             })}
           </nav>
-          <button onClick={() => signOut()} className="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-500 hover:bg-slate-50 text-sm font-medium">
+          <button type="button" onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-500 hover:bg-slate-50 text-sm font-medium">
             <LogOut className="w-5 h-5" />
             Sign out
           </button>
@@ -261,33 +303,24 @@ export function AdminPage() {
                 className="w-full rounded-2xl bg-slate-100 border border-slate-200 py-3 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300"
               />
             </div>
-            <button onClick={loadDashboard} className="rounded-2xl border border-slate-200 bg-white p-3 hover:bg-slate-50" aria-label="Refresh admin data">
+            <button type="button" onClick={loadDashboard} className="rounded-2xl border border-slate-200 bg-white p-3 hover:bg-slate-50" aria-label="Refresh">
               <RefreshCw className={`w-5 h-5 text-slate-600 ${loading ? "animate-spin" : ""}`} />
             </button>
-            <div className="hidden sm:block text-right">
-              <p className="text-sm font-semibold text-slate-950">{user.email}</p>
-              <p className="text-xs text-slate-500">Admin session</p>
-            </div>
+            <a href="/" className="hidden sm:inline text-sm font-medium text-cyan-700 hover:text-cyan-900">View site</a>
           </header>
 
           <div className="md:hidden bg-white border-b border-slate-200 px-4 py-3 overflow-x-auto flex gap-2">
             {navItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setSection(item.id)}
-                className={`shrink-0 rounded-2xl px-4 py-2 text-sm font-medium ${section === item.id ? "bg-cyan-100 text-slate-950" : "bg-slate-100 text-slate-600"}`}
-              >
+              <button key={item.id} type="button" onClick={() => setSection(item.id)} className={`shrink-0 rounded-2xl px-4 py-2 text-sm font-medium ${section === item.id ? "bg-cyan-100 text-slate-950" : "bg-slate-100 text-slate-600"}`}>
                 {item.label}
               </button>
             ))}
           </div>
 
           <section className="p-4 md:p-8">
-            <div className="flex items-start justify-between gap-4 mb-6">
-              <div>
-                <h2 className="text-3xl font-semibold text-slate-950 capitalize">{section}</h2>
-                <p className="text-sm text-slate-500 mt-1">Live data from Supabase through protected server routes.</p>
-              </div>
+            <div className="mb-6">
+              <h2 className="text-3xl font-semibold text-slate-950 capitalize">{section}</h2>
+              <p className="text-sm text-slate-500 mt-1">Manage clients, KYC, transfers, and ledger on wallex.online</p>
             </div>
 
             {error && <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
@@ -341,7 +374,7 @@ export function AdminPage() {
                               <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusClass(item.kycStatus)}`}>{item.kycStatus.replace("_", " ")}</span>
                             </td>
                             <td className="p-4">
-                              <button onClick={() => setSelectedUserId(item.id)} className="text-cyan-700 font-semibold hover:text-cyan-900">
+                              <button type="button" onClick={() => setSelectedUserId(item.id)} className="text-cyan-700 font-semibold hover:text-cyan-900">
                                 Manage
                               </button>
                             </td>
@@ -358,7 +391,9 @@ export function AdminPage() {
 
                   <div className="space-y-4 mt-5">
                     <select value={selectedUser?.id || ""} onChange={(event) => setSelectedUserId(event.target.value)} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm">
-                      {data.users.map((item) => <option key={item.id} value={item.id}>{item.email || item.name}</option>)}
+                      {data.users.map((item) => (
+                        <option key={item.id} value={item.id}>{item.email || item.name}</option>
+                      ))}
                     </select>
                     <select value={actionMode} onChange={(event) => setActionMode(event.target.value as typeof actionMode)} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm">
                       <option value="award">Award crypto</option>
@@ -393,7 +428,7 @@ export function AdminPage() {
                       </select>
                     )}
                     <input value={amount} onChange={(event) => setAmount(event.target.value)} type="number" min="0" placeholder={`Amount in ${selectedUser ? firstWalletSymbol(selectedUser) : "USDT"}`} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" />
-                    <button onClick={submitAction} disabled={saving || !selectedUser} className="w-full rounded-2xl bg-cyan-500 text-white py-3 text-sm font-semibold hover:bg-cyan-600 disabled:opacity-60 flex items-center justify-center gap-2">
+                    <button type="button" onClick={submitAction} disabled={saving || !selectedUser} className="w-full rounded-2xl bg-cyan-500 text-white py-3 text-sm font-semibold hover:bg-cyan-600 disabled:opacity-60 flex items-center justify-center gap-2">
                       {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Gift className="w-4 h-4" />}
                       Save action
                     </button>
@@ -409,7 +444,7 @@ export function AdminPage() {
                           <option value="rejected">Rejected</option>
                           <option value="not_started">Not started</option>
                         </select>
-                        <button onClick={() => updateKyc(selectedUser)} disabled={saving} className="rounded-2xl bg-slate-950 text-white px-4 py-2 text-sm font-semibold">
+                        <button type="button" onClick={() => updateKyc(selectedUser)} disabled={saving} className="rounded-2xl bg-slate-950 text-white px-4 py-2 text-sm font-semibold">
                           <CheckCircle2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -424,14 +459,14 @@ export function AdminPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-slate-50 text-slate-500">
-                        <tr>
-                          <th className="p-4 text-left font-medium">From</th>
-                          <th className="p-4 text-left font-medium">To</th>
-                          <th className="p-4 text-left font-medium">Type</th>
-                          <th className="p-4 text-left font-medium">Amount</th>
-                          <th className="p-4 text-left font-medium">Status</th>
-                          <th className="p-4 text-left font-medium">Created</th>
-                        </tr>
+                      <tr>
+                        <th className="p-4 text-left font-medium">From</th>
+                        <th className="p-4 text-left font-medium">To</th>
+                        <th className="p-4 text-left font-medium">Type</th>
+                        <th className="p-4 text-left font-medium">Amount</th>
+                        <th className="p-4 text-left font-medium">Status</th>
+                        <th className="p-4 text-left font-medium">Created</th>
+                      </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {data.transactions.map((tx) => (

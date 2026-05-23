@@ -7,3 +7,4 @@ dist
 .playwright-mcp
 *.png
 prod-*.html
+ADMIN_ACCESS.md
