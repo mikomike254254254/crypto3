@@ -1,16 +1,13 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "github": {
+    "silent": true
+  },
   "redirects": [
     {
       "source": "/:path*",
       "has": [{ "type": "host", "value": "wallex2.vercel.app" }],
-      "destination": "https://wallex.online/:path*",
-      "permanent": true
-    },
-    {
-      "source": "/:path*",
-      "has": [{ "type": "host", "value": "wallex2-mikomike280s-projects.vercel.app" }],
       "destination": "https://wallex.online/:path*",
       "permanent": true
     },

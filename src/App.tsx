@@ -30,6 +30,7 @@ import {
   updateProfileInBackend,
   WalletNotification,
 } from "./services/walletBackend";
+import { marketAssetsToCrypto, useLiveMarketPrices } from "./hooks/useLiveMarketPrices";
 
 function AppContent() {
   const { isDark } = useTheme();
@@ -54,17 +55,8 @@ function AppContent() {
     { id: "eth", name: "ETH Wallet", symbol: "ETH", balance: 0, change: 3.8, color: "blue" },
   ]);
 
-  // Crypto data state
-  const [cryptoData, setCryptoData] = useState<Crypto[]>([
-    { id: "btc", name: "Bitcoin", symbol: "BTC", price: 43250.0, change: 2.34, isUp: true, sparkline: [42000, 42100, 41900, 42300, 42500, 42400, 43250], marketCap: "847.2B", volume: "28.5B" },
-    { id: "eth", name: "Ethereum", symbol: "ETH", price: 2285.5, change: -1.28, isUp: false, sparkline: [2300, 2320, 2290, 2280, 2270, 2295, 2285], marketCap: "274.8B", volume: "15.2B" },
-    { id: "bnb", name: "BNB", symbol: "BNB", price: 312.45, change: 4.56, isUp: true, sparkline: [298, 302, 305, 308, 310, 311, 312], marketCap: "48.2B", volume: "1.8B" },
-    { id: "sol", name: "Solana", symbol: "SOL", price: 98.72, change: 8.92, isUp: true, sparkline: [88, 90, 92, 95, 96, 97, 98], marketCap: "42.1B", volume: "2.3B" },
-    { id: "xrp", name: "XRP", symbol: "XRP", price: 0.5234, change: -0.85, isUp: false, sparkline: [0.53, 0.528, 0.525, 0.522, 0.52, 0.524, 0.523], marketCap: "28.4B", volume: "1.1B" },
-    { id: "ada", name: "Cardano", symbol: "ADA", price: 0.4521, change: 1.23, isUp: true, sparkline: [0.44, 0.445, 0.448, 0.45, 0.451, 0.452, 0.452], marketCap: "16.1B", volume: "0.4B" },
-    { id: "doge", name: "Dogecoin", symbol: "DOGE", price: 0.0821, change: 12.45, isUp: true, sparkline: [0.072, 0.074, 0.076, 0.078, 0.079, 0.08, 0.082], marketCap: "11.7B", volume: "0.9B" },
-    { id: "avax", name: "Avalanche", symbol: "AVAX", price: 35.67, change: -3.21, isUp: false, sparkline: [37, 36.8, 36.5, 36.2, 35.9, 35.8, 35.7], marketCap: "13.2B", volume: "0.5B" },
-  ]);
+  const { assets: liveAssets } = useLiveMarketPrices();
+  const cryptoData: Crypto[] = marketAssetsToCrypto(liveAssets);
 
   // Check auth and user data on mount
   useEffect(() => {
@@ -121,18 +113,6 @@ function AppContent() {
 
     return () => window.clearInterval(interval);
   }, [onboardingComplete, user]);
-
-  // Simulate price updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCryptoData(prev => prev.map(crypto => ({
-        ...crypto,
-        price: crypto.price * (1 + (Math.random() - 0.5) * 0.002),
-        change: Number(((crypto.change ?? 0) + (Math.random() - 0.5) * 0.1).toFixed(2)),
-      })));
-    }, 180000);
-    return () => clearInterval(interval);
-  }, []);
 
   const currentWallet = wallets.find(w => w.id === selectedWallet) || wallets[0];
   const priceBySymbol = Object.fromEntries(cryptoData.map((crypto) => [crypto.symbol, crypto.price]));

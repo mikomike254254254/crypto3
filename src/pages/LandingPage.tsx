@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -9,7 +9,6 @@ import {
   Menu,
   Shield,
   ShieldCheck,
-  Sparkles,
   TrendingDown,
   TrendingUp,
   Wallet,
@@ -21,23 +20,10 @@ import { CryptoLogo } from "../components/CryptoLogo";
 import { LandingAuthPanel } from "../components/LandingAuthPanel";
 import { LandingCharacterShowcase } from "../components/LandingCharacterShowcase";
 import { AnimatedNumber } from "../components/AnimatedNumber";
+import { SkyClouds } from "../components/SkyClouds";
+import { useLiveMarketPrices } from "../hooks/useLiveMarketPrices";
 
 type AuthMode = "signup" | "signin";
-
-const assets = [
-  { symbol: "BTC", name: "Bitcoin", price: 67432, change: 2.4 },
-  { symbol: "ETH", name: "Ethereum", price: 3521, change: -1.2 },
-  { symbol: "USDT", name: "Tether", price: 1, change: 0.0 },
-  { symbol: "SOL", name: "Solana", price: 142, change: 5.8 },
-  { symbol: "XRP", name: "XRP", price: 0.52, change: -0.8 },
-  { symbol: "ADA", name: "Cardano", price: 0.45, change: 3.2 },
-  { symbol: "DOGE", name: "Dogecoin", price: 0.082, change: 1.8 },
-  { symbol: "BNB", name: "BNB", price: 612, change: 0.9 },
-  { symbol: "AVAX", name: "Avalanche", price: 35.67, change: -0.4 },
-  { symbol: "MATIC", name: "Polygon", price: 0.72, change: 2.1 },
-  { symbol: "LTC", name: "Litecoin", price: 84.2, change: 0.7 },
-  { symbol: "TRX", name: "Tron", price: 0.12, change: 1.1 },
-];
 
 function formatUsd(value: number) {
   return value.toLocaleString("en-US", {
@@ -191,30 +177,15 @@ function AuthDialog({ mode, onModeChange, onClose }: { mode: AuthMode; onModeCha
 export function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode | null>(null);
-  const [rates, setRates] = useState(assets);
-  const [priceTick, setPriceTick] = useState(0);
-
-  const refreshRates = () => {
-    setRates((current) =>
-      current.map((asset) => ({
-        ...asset,
-        price: Math.max(asset.price * (1 + (Math.random() - 0.5) * 0.008), asset.price < 1 ? 0.0001 : 0.01),
-        change: asset.change + (Math.random() - 0.5) * 0.2,
-      })),
-    );
-    setPriceTick((tick) => tick + 1);
-  };
-
-  useEffect(() => {
-    refreshRates();
-    const interval = window.setInterval(refreshRates, 45000);
-    return () => window.clearInterval(interval);
-  }, []);
+  const { assets: rates, priceTick, updatedAt } = useLiveMarketPrices();
 
   const featured = useMemo(() => rates.slice(0, 4), [rates]);
+  const priceUpdatedLabel = updatedAt
+    ? `Live · ${new Date(updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+    : "Live prices";
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen bg-white text-black">
       <nav className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           <a href="/" className="flex items-center gap-3">
@@ -255,28 +226,27 @@ export function LandingPage() {
       </nav>
 
       <main>
-        <section className="relative overflow-hidden bg-gradient-to-b from-cyan-50 via-white to-slate-50">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(34,211,238,0.15),transparent_50%)]" />
-          <div className="max-w-7xl mx-auto px-4 md:px-6 py-16 md:py-24 grid lg:grid-cols-[1.1fr_0.9fr] gap-12 items-center relative">
+        <section className="relative overflow-hidden landing-sky">
+          <SkyClouds />
+          <div className="max-w-7xl mx-auto px-4 md:px-6 py-16 md:py-24 grid lg:grid-cols-[1.1fr_0.9fr] gap-12 items-center relative z-10">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200/80 bg-white/80 px-4 py-2 text-sm font-medium text-cyan-900 shadow-sm">
-                <Sparkles className="w-4 h-4 text-cyan-600" />
-                Production-ready crypto wallet · wallex.online
-              </div>
-              <h1 className="mt-6 text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-slate-950 leading-[1.05]">
+              <p className="inline-block rounded-full bg-white/90 border border-sky-200 px-4 py-2 text-sm font-semibold text-black shadow-sm">
+                Wallex · wallex.online
+              </p>
+              <h1 className="mt-6 text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-black leading-[1.05]">
                 Log in or sign up.
-                <span className="block text-cyan-700">Pick your crypto character.</span>
+                <span className="block">Pick your crypto character.</span>
               </h1>
-              <p className="mt-6 max-w-xl text-lg text-slate-600 leading-relaxed">
-                Start on Wallex with Google or email, choose a chibi profile hero, then buy, receive, swap, and send crypto on wallex.online.
+              <p className="mt-6 max-w-xl text-lg text-black/80 leading-relaxed">
+                Google or email sign-in. Choose a profile character. Buy, receive, swap, and send crypto.
               </p>
               <LandingAuthPanel />
               <LandingCharacterShowcase />
 
-              <div className="mt-10 flex flex-wrap gap-6 text-sm text-slate-500">
-                <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> 12+ assets</span>
-                <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Paystack buy</span>
-                <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> KYC send/sell</span>
+              <div className="mt-10 flex flex-wrap gap-6 text-sm font-medium text-black/70">
+                <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-black" /> 12 assets</span>
+                <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-black" /> Paystack</span>
+                <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-black" /> Wallet transfers</span>
               </div>
             </div>
 
@@ -324,15 +294,15 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="markets" className="max-w-7xl mx-auto px-4 md:px-6 py-16">
+        <section id="markets" className="max-w-7xl mx-auto px-4 md:px-6 py-16 bg-white">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
             <div>
-              <h2 className="text-3xl font-bold tracking-tight text-slate-950">Live market overview</h2>
-              <p className="text-slate-500 mt-2">Track major assets with recognizable crypto branding.</p>
+              <h2 className="text-3xl font-bold tracking-tight text-black">Market prices</h2>
+              <p className="text-black/60 mt-2">USD prices from CoinGecko. Refreshes every 5 minutes.</p>
             </div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-4 py-2 text-sm font-medium text-emerald-800">
+            <span className="inline-flex items-center gap-2 rounded-full bg-sky-100 border border-sky-200 px-4 py-2 text-sm font-semibold text-black">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Updating
+              {priceUpdatedLabel}
             </span>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -362,10 +332,10 @@ export function LandingPage() {
 
         <section id="assets" className="bg-white border-y border-slate-200">
           <div className="max-w-7xl mx-auto px-4 md:px-6 py-16">
-            <h2 className="text-3xl font-bold text-center text-slate-950">Supported cryptocurrencies</h2>
-            <p className="text-center text-slate-500 mt-2 max-w-lg mx-auto">Hold, receive, and trade across the assets your clients expect.</p>
+            <h2 className="text-3xl font-bold text-center text-black">Supported assets</h2>
+            <p className="text-center text-black/60 mt-2 max-w-lg mx-auto">BTC, ETH, USDT, XRP, SOL, and more.</p>
             <div className="flex flex-wrap justify-center gap-4 mt-10">
-              {assets.map((asset) => (
+              {rates.map((asset) => (
                 <div key={asset.symbol} className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <CryptoLogo symbol={asset.symbol} size={36} />
                   <span className="text-sm font-semibold text-slate-800">{asset.symbol}</span>
@@ -375,56 +345,28 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="security" className="max-w-7xl mx-auto px-4 md:px-6 py-20">
+        <section id="security" className="max-w-7xl mx-auto px-4 md:px-6 py-20 bg-slate-50">
           <div className="text-center max-w-2xl mx-auto">
-            <p className="text-sm font-semibold uppercase tracking-wider text-cyan-700">Trust & protection</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-950 mt-2">Your money deserves real security</h2>
-            <p className="text-slate-600 mt-4 leading-relaxed">
-              Wallex is built so you can receive, hold, and move crypto with confidence — clear rules, verified payments, and safeguards at every step.
-            </p>
+            <h2 className="text-3xl md:text-4xl font-bold text-black">Security</h2>
+            <p className="text-black/70 mt-4">Encrypted sign-in, verified deposits, and ID checks before send or sell.</p>
           </div>
           <div className="grid md:grid-cols-2 gap-5 mt-12">
             {[
-              {
-                icon: ShieldCheck,
-                title: "Secure sign-in",
-                text: "Sign in with Google or your email. Your session is encrypted and stays on wallex.online — we never share your login with third parties.",
-              },
-              {
-                icon: LockKeyhole,
-                title: "Smart identity checks",
-                text: "You can receive funds and buy crypto right away. Before sending or selling larger amounts, we verify your identity to protect you and your recipients.",
-              },
-              {
-                icon: Zap,
-                title: "Verified top-ups",
-                text: "Add funds with card, bank, or mobile money. Every deposit is confirmed on our servers before it appears in your balance — no guesswork.",
-              },
-              {
-                icon: Shield,
-                title: "Protected wallets",
-                text: "Each account has its own wallet address. Transfers are recorded in a secure ledger so you always know where your crypto came from and where it went.",
-              },
+              { icon: ShieldCheck, title: "Sign-in", text: "Google or email on wallex.online." },
+              { icon: LockKeyhole, title: "KYC", text: "Required to send or sell. Receive and buy work without it." },
+              { icon: Zap, title: "Deposits", text: "Paystack top-ups verified on our servers." },
+              { icon: Shield, title: "Ledger", text: "Every transfer is recorded on your wallet." },
             ].map((item) => (
-              <div key={item.title} className="rounded-[1.75rem] bg-white border border-slate-200/90 p-7 shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 rounded-2xl bg-cyan-50 flex items-center justify-center">
-                  <item.icon className="w-6 h-6 text-cyan-700" />
-                </div>
-                <h3 className="mt-5 text-lg font-semibold text-slate-950">{item.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.text}</p>
+              <div key={item.title} className="rounded-2xl bg-white border border-slate-200 p-6 shadow-sm">
+                <item.icon className="w-6 h-6 text-black" />
+                <h3 className="mt-4 text-lg font-bold text-black">{item.title}</h3>
+                <p className="mt-2 text-sm text-black/70">{item.text}</p>
               </div>
             ))}
           </div>
-          <div className="mt-12 rounded-[2rem] bg-gradient-to-br from-slate-950 to-slate-800 text-white p-8 md:p-10 text-center max-w-3xl mx-auto shadow-xl">
-            <p className="text-lg font-semibold">Questions about safety or compliance?</p>
-            <p className="text-slate-300 mt-2 text-sm leading-relaxed">
-              Our team can walk you through how Wallex handles verification, payments, and support for your clients.
-            </p>
-            <a
-              href="mailto:support@wallex.online"
-              className="inline-flex mt-6 rounded-2xl bg-white text-slate-950 px-6 py-3 text-sm font-semibold hover:bg-slate-100 transition-colors"
-            >
-              Contact support
+          <div className="mt-10 text-center">
+            <a href="mailto:support@wallex.online" className="inline-flex rounded-2xl bg-black text-white px-6 py-3 text-sm font-semibold hover:bg-neutral-800">
+              support@wallex.online
             </a>
           </div>
         </section>
@@ -438,7 +380,7 @@ export function LandingPage() {
                 <img src="/wallex-logo.jpg" alt="" className="w-8 h-8 rounded-lg" />
                 <span className="font-bold text-slate-950">Wallex</span>
               </div>
-              <p className="text-sm text-slate-500 mt-2 max-w-xs">Crypto wallet for your clients — wallex.online</p>
+              <p className="text-sm text-black/60 mt-2 max-w-xs">Crypto wallet · wallex.online</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-6 text-sm">
               <button type="button" onClick={() => setAuthMode("signup")} className="font-semibold text-slate-950 hover:text-cyan-700">
