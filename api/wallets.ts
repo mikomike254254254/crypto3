@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { awardSignupBonuses } from "./_bonuses.js";
 import { buildClientWallets, ensureUserAccount, requireUser } from "./_supabase.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -9,6 +10,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const user = await requireUser(req);
     const userRow = await ensureUserAccount(user);
+    if (!userRow.signup_bonus_awarded) {
+      await awardSignupBonuses(userRow);
+    }
     const wallets = await buildClientWallets(userRow);
     return res.status(200).json({ wallets });
   } catch (error) {

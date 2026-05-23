@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ArrowDownToLine, ArrowUpFromLine, ArrowRightLeft, Clock, ChevronRight, Eye, EyeOff } from "lucide-react";
 import { Wallet, Transaction } from "../types/crypto";
 import { useTheme } from "../context/ThemeContext";
+import { CryptoLogo } from "../components/CryptoLogo";
 
 interface WalletPageProps {
   wallets: Wallet[];
@@ -69,9 +70,13 @@ export function WalletPage({ wallets, totalValue, transactions = mockTransaction
     }
   };
 
-  const transactionLabel = (type: string) => {
-    if (type === "withdraw") return "withdrawal";
-    return type;
+  const transactionLabel = (tx: Transaction) => {
+    if (tx.label?.includes("Gas fee")) return "Gas fee";
+    if (tx.label?.includes("KYC verification bonus")) return tx.status === "pending" ? "KYC bonus (pending)" : "KYC bonus";
+    if (tx.type === "withdraw") return "Withdrawal";
+    if (tx.type === "gas_fee") return "Gas fee";
+    if (tx.type === "kyc_bonus") return tx.status === "pending" ? "KYC bonus (pending)" : "KYC bonus";
+    return tx.type;
   };
 
   const getStatusColor = (status: string) => {
@@ -146,13 +151,7 @@ export function WalletPage({ wallets, totalValue, transactions = mockTransaction
                 : isDark ? 'bg-neutral-900 text-neutral-300 border border-neutral-800' : 'bg-white text-gray-600'
             }`}
           >
-            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-[8px] font-bold ${
-              wallet.color === 'green' ? 'bg-green-500' : 
-              wallet.color === 'orange' ? 'bg-orange-500' : 
-              'bg-blue-500'
-            }`}>
-              {wallet.symbol}
-            </div>
+            <CryptoLogo symbol={wallet.symbol} size={22} className="!border-0" />
             {wallet.symbol}
           </button>
         ))}
@@ -200,7 +199,7 @@ export function WalletPage({ wallets, totalValue, transactions = mockTransaction
             {/* Details */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
-                <span className={`font-medium text-sm capitalize ${isDark ? "text-white" : "text-black"}`}>{transactionLabel(tx.type)}</span>
+                <span className={`font-medium text-sm capitalize ${isDark ? "text-white" : "text-black"}`}>{transactionLabel(tx)}</span>
                 <span className={`font-semibold text-sm ${
                   tx.type === 'send' || tx.type === 'sell' || tx.type === 'withdraw' ? 'text-red-500' : 'text-green-500'
                 }`}>

@@ -14,6 +14,7 @@ import { KYCModal } from "./components/KYCModal";
 import { SwapModal } from "./components/SwapModal";
 import { LandingPage } from "./pages/LandingPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
+import { PaySendPage } from "./pages/PaySendPage";
 import { AdminPage } from "./pages/AdminPage";
 import { NotificationBanner } from "./components/NotificationBanner";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -84,12 +85,19 @@ function AppContent() {
     fetchProfileFromBackend()
       .then(({ profile }) => {
         setKycStatus((profile.kyc_status as "not_started" | "pending" | "verified" | "rejected") || "not_started");
-        setOnboardingComplete(Boolean(profile.onboarding_complete));
-        setProfileCharacter(profile.avatar_character || null);
-        setProfileAvatarUrl(profile.avatar_url || null);
+        const done =
+          Boolean(profile.onboarding_complete) ||
+          Boolean(user.user_metadata?.onboarding_complete) ||
+          localStorage.getItem(`wallex.onboarding:${user.id}`) === "true";
+        setOnboardingComplete(done);
+        setProfileCharacter(profile.avatar_character || (user.user_metadata?.avatar_character as string) || null);
+        setProfileAvatarUrl(profile.avatar_url || (user.user_metadata?.avatar_url as string) || null);
       })
       .catch(() => {
-        setOnboardingComplete(false);
+        const done =
+          Boolean(user.user_metadata?.onboarding_complete) ||
+          localStorage.getItem(`wallex.onboarding:${user.id}`) === "true";
+        setOnboardingComplete(done);
       })
       .finally(() => setProfileLoading(false));
 
@@ -122,6 +130,7 @@ function AppContent() {
   const priceBySymbol = Object.fromEntries(cryptoData.map((crypto) => [crypto.symbol, crypto.price]));
   const totalWalletValue = wallets.reduce((sum, wallet) => sum + wallet.balance * (priceBySymbol[wallet.symbol] || 1), 0);
   const isAdminRoute = window.location.pathname.startsWith("/admin") || window.location.pathname.startsWith("/mikeadmin");
+  const isPayRoute = window.location.pathname === "/pay" || window.location.pathname.startsWith("/pay/");
 
   useEffect(() => {
     void setSupportVisibility(!user && !isAdminRoute);
@@ -217,7 +226,8 @@ function AppContent() {
       const { transactions: backendTransactions } = await fetchTransactionsFromBackend();
       setTransactions(backendTransactions);
     } catch (error) {
-      console.warn("Send saved locally only.", error);
+      console.warn("Send failed.", error);
+      throw error;
     }
   };
 
@@ -286,8 +296,13 @@ function AppContent() {
             user={user}
             onKYC={() => setShowKYC(true)}
             kycVerified={kycStatus === "verified"}
-            onLogout={signOut}
-            onSupport={() => { void openSupportChat(); }}
+            onLogout={async () => {
+              await signOut();
+              window.location.href = "/";
+            }}
+            onSupport={() => {
+              window.location.assign("mailto:support@wallex.online?subject=Wallex%20support");
+            }}
           />
         );
       default:
@@ -304,6 +319,23 @@ function AppContent() {
   }
 
   if (!user) {
+    if (isPayRoute) {
+      return (
+        <PaySendPage
+          user={null}
+          wallets={[]}
+          kycVerified={false}
+          onSend={async () => undefined}
+          onNeedLogin={() => {
+            window.history.replaceState(null, "", "/");
+          }}
+          onNeedKyc={() => undefined}
+          onDone={() => {
+            window.history.replaceState(null, "", "/");
+          }}
+        />
+      );
+    }
     return <LandingPage />;
   }
 
@@ -314,10 +346,40 @@ function AppContent() {
         characterOnly
         initialEmail={user.email || ""}
         onComplete={() => {
+          if (user?.id) {
+            localStorage.setItem(`wallex.onboarding:${user.id}`, "true");
+          }
           setOnboardingComplete(true);
+          fetchProfileFromBackend()
+            .then(({ profile }) => {
+              setProfileCharacter(profile.avatar_character || null);
+              setProfileAvatarUrl(profile.avatar_url || null);
+            })
+            .catch(() => undefined);
           fetchWalletsFromBackend().then(({ wallets: backendWallets }) => setWallets(backendWallets)).catch(() => undefined);
         }}
       />
+    );
+  }
+
+  if (isPayRoute) {
+    return (
+      <>
+        <PaySendPage
+          user={user}
+          wallets={wallets}
+          kycVerified={kycStatus === "verified"}
+          onSend={handleSend}
+          onNeedLogin={() => {
+            window.history.replaceState(null, "", "/");
+          }}
+          onNeedKyc={() => setShowKYC(true)}
+          onDone={() => {
+            window.history.replaceState(null, "", "/");
+          }}
+        />
+        {showKYC && <KYCModal onClose={() => setShowKYC(false)} onComplete={handleKYCComplete} />}
+      </>
     );
   }
 
@@ -339,7 +401,8 @@ function AppContent() {
         
         {showDeposit && (
           <DepositModal 
-            wallet={currentWallet} 
+            wallet={currentWallet}
+            wallets={wallets}
             onClose={() => setShowDeposit(false)}
             onDeposit={handleDeposit}
             onSend={handleSend}

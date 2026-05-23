@@ -33,6 +33,26 @@ body {
   animation: marquee-scroll 28s linear infinite;
 }
 
+@keyframes testimonial-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.testimonial-marquee-mask {
+  overflow: hidden;
+  width: 100%;
+}
+
+.testimonial-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: testimonial-scroll 45s linear infinite;
+}
+
+.testimonial-marquee-track:hover {
+  animation-play-state: paused;
+}
+
 @keyframes balance-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.92; }

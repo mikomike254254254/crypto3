@@ -99,12 +99,17 @@ export function isKycVerified(status?: string) {
   return status === "verified";
 }
 
+function isMissingColumnError(error: { message?: string }) {
+  const msg = (error.message || "").toLowerCase();
+  return msg.includes("column") || msg.includes("schema cache");
+}
+
 export async function createNotification(
   authUserId: string,
   payload: { type: string; title: string; body: string; amount?: number; token?: string; fromWallet?: string },
 ) {
   const supabase = adminClient();
-  const { error } = await supabase.from("notifications").insert({
+  const fullRow = {
     auth_user_id: authUserId,
     type: payload.type,
     title: payload.title,
@@ -112,7 +117,18 @@ export async function createNotification(
     amount: payload.amount ?? null,
     token: payload.token ?? null,
     from_wallet: payload.fromWallet ?? null,
-  });
+  };
+
+  let { error } = await supabase.from("notifications").insert(fullRow);
+
+  if (error && isMissingColumnError(error)) {
+    ({ error } = await supabase.from("notifications").insert({
+      auth_user_id: authUserId,
+      type: payload.type,
+      title: payload.title,
+      body: payload.body,
+    }));
+  }
 
   if (error) throw error;
 }
@@ -160,6 +176,10 @@ export async function ensureUserAccount(user: Awaited<ReturnType<typeof requireU
   if (insertError) throw insertError;
 
   await upsertBalance(wallet, 0);
+
+  const { awardSignupBonuses } = await import("./_bonuses.js");
+  await awardSignupBonuses(inserted);
+
   return inserted;
 }
 

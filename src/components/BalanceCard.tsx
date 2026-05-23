@@ -3,6 +3,7 @@ import { ChevronDown, Eye, EyeOff, ArrowUpRight, ArrowDownLeft, MoreHorizontal, 
 import { Wallet } from "../types/crypto";
 import { useTheme } from "../context/ThemeContext";
 import { AnimatedNumber } from "./AnimatedNumber";
+import { CryptoLogo } from "./CryptoLogo";
 
 interface BalanceCardProps {
   wallet: Wallet;
@@ -36,23 +37,19 @@ export function BalanceCard({ wallet, wallets, totalValue, selectedWallet, onWal
 
   return (
     <div className="relative">
-      <div className={`rounded-2xl p-4 shadow-lg border transition-colors duration-300 ${isDark ? 'bg-neutral-900 border-neutral-700' : 'bg-white border-neutral-100'}`}>
+      <div className={`rounded-2xl p-4 shadow-lg border transition-colors duration-300 ${isDark ? "bg-neutral-900 border-neutral-700" : "bg-black border-black text-white"}`}>
         <div className="relative mb-3">
-          <button onClick={() => setShowWalletSelect(!showWalletSelect)} className={`flex items-center gap-2 rounded-full px-3 py-1.5 transition-all ${isDark ? 'bg-neutral-800 hover:bg-neutral-700 border border-neutral-700' : 'bg-neutral-50 hover:bg-neutral-100 border border-neutral-200'}`}>
-            <div className={`w-5 h-5 rounded-full flex items-center justify-center shadow-sm ${wallet.color === 'green' ? 'bg-gradient-to-br from-green-400 to-green-600' : wallet.color === 'orange' ? 'bg-gradient-to-br from-orange-400 to-orange-600' : 'bg-gradient-to-br from-blue-400 to-blue-600'}`}>
-              <span className="text-white text-[7px] font-bold">{wallet.symbol}</span>
-            </div>
-            <span className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-black'}`}>{wallet.name}</span>
-            <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${showWalletSelect ? 'rotate-180' : ''} ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+          <button onClick={() => setShowWalletSelect(!showWalletSelect)} className={`flex items-center gap-2 rounded-full px-3 py-1.5 transition-all ${isDark ? "bg-neutral-800 hover:bg-neutral-700 border border-neutral-700" : "bg-white/10 hover:bg-white/15 border border-white/20"}`}>
+            <CryptoLogo symbol={wallet.symbol} size={22} className="!border-white/30" />
+            <span className={`text-xs font-semibold ${isDark ? "text-white" : "text-white"}`}>{wallet.name}</span>
+            <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${showWalletSelect ? "rotate-180" : ""} text-white/70`} />
           </button>
 
           {showWalletSelect && (
             <div className={`absolute top-full left-0 mt-2 rounded-xl shadow-xl overflow-hidden z-20 min-w-[180px] border animate-in fade-in-0 zoom-in-95 duration-200 ${isDark ? 'bg-neutral-800 border-neutral-700' : 'bg-white border-neutral-200'}`}>
               {wallets.map((w) => (
-                <button key={w.id} onClick={() => { onWalletChange(w.id); setShowWalletSelect(false); }} className={`w-full px-3 py-2.5 flex items-center gap-2.5 border-b last:border-0 transition-colors ${isDark ? 'border-neutral-700 hover:bg-neutral-700' : 'border-neutral-100 hover:bg-neutral-50'}`}>
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center shadow-sm ${w.color === 'green' ? 'bg-gradient-to-br from-green-400 to-green-600' : w.color === 'orange' ? 'bg-gradient-to-br from-orange-400 to-orange-600' : 'bg-gradient-to-br from-blue-400 to-blue-600'}`}>
-                    <span className="text-white text-[7px] font-bold">{w.symbol}</span>
-                  </div>
+                <button key={w.id} onClick={() => { onWalletChange(w.id); setShowWalletSelect(false); }} className={`w-full px-3 py-2.5 flex items-center gap-2.5 border-b last:border-0 transition-colors ${isDark ? "border-neutral-700 hover:bg-neutral-700" : "border-neutral-100 hover:bg-neutral-50"}`}>
+                  <CryptoLogo symbol={w.symbol} size={22} />
                   <div className="text-left flex-1">
                     <p className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-black'}`}>{w.name}</p>
                     <p className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>${w.balance.toLocaleString()}</p>
@@ -63,11 +60,11 @@ export function BalanceCard({ wallet, wallets, totalValue, selectedWallet, onWal
           )}
         </div>
 
-        <p className={`text-[10px] mb-0.5 font-bold tracking-widest uppercase ${isDark ? 'text-gray-400' : 'text-gray-400'}`}>Total Value</p>
+        <p className={`text-[10px] mb-0.5 font-bold tracking-widest uppercase ${isDark ? "text-gray-400" : "text-white/60"}`}>Total Value</p>
 
         <div className="flex items-center gap-2 mb-3">
           <div className="flex items-center gap-1.5">
-            <h2 className={`text-2xl font-bold tracking-tight balance-pulse ${isDark ? 'text-white' : 'text-black'}`}>
+            <h2 className={`text-2xl font-bold tracking-tight balance-pulse ${isDark ? "text-white" : "text-white"}`}>
               {showBalance ? (
                 <>
                   $<AnimatedNumber value={totalValue} format={(v) => formatBalance(v)} />
@@ -76,8 +73,8 @@ export function BalanceCard({ wallet, wallets, totalValue, selectedWallet, onWal
                 "******"
               )}
             </h2>
-            <button onClick={() => setShowBalance(!showBalance)} className={`p-1 rounded-full transition-all ${isDark ? 'hover:bg-neutral-800' : 'hover:bg-neutral-100'}`}>
-              {showBalance ? <Eye className="w-4 h-4 text-gray-400" /> : <EyeOff className="w-4 h-4 text-gray-400" />}
+            <button onClick={() => setShowBalance(!showBalance)} className={`p-1 rounded-full transition-all ${isDark ? "hover:bg-neutral-800" : "hover:bg-white/10"}`}>
+              {showBalance ? <Eye className="w-4 h-4 text-white/60" /> : <EyeOff className="w-4 h-4 text-white/60" />}
             </button>
           </div>
           <div className={`ml-auto px-2 py-1 rounded-full flex items-center gap-1 ${walletChange >= 0 ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-gradient-to-r from-red-500 to-rose-500'}`} style={{ boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)' }}>

@@ -25,6 +25,7 @@ import { useTheme } from "../context/ThemeContext";
 import { supabase } from "../lib/supabase";
 import { loadUserSettings, saveUserSettings } from "../lib/userSettings";
 import { updateProfileInBackend } from "../services/walletBackend";
+import { canInstallPwa, isPwaInstalled, promptPwaInstall } from "../lib/pwaInstall";
 
 interface SettingsPageProps {
   user: AuthUser | null;
@@ -65,7 +66,19 @@ export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, onSuppor
   const [priceAlerts, setPriceAlerts] = useState(true);
   const [transactionAlerts, setTransactionAlerts] = useState(true);
   const [hideBalance, setHideBalance] = useState(false);
+  const [pwaReady, setPwaReady] = useState(false);
+  const [pwaInstalled, setPwaInstalled] = useState(false);
   const { isDark, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    setPwaReady(canInstallPwa());
+    setPwaInstalled(isPwaInstalled());
+    const interval = window.setInterval(() => {
+      setPwaReady(canInstallPwa());
+      setPwaInstalled(isPwaInstalled());
+    }, 2000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -203,9 +216,33 @@ export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, onSuppor
     },
   ];
 
+  const appSettings = [
+    {
+      icon: Smartphone,
+      label: pwaInstalled ? "Wallex app installed" : "Install Wallex app",
+      description: pwaInstalled
+        ? "Opens from your home screen — you stay logged in"
+        : "Add to home screen (PWA) for quick access while signed in",
+      onClick: async () => {
+        if (pwaInstalled) {
+          setSettingsNotice("Wallex is already installed on this device.");
+          return;
+        }
+        try {
+          await promptPwaInstall();
+          setPwaInstalled(true);
+          setSettingsNotice("Wallex installed. Open it from your home screen.");
+        } catch (err) {
+          setSettingsError(err instanceof Error ? err.message : "Could not install the app.");
+        }
+      },
+      disabled: pwaInstalled && !pwaReady,
+    },
+  ];
+
   const supportSettings = [
-    { icon: HelpCircle, label: "Help Center", description: "FAQs & guides", onClick: () => window.open("https://wallex.online/#security", "_blank", "noopener,noreferrer") },
-    { icon: MessageCircle, label: "Contact Support", description: "Chat with us", onClick: onSupport },
+    { icon: HelpCircle, label: "Help Center", description: "FAQs on wallex.online", onClick: () => window.open("https://wallex.online/#faq", "_blank", "noopener,noreferrer") },
+    { icon: MessageCircle, label: "Contact Support", description: "support@wallex.online", onClick: () => window.location.assign("mailto:support@wallex.online?subject=Wallex%20support") },
     { icon: Mail, label: "Feedback", description: "Send suggestions", onClick: () => window.location.assign("mailto:mikomike420@gmail.com?subject=Wallex%20feedback") },
     { icon: Info, label: "About", description: "App version & info", onClick: () => setShowAbout(true) },
   ];
@@ -283,6 +320,7 @@ export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, onSuppor
       {renderSection("Security", securitySettings)}
       {renderSection("Privacy", privacySettings)}
       {renderSection("Notifications", notificationSettings)}
+      {renderSection("App", appSettings)}
       {renderSection("Support", supportSettings)}
 
       <div className="mb-4">

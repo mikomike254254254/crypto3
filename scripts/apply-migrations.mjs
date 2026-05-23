@@ -83,25 +83,27 @@ async function main() {
   const usersOk = await tableExists("users");
   const notificationsOk = await tableExists("notifications");
 
-  if (usersOk && notificationsOk) {
-    console.log("All required tables already exist.");
-    return;
-  }
-
-  console.log("Tables missing. Apply SQL manually in Supabase SQL Editor:");
-  console.log("https://supabase.com/dashboard/project/nzzstvvbrcdhuiqppdpv/sql/new");
-  console.log("\nFiles to run:");
-  console.log(" - supabase/migrations/20260523120000_wallet_ledger.sql");
-  console.log(" - supabase/migrations/20260523140000_notifications_onboarding.sql");
-
   if (!usersOk) {
-    console.log("\nusers table: MISSING");
-  }
-  if (!notificationsOk) {
-    console.log("notifications table: MISSING");
+    console.log("\nusers table: MISSING — run supabase/migrations/20260523120000_wallet_ledger.sql");
+    process.exit(1);
   }
 
-  process.exit(usersOk ? 0 : 1);
+  console.log("users table: OK");
+  console.log(notificationsOk ? "notifications table: OK" : "notifications table: optional (missing)");
+
+  console.log("\nRun this in Supabase SQL Editor if features fail:");
+  console.log("https://supabase.com/dashboard/project/_/sql/new");
+  for (const sql of [
+    `alter table public.users add column if not exists avatar_character text;`,
+    `alter table public.users add column if not exists avatar_gradient text;`,
+    `alter table public.users add column if not exists onboarding_complete boolean not null default false;`,
+    `alter table public.notifications add column if not exists amount numeric;`,
+    `alter table public.notifications add column if not exists token text;`,
+    `alter table public.notifications add column if not exists from_wallet text;`,
+    `-- also run: supabase/migrations/20260523170000_kyc_submissions_ledger.sql`,
+  ]) {
+    console.log(`\n${sql}`);
+  }
 }
 
 main().catch((err) => {

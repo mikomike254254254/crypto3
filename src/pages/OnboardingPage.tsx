@@ -52,16 +52,28 @@ export function OnboardingPage({ onComplete, initialEmail = "", skipAuth = false
     }
   }, [user?.email]);
 
+  const displayName = () => {
+    const trimmed = name.trim();
+    if (trimmed) return trimmed;
+    return user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || "Wallet User";
+  };
+
   const finishOnboarding = async () => {
     const character = getCharacter(selectedCharacter);
     const isCustom = selectedCharacter === CUSTOM_AVATAR_ID;
+    if (isCustom && !customAvatarUrl.trim()) {
+      throw new Error("Paste a valid image URL or pick one of the avatars.");
+    }
     await updateProfileInBackend({
-      fullName: name.trim(),
+      fullName: displayName(),
       avatarCharacter: isCustom ? CUSTOM_AVATAR_ID : character.id,
       avatarGradient: character.gradient,
       avatarUrl: isCustom ? customAvatarUrl.trim() : character.imageUrl,
       onboardingComplete: true,
     });
+    if (user?.id) {
+      localStorage.setItem(`wallex.onboarding:${user.id}`, "true");
+    }
     onComplete();
   };
 
@@ -84,11 +96,6 @@ export function OnboardingPage({ onComplete, initialEmail = "", skipAuth = false
   };
 
   const handleComplete = () => {
-    if (!name.trim()) {
-      setError("Please enter your name.");
-      return;
-    }
-
     setIsLoading(true);
     setError("");
 

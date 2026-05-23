@@ -121,11 +121,30 @@ export async function submitKycToBackend(payload: {
   });
 }
 
-export async function verifyPaystackDeposit(reference: string, walletId: string) {
+export async function verifyPaystackDeposit(reference: string, walletId: string, fiatUsd?: number) {
   return apiRequest<{ wallets: Wallet[] }>("/api/paystack/verify", {
     method: "POST",
-    body: JSON.stringify({ reference, walletId }),
+    body: JSON.stringify({ reference, walletId, fiatUsd }),
   });
+}
+
+export type PayRecipient = {
+  wallet: string;
+  fullName: string;
+  avatarUrl: string | null;
+  avatarCharacter: string | null;
+  avatarGradient: string | null;
+  symbol: string;
+  walletKey: string;
+  network: string;
+};
+
+export async function lookupPayRecipient(account: string, symbol?: string, walletKey?: string, network?: string) {
+  const params = new URLSearchParams({ account });
+  if (symbol) params.set("symbol", symbol);
+  if (walletKey) params.set("wallet", walletKey);
+  if (network) params.set("network", network);
+  return apiRequest<{ recipient: PayRecipient }>(`/api/pay/lookup?${params.toString()}`);
 }
 
 export async function swapWalletAssets(fromWalletKey: string, toWalletKey: string, amount: number) {

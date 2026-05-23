@@ -13,13 +13,21 @@ const FALLBACK: MarketAsset[] = [
   { symbol: "USDT", name: "Tether", price: 1, change: 0 },
   { symbol: "SOL", name: "Solana", price: 142, change: 0 },
   { symbol: "XRP", name: "XRP", price: 0.52, change: 0 },
+  { symbol: "BNB", name: "BNB", price: 612, change: 0 },
   { symbol: "ADA", name: "Cardano", price: 0.45, change: 0 },
   { symbol: "DOGE", name: "Dogecoin", price: 0.082, change: 0 },
-  { symbol: "BNB", name: "BNB", price: 612, change: 0 },
   { symbol: "AVAX", name: "Avalanche", price: 35.67, change: 0 },
   { symbol: "MATIC", name: "Polygon", price: 0.72, change: 0 },
   { symbol: "LTC", name: "Litecoin", price: 84.2, change: 0 },
   { symbol: "TRX", name: "Tron", price: 0.12, change: 0 },
+  { symbol: "LINK", name: "Chainlink", price: 14.2, change: 0 },
+  { symbol: "DOT", name: "Polkadot", price: 7.1, change: 0 },
+  { symbol: "SHIB", name: "Shiba Inu", price: 0.00002, change: 0 },
+  { symbol: "ATOM", name: "Cosmos", price: 8.5, change: 0 },
+  { symbol: "UNI", name: "Uniswap", price: 9.2, change: 0 },
+  { symbol: "XLM", name: "Stellar", price: 0.11, change: 0 },
+  { symbol: "BCH", name: "Bitcoin Cash", price: 420, change: 0 },
+  { symbol: "NEAR", name: "NEAR", price: 5.2, change: 0 },
 ];
 
 /** Live USD prices via /api/prices (CoinGecko). Refreshes every 5 minutes. */

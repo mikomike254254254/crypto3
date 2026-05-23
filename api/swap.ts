@@ -1,11 +1,11 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { fetchLiveUsdPrices } from "./_prices.js";
 import {
   adminClient,
   buildClientWallets,
   ensureUserAccount,
   readTokenBalances,
   requireUser,
-  SWAP_RATES_USD,
   upsertBalance,
 } from "./_supabase.js";
 
@@ -22,7 +22,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const toToken = String(toWalletKey || "btc").toUpperCase();
     const parsedAmount = Number(amount);
 
-    if (!SWAP_RATES_USD[fromToken] || !SWAP_RATES_USD[toToken]) {
+    const prices = await fetchLiveUsdPrices();
+    if (!prices[fromToken] || !prices[toToken]) {
       return res.status(400).json({ error: "Unsupported swap pair." });
     }
 
@@ -41,8 +42,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: `Insufficient ${fromToken} balance.` });
     }
 
-    const usdValue = parsedAmount * SWAP_RATES_USD[fromToken];
-    const receiveAmount = Number((usdValue / SWAP_RATES_USD[toToken]).toFixed(8));
+    const usdValue = parsedAmount * prices[fromToken];
+    const receiveAmount = Number((usdValue / prices[toToken]).toFixed(8));
 
     const supabase = adminClient();
     const note = `Swap ${parsedAmount} ${fromToken} → ${receiveAmount} ${toToken}`;

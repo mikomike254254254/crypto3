@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { verifyAdminPanelToken } from "./adminAuth.js";
+import { releaseKycPendingBonus } from "./_bonuses.js";
 import {
   adminClient,
   balancesFromTransactions,
@@ -401,6 +402,24 @@ async function writeAdminAction(action: AdminAction, body: any, adminEmail: stri
         .from("kyc_submissions")
         .update({ status: nextStatus === "not_started" ? "pending" : nextStatus })
         .eq("id", body.kycSubmissionId);
+    }
+
+    if (nextStatus === "verified") {
+      await releaseKycPendingBonus(userRow);
+      if (userRow.auth_user_id) {
+        try {
+          await createNotification(userRow.auth_user_id, {
+            type: "receive",
+            title: "KYC approved",
+            body: "Your identity is verified. Your $15 bonus is now in your wallet.",
+            amount: 15,
+            token: "USDT",
+            fromWallet: "system",
+          });
+        } catch {
+          // KYC status still updated if notifications table is missing columns
+        }
+      }
     }
 
     return;

@@ -1,0 +1,23 @@
+/** 20 assets for markets, explore, and price API */
+export const MARKET_COINS = [
+  { symbol: "BTC", name: "Bitcoin", id: "bitcoin" },
+  { symbol: "ETH", name: "Ethereum", id: "ethereum" },
+  { symbol: "USDT", name: "Tether", id: "tether" },
+  { symbol: "SOL", name: "Solana", id: "solana" },
+  { symbol: "XRP", name: "XRP", id: "ripple" },
+  { symbol: "BNB", name: "BNB", id: "binancecoin" },
+  { symbol: "ADA", name: "Cardano", id: "cardano" },
+  { symbol: "DOGE", name: "Dogecoin", id: "dogecoin" },
+  { symbol: "AVAX", name: "Avalanche", id: "avalanche-2" },
+  { symbol: "MATIC", name: "Polygon", id: "matic-network" },
+  { symbol: "LTC", name: "Litecoin", id: "litecoin" },
+  { symbol: "TRX", name: "Tron", id: "tron" },
+  { symbol: "LINK", name: "Chainlink", id: "chainlink" },
+  { symbol: "DOT", name: "Polkadot", id: "polkadot" },
+  { symbol: "SHIB", name: "Shiba Inu", id: "shiba-inu" },
+  { symbol: "ATOM", name: "Cosmos", id: "cosmos" },
+  { symbol: "UNI", name: "Uniswap", id: "uniswap" },
+  { symbol: "XLM", name: "Stellar", id: "stellar" },
+  { symbol: "BCH", name: "Bitcoin Cash", id: "bitcoin-cash" },
+  { symbol: "NEAR", name: "NEAR", id: "near" },
+] as const;

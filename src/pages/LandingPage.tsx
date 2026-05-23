@@ -21,6 +21,8 @@ import { LandingAuthPanel } from "../components/LandingAuthPanel";
 import { LandingCharacterShowcase } from "../components/LandingCharacterShowcase";
 import { AnimatedNumber } from "../components/AnimatedNumber";
 import { SkyClouds } from "../components/SkyClouds";
+import { TestimonialsMarquee } from "../components/landing/TestimonialsMarquee";
+import { FaqSection } from "../components/landing/FaqSection";
 import { useLiveMarketPrices } from "../hooks/useLiveMarketPrices";
 
 type AuthMode = "signup" | "signin";
@@ -197,6 +199,7 @@ export function LandingPage() {
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
             <a href="#markets" className="hover:text-slate-950 transition-colors">Markets</a>
             <a href="#assets" className="hover:text-slate-950 transition-colors">Assets</a>
+            <a href="#faq" className="hover:text-slate-950 transition-colors">FAQ</a>
             <a href="#security" className="hover:text-slate-950 transition-colors">Security</a>
           </div>
           <div className="hidden md:flex items-center gap-3">
@@ -344,6 +347,10 @@ export function LandingPage() {
             </div>
           </div>
         </section>
+
+        <TestimonialsMarquee />
+
+        <FaqSection />
 
         <section id="security" className="max-w-7xl mx-auto px-4 md:px-6 py-20 bg-slate-50">
           <div className="text-center max-w-2xl mx-auto">

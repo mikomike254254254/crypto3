@@ -39,15 +39,29 @@ function recipientCandidates(value: unknown) {
 
 function toClientTransaction(tx: any, wallet: string) {
   const outgoing = tx.from_wallet === wallet;
+  const note = String(tx.note || "");
+
+  let type: "send" | "receive" | "deposit" | "withdraw" | "swap" | "gas_fee" | "kyc_bonus" = outgoing
+    ? "send"
+    : tx.type === "deposit"
+      ? "deposit"
+      : "receive";
+
+  if (note.includes("Gas fee")) type = "gas_fee";
+  else if (note.includes("KYC verification bonus")) type = "kyc_bonus";
+  else if (tx.type === "swap") type = "swap";
+  else if (tx.type === "withdraw") type = "withdraw";
 
   return {
     id: tx.id,
-    type: outgoing ? "send" : tx.type === "deposit" ? "deposit" : "receive",
+    type,
     amount: Number(tx.amount),
     currency: tx.token,
+    symbol: tx.token,
     date: tx.created_at,
     status: tx.status,
     address: outgoing ? tx.to_wallet : tx.from_wallet,
+    label: note || undefined,
   };
 }
 

@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { fetchLiveUsdPrices, usdToTokenAmount } from "../_prices.js";
 import {
   adminClient,
   buildClientWallets,
@@ -48,7 +49,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const user = await requireUser(req);
     const userRow = await ensureUserAccount(user);
-    const { reference, walletId } = req.body ?? {};
+    const { reference, walletId, fiatUsd } = req.body ?? {};
     const token = String(walletId || "").toUpperCase();
 
     if (!reference || !walletAssets.some((asset) => asset.symbol === token || asset.wallet_key.toUpperCase() === token)) {
@@ -77,7 +78,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (!existing) {
-      const amount = Number((Number(paystackTransaction.amount || 0) / 100).toFixed(2));
+      const paidUsd = Number(fiatUsd) || Number((Number(paystackTransaction.amount || 0) / 100).toFixed(2));
+      const prices = await fetchLiveUsdPrices();
+      const amount = usdToTokenAmount(paidUsd, token, prices);
       const { error: insertError } = await supabase.from("transactions").insert({
         from_wallet: "paystack",
         to_wallet: userRow.wallet,
@@ -85,7 +88,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         token,
         type: "deposit",
         status: "completed",
-        note,
+        note: `${note} — $${paidUsd} USD → ${amount} ${token}`,
       });
 
       if (insertError) {

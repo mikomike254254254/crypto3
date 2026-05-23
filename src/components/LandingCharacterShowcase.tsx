@@ -11,13 +11,9 @@ export function LandingCharacterShowcase() {
         {WALLEX_CHARACTERS.map((character) => (
           <div
             key={character.id}
-            className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/90 border border-sky-200/80 px-3 py-2 shadow-sm"
-            title={character.name}
+            className="rounded-2xl bg-white/90 border border-sky-200/80 p-2 shadow-sm"
           >
             <ProfileAvatar characterId={character.id} size={56} />
-            <span className="text-[10px] font-semibold text-black max-w-[72px] text-center leading-tight">
-              {character.name}
-            </span>
           </div>
         ))}
       </div>

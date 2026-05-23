@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useLiveMarketPrices } from "../hooks/useLiveMarketPrices";
 import { QRCodeSVG } from "qrcode.react";
 import {
   AlertCircle,
@@ -24,6 +25,7 @@ import { buildReceiveLink, getAccountNumber, getReceiveAddress, parseScannedWall
 
 interface DepositModalProps {
   wallet: WalletType;
+  wallets: WalletType[];
   onClose: () => void;
   onDeposit?: (amount: number, walletId: string) => void;
   onSend?: (amount: number, walletId: string, address: string, network: string) => void | Promise<void>;
@@ -40,19 +42,30 @@ const networks = [
   { id: "MATIC", name: "Polygon", fee: "0.1 USDT", time: "~2 min", confirmations: "128" },
 ];
 
-export function DepositModal({ wallet, onClose, onDeposit: _onDeposit, onSend, onPaystackDeposit, kycVerified = true, onKYC }: DepositModalProps) {
+export function DepositModal({ wallet, wallets, onClose, onDeposit: _onDeposit, onSend, onPaystackDeposit, kycVerified = true, onKYC }: DepositModalProps) {
   const { user } = useAuth();
+  const { assets: liveAssets } = useLiveMarketPrices(60_000);
   const [copied, setCopied] = useState("");
   const [activeTab, setActiveTab] = useState<"deposit" | "send">("deposit");
   const [selectedNetwork, setSelectedNetwork] = useState("TRC20");
   const [showQR, setShowQR] = useState(true);
   const [sendAmount, setSendAmount] = useState("");
+  const [topUpWalletId, setTopUpWalletId] = useState(wallet.id);
   const [topUpAmount, setTopUpAmount] = useState("");
   const [topUpError, setTopUpError] = useState("");
   const [isTopUpLoading, setIsTopUpLoading] = useState(false);
   const [sendAddress, setSendAddress] = useState("");
   const [showNetworkDropdown, setShowNetworkDropdown] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
+
+  const topUpWallet = wallets.find((w) => w.id === topUpWalletId) || wallet;
+  const topUpUsd = Number(topUpAmount);
+  const topUpTokenPrice = liveAssets.find((a) => a.symbol === topUpWallet.symbol)?.price || (topUpWallet.symbol === "USDT" ? 1 : 1);
+  const topUpCryptoPreview = useMemo(() => {
+    if (!Number.isFinite(topUpUsd) || topUpUsd <= 0) return 0;
+    if (topUpWallet.symbol === "USDT") return topUpUsd;
+    return Number((topUpUsd / topUpTokenPrice).toFixed(8));
+  }, [topUpUsd, topUpTokenPrice, topUpWallet.symbol]);
 
   const selectedNetworkData = networks.find((network) => network.id === selectedNetwork) || networks[0];
   const accountNumber = getAccountNumber(wallet);
@@ -102,8 +115,8 @@ export function DepositModal({ wallet, onClose, onDeposit: _onDeposit, onSend, o
         reference,
         onSuccess: async (confirmedReference) => {
           try {
-            const { wallets } = await verifyPaystackDeposit(confirmedReference, wallet.id);
-            await onPaystackDeposit?.(wallets);
+            const { wallets: nextWallets } = await verifyPaystackDeposit(confirmedReference, topUpWallet.id, amount);
+            await onPaystackDeposit?.(nextWallets);
             setTopUpAmount("");
             onClose();
           } catch (error) {
@@ -247,9 +260,19 @@ export function DepositModal({ wallet, onClose, onDeposit: _onDeposit, onSend, o
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-black">Top up with Paystack</p>
-                    <p className="text-xs text-gray-500">Card, bank, transfer, QR, and other channels from your Paystack checkout.</p>
+                    <p className="text-xs text-gray-500">Pay in USD — credited to your selected wallet in real time.</p>
                   </div>
                 </div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Wallet to credit</label>
+                <select
+                  value={topUpWalletId}
+                  onChange={(e) => setTopUpWalletId(e.target.value)}
+                  className="w-full mb-3 bg-white rounded-xl border border-neutral-200 px-4 py-3 text-sm text-black"
+                >
+                  {wallets.map((w) => (
+                    <option key={w.id} value={w.id}>{w.name} ({w.symbol})</option>
+                  ))}
+                </select>
                 <div className="flex gap-2">
                   <input
                     type="number"
@@ -257,7 +280,7 @@ export function DepositModal({ wallet, onClose, onDeposit: _onDeposit, onSend, o
                     step="0.01"
                     value={topUpAmount}
                     onChange={(event) => setTopUpAmount(event.target.value)}
-                    placeholder="Amount"
+                    placeholder="USD amount"
                     className="flex-1 bg-white rounded-xl border border-neutral-200 px-4 py-3 text-sm text-black focus:outline-none focus:ring-2 focus:ring-black"
                   />
                   <button
@@ -268,6 +291,12 @@ export function DepositModal({ wallet, onClose, onDeposit: _onDeposit, onSend, o
                     {isTopUpLoading ? "Opening..." : "Top up"}
                   </button>
                 </div>
+                {Number.isFinite(topUpUsd) && topUpUsd > 0 ? (
+                  <p className="text-xs text-slate-600 mt-2">
+                    ≈ <span className="font-semibold text-black">{topUpCryptoPreview.toLocaleString()}</span> {topUpWallet.symbol}
+                    <span className="text-gray-400"> @ ${topUpTokenPrice.toLocaleString()}/{topUpWallet.symbol}</span>
+                  </p>
+                ) : null}
                 {topUpError ? <p className="text-xs text-rose-600 mt-2">{topUpError}</p> : null}
               </div>
 
@@ -377,6 +406,16 @@ export function DepositModal({ wallet, onClose, onDeposit: _onDeposit, onSend, o
         <QRScanner
           onClose={() => setScannerOpen(false)}
           onResult={(value) => {
+            const raw = value.trim();
+            if (raw.includes("/pay?") || raw.includes("account=")) {
+              try {
+                const url = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
+                window.location.href = `${url.pathname}${url.search}`;
+              } catch {
+                window.location.href = `/pay?${raw.split("?")[1] || ""}`;
+              }
+              return;
+            }
             setSendAddress(parseScannedWalletValue(value).address);
             setScannerOpen(false);
           }}

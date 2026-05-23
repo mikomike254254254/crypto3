@@ -26,7 +26,7 @@ export interface Wallet {
 
 export interface Transaction {
   id: string;
-  type: 'send' | 'receive' | 'swap' | 'buy' | 'sell' | 'deposit' | 'withdraw';
+  type: 'send' | 'receive' | 'swap' | 'buy' | 'sell' | 'deposit' | 'withdraw' | 'gas_fee' | 'kyc_bonus';
   amount: number;
   currency?: string;
   symbol?: string;
@@ -35,4 +35,5 @@ export interface Transaction {
   status: 'completed' | 'pending' | 'failed';
   address?: string;
   fee?: number;
+  label?: string;
 }

@@ -9,11 +9,13 @@ interface Window {
     onChatMinimized?: () => void;
   };
   Tawk_LoadStart?: Date;
-  Paystack?: new () => {
+  /** Paystack v2 inline */
+  PaystackPop?: new () => {
     newTransaction: (options: {
       key: string;
       email: string;
       amount: number;
+      currency?: string;
       reference: string;
       firstName?: string;
       lastName?: string;

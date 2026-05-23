@@ -51,10 +51,6 @@ export function ProfileAvatarPicker({
             }`}
           >
             <ProfileAvatar characterId={character.id} size={avatarSize} selected={selectedId === character.id && !customSelected} />
-            <div className="text-center">
-              <p className="text-xs font-bold text-black">{character.name}</p>
-              <p className="text-[10px] text-black/50">{character.tagline}</p>
-            </div>
           </button>
         ))}
       </div>

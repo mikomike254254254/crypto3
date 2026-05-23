@@ -111,10 +111,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     },
     signOut: async () => {
-      const { error } = await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut({ scope: "global" });
       if (error) {
-        throw error;
+        await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
       }
+      setSession(null);
+      localStorage.removeItem("wallex.onboarding");
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith("wallex.") || key.startsWith("kycStatus:")) {
+          localStorage.removeItem(key);
+        }
+      });
     },
   }), [loading, session]);
 

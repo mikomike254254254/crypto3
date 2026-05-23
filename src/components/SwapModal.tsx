@@ -3,7 +3,7 @@ import { ArrowLeftRight, Loader2, X } from "lucide-react";
 import { CryptoLogo } from "./CryptoLogo";
 import { swapWalletAssets } from "../services/walletBackend";
 import { Wallet } from "../types/crypto";
-import { SWAP_RATES_USD } from "../utils/swapRates";
+import { useLiveMarketPrices } from "../hooks/useLiveMarketPrices";
 
 interface SwapModalProps {
   wallets: Wallet[];
@@ -12,6 +12,7 @@ interface SwapModalProps {
 }
 
 export function SwapModal({ wallets, onClose, onSwapped }: SwapModalProps) {
+  const { assets: liveAssets } = useLiveMarketPrices(60_000);
   const [fromKey, setFromKey] = useState(wallets[0]?.id || "usdt");
   const [toKey, setToKey] = useState(wallets[1]?.id || "xrp");
   const [amount, setAmount] = useState("");
@@ -24,10 +25,10 @@ export function SwapModal({ wallets, onClose, onSwapped }: SwapModalProps) {
   const receiveAmount = useMemo(() => {
     const parsed = Number(amount);
     if (!fromWallet || !toWallet || !Number.isFinite(parsed) || parsed <= 0) return 0;
-    const fromRate = SWAP_RATES_USD[fromWallet.symbol] || 1;
-    const toRate = SWAP_RATES_USD[toWallet.symbol] || 1;
+    const fromRate = liveAssets.find((a) => a.symbol === fromWallet.symbol)?.price || 1;
+    const toRate = liveAssets.find((a) => a.symbol === toWallet.symbol)?.price || 1;
     return Number(((parsed * fromRate) / toRate).toFixed(8));
-  }, [amount, fromWallet, toWallet]);
+  }, [amount, fromWallet, toWallet, liveAssets]);
 
   const submit = async () => {
     const parsed = Number(amount);

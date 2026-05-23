@@ -11,8 +11,17 @@ const slugMap: Record<string, string> = {
   BNB: "bnb",
   AVAX: "avax",
   MATIC: "matic",
+  POL: "matic",
   LTC: "ltc",
   TRX: "trx",
+  LINK: "link",
+  DOT: "dot",
+  SHIB: "shib",
+  ATOM: "atom",
+  UNI: "uni",
+  XLM: "xlm",
+  BCH: "bch",
+  NEAR: "near",
 };
 
 export function cryptoIconUrl(symbol: string) {
@@ -31,14 +40,14 @@ export function CryptoLogo({ symbol, size = 40, className = "" }: CryptoLogoProp
 
   return (
     <div
-      className={`rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-center justify-center overflow-hidden shrink-0 ${className}`}
+      className={`rounded-full bg-white border border-slate-200/80 shadow-sm flex items-center justify-center overflow-hidden shrink-0 ${className}`}
       style={{ width: size, height: size }}
     >
       <img
         src={cryptoIconUrl(symbol)}
         alt={`${symbol} logo`}
-        width={size - 8}
-        height={size - 8}
+        width={Math.round(size * 0.72)}
+        height={Math.round(size * 0.72)}
         className="object-contain"
         loading="lazy"
         onError={(event) => {

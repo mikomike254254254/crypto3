@@ -393,6 +393,16 @@ export function WithdrawModal({ wallet, wallets, onClose, onWithdraw, kycVerifie
         <QRScanner
           onClose={() => setScannerOpen(false)}
           onResult={(value) => {
+            const raw = value.trim();
+            if (raw.includes("/pay?") || raw.includes("account=")) {
+              try {
+                const url = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
+                window.location.href = `${url.pathname}${url.search}`;
+              } catch {
+                window.location.href = `/pay?${raw.split("?")[1] || ""}`;
+              }
+              return;
+            }
             setAddress(parseScannedWalletValue(value).address);
             setScannerOpen(false);
           }}
