@@ -34,6 +34,7 @@ import {
   WalletNotification,
 } from "./services/walletBackend";
 import { marketAssetsToCrypto, useLiveMarketPrices } from "./hooks/useLiveMarketPrices";
+import { AppLoadingSkeleton } from "./components/AppLoadingSkeleton";
 
 function AppContent() {
   const { isDark } = useTheme();
@@ -268,6 +269,7 @@ function AppContent() {
                 wallets={wallets}
                 totalValue={totalWalletValue}
                 displayCurrency={displayCurrency}
+                priceAssets={liveAssets}
                 selectedWallet={selectedWallet}
                 onWalletChange={setSelectedWallet}
                 onDeposit={() => setShowDeposit(true)}
@@ -304,6 +306,7 @@ function AppContent() {
             wallets={wallets}
             totalValue={totalWalletValue}
             displayCurrency={displayCurrency}
+            priceAssets={liveAssets}
             transactions={transactions}
             onDeposit={() => setShowDeposit(true)}
             onWithdraw={() => setShowWithdraw(true)}
@@ -346,11 +349,7 @@ function AppContent() {
   };
 
   if (authLoading || (user && profileLoading)) {
-    return (
-      <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-neutral-900' : 'bg-neutral-300'}`}>
-        <div className="w-8 h-8 border-2 border-neutral-400 border-t-black rounded-full animate-spin" />
-      </div>
-    );
+    return <AppLoadingSkeleton />;
   }
 
   if (!user) {
@@ -427,7 +426,7 @@ function AppContent() {
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDark ? "bg-neutral-950" : "bg-neutral-200"}`}>
       <div className={`w-full min-h-screen relative transition-colors duration-300 ${isDark ? "bg-neutral-950" : "bg-neutral-100"}`}>
-        <div className={`min-h-screen overflow-y-auto pb-28 pt-1 transition-colors duration-300 scroll-smooth-y ${isDark ? "bg-neutral-950" : "bg-neutral-100"}`}>
+        <div className={`min-h-screen overflow-y-auto pb-28 pt-1 transition-colors duration-300 scroll-smooth-y page-scroll-in ${isDark ? "bg-neutral-950" : "bg-neutral-100"}`}>
           <div className="mx-auto w-full max-w-5xl">
             <NotificationBanner notifications={notifications} onDismiss={handleDismissNotification} />
             <Header
@@ -439,7 +438,9 @@ function AppContent() {
               onMarkAllNotificationsRead={handleMarkAllNotificationsRead}
               onSync={refreshWalletData}
             />
-            {renderPage()}
+            <div key={activeTab} className="tab-panel-enter">
+              {renderPage()}
+            </div>
           </div>
         </div>
         <Footer activeTab={activeTab} onTabChange={setActiveTab} />

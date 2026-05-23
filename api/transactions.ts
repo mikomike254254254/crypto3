@@ -49,7 +49,7 @@ function toClientTransaction(tx: any, wallet: string) {
 
   if (note.includes("Gas fee")) type = "gas_fee";
   else if (note.includes("KYC verification bonus")) type = "kyc_bonus";
-  else if (tx.type === "swap") type = "swap";
+  else if (note.startsWith("Swap ") || tx.type === "swap") type = "swap";
   else if (tx.type === "withdraw") type = "withdraw";
 
   return {

@@ -1,103 +1,89 @@
 import { useState } from "react";
-import { ArrowDownToLine, ArrowUpFromLine, ArrowRightLeft, Clock, ChevronRight, Eye, EyeOff } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, ArrowRightLeft, Clock, ChevronRight, Eye, EyeOff, TrendingDown, TrendingUp } from "lucide-react";
 import { Wallet, Transaction } from "../types/crypto";
 import { useTheme } from "../context/ThemeContext";
 import { CryptoLogo } from "../components/CryptoLogo";
 import { formatFiat } from "../lib/currency";
+import { computePortfolioDayChange } from "../lib/portfolioChange";
+import { formatTxStatus, getTransactionDisplay } from "../lib/transactionDisplay";
+import type { MarketAsset } from "../hooks/useLiveMarketPrices";
 
 interface WalletPageProps {
   wallets: Wallet[];
   totalValue?: number;
   displayCurrency?: string;
+  priceAssets?: MarketAsset[];
   transactions?: Transaction[];
   onDeposit: () => void;
   onWithdraw: () => void;
   kycVerified?: boolean;
 }
 
-const mockTransactions: Transaction[] = [
-  { id: '1', type: 'receive', amount: 250.00, currency: 'USDT', date: '2024-01-15', status: 'completed', address: '0x7a9...f3d' },
-  { id: '2', type: 'send', amount: 100.00, currency: 'USDT', date: '2024-01-14', status: 'completed', address: '0x3b2...a1c' },
-  { id: '3', type: 'swap', amount: 0.05, currency: 'BTC', date: '2024-01-14', status: 'completed' },
-  { id: '4', type: 'buy', amount: 500.00, currency: 'USDT', date: '2024-01-13', status: 'completed' },
-  { id: '5', type: 'sell', amount: 0.5, currency: 'ETH', date: '2024-01-12', status: 'pending' },
-  { id: '6', type: 'send', amount: 75.00, currency: 'USDT', date: '2024-01-11', status: 'failed', address: '0x9c8...b2e' },
-];
-
-export function WalletPage({ wallets, totalValue, displayCurrency = "USD", transactions = mockTransactions, onDeposit, onWithdraw }: WalletPageProps) {
+export function WalletPage({
+  wallets,
+  totalValue,
+  displayCurrency = "USD",
+  priceAssets = [],
+  transactions = [],
+  onDeposit,
+  onWithdraw,
+}: WalletPageProps) {
   const [selectedWallet, setSelectedWallet] = useState(0);
   const [isHidden, setIsHidden] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('all');
+  const [activeFilter, setActiveFilter] = useState("all");
   const { isDark } = useTheme();
 
-  const currentWallet = wallets[selectedWallet];
   const totalBalance = totalValue ?? wallets.reduce((sum, w) => sum + w.balance, 0);
+  const { percent: dayChangePct, usdDelta } = computePortfolioDayChange(wallets, priceAssets);
+  const isUp = dayChangePct >= 0;
 
   const filters = [
-    { id: 'all', label: 'All' },
-    { id: 'send', label: 'Sent' },
-    { id: 'receive', label: 'Received' },
-    { id: 'pending', label: 'Pending' },
+    { id: "all", label: "All" },
+    { id: "send", label: "Sent" },
+    { id: "receive", label: "Received" },
+    { id: "swap", label: "Swaps" },
+    { id: "pending", label: "Pending" },
   ];
 
-  const filteredTransactions = activeFilter === 'all'
-    ? transactions
-    : activeFilter === 'pending'
-    ? transactions.filter(t => t.status === 'pending')
-    : transactions.filter(t => t.type === activeFilter);
+  const filteredTransactions = (() => {
+    if (activeFilter === "all") return transactions;
+    if (activeFilter === "pending") return transactions.filter((t) => t.status === "pending");
+    if (activeFilter === "swap") {
+      return transactions.filter((t) => t.type === "swap" || t.label?.startsWith("Swap "));
+    }
+    return transactions.filter((t) => t.type === activeFilter || (activeFilter === "receive" && (t.type === "deposit" || t.type === "receive")));
+  })();
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
-      case 'send': return <ArrowUpFromLine className="w-4 h-4" />;
-      case 'withdraw': return <ArrowUpFromLine className="w-4 h-4" />;
-      case 'receive': return <ArrowDownToLine className="w-4 h-4" />;
-      case 'deposit': return <ArrowDownToLine className="w-4 h-4" />;
-      case 'swap': return <ArrowRightLeft className="w-4 h-4" />;
-      case 'buy': return <ArrowDownToLine className="w-4 h-4" />;
-      case 'sell': return <ArrowUpFromLine className="w-4 h-4" />;
-      default: return null;
-    }
-  };
-
-  const getTransactionColor = (type: string) => {
-    if (isDark) {
-      switch (type) {
-        case "send":
-        case "withdraw":
-        case "sell":
-          return "bg-neutral-800 text-neutral-200";
-        default:
-          return "bg-neutral-800 text-white";
-      }
-    }
-    switch (type) {
       case "send":
       case "withdraw":
-        return "bg-neutral-200 text-neutral-800";
+      case "sell":
+        return <ArrowUpFromLine className="w-4 h-4" />;
       case "receive":
       case "deposit":
-      case "gas_fee":
-      case "kyc_bonus":
       case "buy":
-        return "bg-neutral-100 text-black";
+      case "kyc_bonus":
+      case "gas_fee":
+        return <ArrowDownToLine className="w-4 h-4" />;
+      case "swap":
+        return <ArrowRightLeft className="w-4 h-4" />;
       default:
-        return "bg-neutral-100 text-neutral-700";
+        return <ArrowRightLeft className="w-4 h-4" />;
     }
   };
 
-  const transactionLabel = (tx: Transaction) => {
-    if (tx.label?.includes("Gas fee")) return "Gas fee";
-    if (tx.label?.includes("KYC verification bonus")) return tx.status === "pending" ? "KYC bonus (pending)" : "KYC bonus";
-    if (tx.type === "withdraw") return "Withdrawal";
-    if (tx.type === "gas_fee") return "Gas fee";
-    if (tx.type === "kyc_bonus") return tx.status === "pending" ? "KYC bonus (pending)" : "KYC bonus";
-    return tx.type;
+  const getTransactionColor = (tx: Transaction, isCredit: boolean) => {
+    if (isDark) {
+      return isCredit ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800/50" : "bg-red-950/60 text-red-300 border border-red-900/40";
+    }
+    return isCredit ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-red-50 text-red-700 border border-red-100";
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed":
-        return isDark ? "text-neutral-300" : "text-neutral-600";
+        return isDark ? "text-emerald-400/90" : "text-emerald-700";
       case "pending":
         return isDark ? "text-amber-400" : "text-amber-700";
       case "failed":
@@ -112,62 +98,83 @@ export function WalletPage({ wallets, totalValue, displayCurrency = "USD", trans
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
-    
-    if (date.toDateString() === today.toDateString()) return 'Today';
-    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+    if (date.toDateString() === today.toDateString()) {
+      return `Today · ${date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+    }
+    if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   };
 
   return (
     <div className="px-4 pt-2 pb-6">
-      {/* Header */}
       <h1 className={`text-xl font-bold mb-4 ${isDark ? "text-white" : "text-black"}`}>Wallet</h1>
 
-      {/* Total Balance Card */}
-      <div className="bg-black rounded-2xl p-5 mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs text-gray-400 font-medium">Total Balance</p>
-          <button onClick={() => setIsHidden(!isHidden)} className="p-1">
-            {isHidden ? (
-              <EyeOff className="w-4 h-4 text-gray-400" />
-            ) : (
-              <Eye className="w-4 h-4 text-gray-400" />
-            )}
-          </button>
-        </div>
-        <h2 className="text-3xl font-bold text-white mb-4">
-          {isHidden ? "******" : formatFiat(totalBalance, displayCurrency)}
-        </h2>
-        
-        {/* Quick Actions - Fixed buttons */}
-        <div className="flex gap-2">
-          <button 
-            onClick={onDeposit}
-            className="flex-1 flex items-center justify-center gap-2 bg-white text-black rounded-full py-2.5 font-medium text-sm hover:bg-neutral-200 transition-colors"
-          >
-            <ArrowDownToLine className="w-4 h-4" />
-            Deposit
-          </button>
-          <button 
-            onClick={onWithdraw}
-            className="flex-1 flex items-center justify-center gap-2 bg-white/10 text-white rounded-full py-2.5 font-medium text-sm border border-white/20 hover:bg-white/20 transition-colors"
-          >
-            <ArrowUpFromLine className="w-4 h-4" />
-            Send
-          </button>
+      <div className="relative overflow-hidden bg-black rounded-2xl p-5 mb-4 border border-neutral-800 shadow-xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent pointer-events-none" />
+        <div className="relative">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Total Balance</p>
+            <button type="button" onClick={() => setIsHidden(!isHidden)} className="p-1 rounded-md hover:bg-white/10" aria-label="Toggle balance">
+              {isHidden ? <EyeOff className="w-4 h-4 text-neutral-400" /> : <Eye className="w-4 h-4 text-neutral-400" />}
+            </button>
+          </div>
+
+          <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">
+            {isHidden ? "••••••" : formatFiat(totalBalance, displayCurrency)}
+          </h2>
+
+          <div className="flex items-center gap-2 mb-4">
+            <div
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${
+                isUp ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" : "bg-red-500/15 text-red-400 border border-red-500/30"
+              }`}
+            >
+              {isUp ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+              {isUp ? "+" : ""}
+              {dayChangePct.toFixed(2)}% today
+            </div>
+            {!isHidden && Math.abs(usdDelta) > 0.001 ? (
+              <span className={`text-xs font-medium ${isUp ? "text-emerald-400/90" : "text-red-400/90"}`}>
+                {isUp ? "+" : ""}
+                {formatFiat(Math.abs(usdDelta), displayCurrency)}
+              </span>
+            ) : null}
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onDeposit}
+              className="flex-1 flex items-center justify-center gap-2 bg-white text-black rounded-xl py-2.5 font-semibold text-sm hover:bg-neutral-100 transition-all active:scale-[0.98]"
+            >
+              <ArrowDownToLine className="w-4 h-4" />
+              Deposit
+            </button>
+            <button
+              type="button"
+              onClick={onWithdraw}
+              className="flex-1 flex items-center justify-center gap-2 bg-transparent text-white rounded-xl py-2.5 font-semibold text-sm border-2 border-white/80 hover:bg-white/10 transition-all active:scale-[0.98]"
+            >
+              <ArrowUpFromLine className="w-4 h-4" />
+              Send
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Wallet Tabs */}
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide">
         {wallets.map((wallet, index) => (
           <button
             key={wallet.id}
+            type="button"
             onClick={() => setSelectedWallet(index)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200 ${
               selectedWallet === index
-                ? 'bg-black text-white'
-                : isDark ? 'bg-neutral-900 text-neutral-300 border border-neutral-800' : 'bg-white text-gray-600'
+                ? "bg-black text-white scale-[1.02] shadow-md"
+                : isDark
+                  ? "bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-600"
+                  : "bg-white text-gray-600 border border-neutral-200 hover:border-neutral-300"
             }`}
           >
             <CryptoLogo symbol={wallet.symbol} size={22} className="!border-0" />
@@ -176,24 +183,23 @@ export function WalletPage({ wallets, totalValue, displayCurrency = "USD", trans
         ))}
       </div>
 
-      {/* Transaction Filters */}
       <div className="flex items-center justify-between mb-3">
         <h3 className={`text-base font-semibold ${isDark ? "text-white" : "text-black"}`}>Transactions</h3>
-        <button className={`flex items-center gap-1 text-xs ${isDark ? "text-neutral-400" : "text-gray-500"}`}>
-          <Clock className="w-3.5 h-3.5" />
-          History
-        </button>
+        <span className={`text-xs ${isDark ? "text-neutral-500" : "text-gray-500"}`}>{filteredTransactions.length} shown</span>
       </div>
 
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide">
         {filters.map((filter) => (
           <button
             key={filter.id}
+            type="button"
             onClick={() => setActiveFilter(filter.id)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200 ${
               activeFilter === filter.id
-                ? 'bg-black text-white'
-                : isDark ? 'bg-neutral-900 text-neutral-400 border border-neutral-800' : 'bg-white text-gray-500'
+                ? "bg-black text-white shadow-sm"
+                : isDark
+                  ? "bg-neutral-900 text-neutral-400 border border-neutral-800"
+                  : "bg-white text-gray-500 border border-neutral-200"
             }`}
           >
             {filter.label}
@@ -201,44 +207,47 @@ export function WalletPage({ wallets, totalValue, displayCurrency = "USD", trans
         ))}
       </div>
 
-      {/* Transaction List */}
-      <div className={`rounded-2xl shadow-sm overflow-hidden ${isDark ? "bg-neutral-900 border border-neutral-800" : "bg-white"}`}>
-        {filteredTransactions.map((tx, index) => (
-          <div 
-            key={tx.id}
-            className={`flex items-center gap-3 p-4 ${
-              index !== filteredTransactions.length - 1 ? (isDark ? 'border-b border-neutral-800' : 'border-b border-neutral-100') : ''
-            }`}
-          >
-            {/* Icon */}
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getTransactionColor(tx.type)}`}>
-              {getTransactionIcon(tx.type)}
-            </div>
-
-            {/* Details */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <span className={`font-medium text-sm capitalize ${isDark ? "text-white" : "text-black"}`}>{transactionLabel(tx)}</span>
-                <span className={`font-semibold text-sm ${isDark ? "text-white" : "text-black"}`}>
-                  {tx.type === 'send' || tx.type === 'sell' || tx.type === 'withdraw' ? '-' : '+'}
-                  {tx.amount.toLocaleString()} {tx.currency}
-                </span>
+      <div className={`rounded-xl overflow-hidden border ${isDark ? "bg-neutral-900 border-neutral-800" : "bg-white border-neutral-200"}`}>
+        {filteredTransactions.map((tx, index) => {
+          const display = getTransactionDisplay(tx);
+          return (
+            <div
+              key={tx.id}
+              className={`flex items-center gap-3 p-4 transition-colors ${
+                index !== filteredTransactions.length - 1 ? (isDark ? "border-b border-neutral-800" : "border-b border-neutral-100") : ""
+              } ${isDark ? "hover:bg-neutral-800/50" : "hover:bg-neutral-50"}`}
+            >
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${getTransactionColor(tx, display.isCredit)}`}>
+                {getTransactionIcon(tx.type)}
               </div>
-              <div className="flex items-center justify-between mt-0.5">
-                <span className={`text-xs ${isDark ? "text-neutral-400" : "text-gray-500"}`}>{formatDate(tx.date ?? new Date().toISOString())}</span>
-                <span className={`text-xs font-medium capitalize ${getStatusColor(tx.status)}`}>
-                  {tx.status}
-                </span>
-              </div>
-            </div>
 
-            <ChevronRight className="w-4 h-4 text-gray-400" />
-          </div>
-        ))}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className={`font-semibold text-sm truncate ${isDark ? "text-white" : "text-black"}`}>{display.title}</p>
+                    <p className={`text-xs truncate mt-0.5 ${isDark ? "text-neutral-400" : "text-gray-500"}`}>{display.subtitle}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className={`font-bold text-sm tabular-nums ${display.isCredit ? (isDark ? "text-emerald-400" : "text-emerald-600") : isDark ? "text-red-400" : "text-red-600"}`}>
+                      {display.sign}
+                      {tx.amount.toLocaleString(undefined, { maximumFractionDigits: 8 })} {tx.currency}
+                    </p>
+                    <p className={`text-[10px] font-medium mt-0.5 ${getStatusColor(tx.status)}`}>{formatTxStatus(tx.status)}</p>
+                  </div>
+                </div>
+                <p className={`text-[10px] mt-1.5 ${isDark ? "text-neutral-500" : "text-gray-400"}`}>{formatDate(tx.date ?? new Date().toISOString())}</p>
+              </div>
+
+              <ChevronRight className={`w-4 h-4 shrink-0 ${isDark ? "text-neutral-600" : "text-gray-300"}`} />
+            </div>
+          );
+        })}
 
         {filteredTransactions.length === 0 && (
-          <div className="p-8 text-center">
-            <p className={`text-sm ${isDark ? "text-neutral-500" : "text-gray-500"}`}>No transactions found</p>
+          <div className="p-10 text-center">
+            <Clock className={`w-8 h-8 mx-auto mb-2 ${isDark ? "text-neutral-600" : "text-gray-300"}`} />
+            <p className={`text-sm font-medium ${isDark ? "text-neutral-400" : "text-gray-600"}`}>No transactions yet</p>
+            <p className={`text-xs mt-1 ${isDark ? "text-neutral-500" : "text-gray-400"}`}>Deposits and swaps will appear here</p>
           </div>
         )}
       </div>

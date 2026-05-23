@@ -6,8 +6,35 @@ import {
   ensureUserAccount,
   readTokenBalances,
   requireUser,
-  upsertBalance,
+  walletAssets,
 } from "./_supabase.js";
+
+function walletKeyToSymbol(key: string) {
+  const asset = walletAssets.find((a) => a.wallet_key === String(key).toLowerCase());
+  return (asset?.symbol || String(key)).toUpperCase();
+}
+
+function isMissingColumnError(error: { message?: string }) {
+  const msg = (error.message || "").toLowerCase();
+  return msg.includes("column") || msg.includes("schema cache") || msg.includes("does not exist");
+}
+
+async function insertLedgerTx(row: Record<string, unknown>) {
+  const supabase = adminClient();
+  const attempts: Record<string, unknown>[] = [
+    row,
+    { ...row, note: undefined },
+    { ...row, type: row.type === "swap" ? "send" : row.type },
+  ];
+
+  for (const payload of attempts) {
+    const { error } = await supabase.from("transactions").insert(payload);
+    if (!error) return;
+    if (!isMissingColumnError(error)) throw error;
+  }
+
+  throw new Error("Could not record swap transaction.");
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
@@ -18,8 +45,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const user = await requireUser(req);
     const userRow = await ensureUserAccount(user);
     const { fromWalletKey, toWalletKey, amount } = req.body ?? {};
-    const fromToken = String(fromWalletKey || "usdt").toUpperCase();
-    const toToken = String(toWalletKey || "btc").toUpperCase();
+    const fromToken = walletKeyToSymbol(fromWalletKey || "usdt");
+    const toToken = walletKeyToSymbol(toWalletKey || "btc");
     const parsedAmount = Number(amount);
 
     const prices = await fetchLiveUsdPrices();
@@ -44,36 +71,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const usdValue = parsedAmount * prices[fromToken];
     const receiveAmount = Number((usdValue / prices[toToken]).toFixed(8));
-
-    const supabase = adminClient();
     const note = `Swap ${parsedAmount} ${fromToken} → ${receiveAmount} ${toToken}`;
 
-    const { error: debitError } = await supabase.from("transactions").insert({
+    await insertLedgerTx({
       from_wallet: userRow.wallet,
       to_wallet: "swap",
       amount: parsedAmount,
       token: fromToken,
-      type: "swap",
+      type: "send",
       status: "completed",
       note,
     });
 
-    if (debitError) throw debitError;
-
-    const { error: creditError } = await supabase.from("transactions").insert({
+    await insertLedgerTx({
       from_wallet: "swap",
       to_wallet: userRow.wallet,
       amount: receiveAmount,
       token: toToken,
-      type: "swap",
+      type: "deposit",
       status: "completed",
       note,
     });
-
-    if (creditError) throw creditError;
-
-    const nextBalances = await readTokenBalances(userRow.wallet);
-    await upsertBalance(userRow.wallet, Number((nextBalances.get(fromToken) || 0).toFixed(8)));
 
     return res.status(200).json({
       wallets: await buildClientWallets(userRow),

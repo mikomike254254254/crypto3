@@ -4,6 +4,7 @@ import { CryptoLogo } from "./CryptoLogo";
 import { swapWalletAssets } from "../services/walletBackend";
 import { Wallet } from "../types/crypto";
 import { useLiveMarketPrices } from "../hooks/useLiveMarketPrices";
+import { useTheme } from "../context/ThemeContext";
 
 interface SwapModalProps {
   wallets: Wallet[];
@@ -12,6 +13,7 @@ interface SwapModalProps {
 }
 
 export function SwapModal({ wallets, onClose, onSwapped }: SwapModalProps) {
+  const { isDark } = useTheme();
   const { assets: liveAssets } = useLiveMarketPrices(60_000);
   const [fromKey, setFromKey] = useState(wallets[0]?.id || "usdt");
   const [toKey, setToKey] = useState(wallets[1]?.id || "xrp");
@@ -58,21 +60,24 @@ export function SwapModal({ wallets, onClose, onSwapped }: SwapModalProps) {
     }
   };
 
+  const panel = isDark ? "bg-neutral-950 border-neutral-800 text-white" : "bg-white border-neutral-200 text-black";
+  const field = isDark ? "bg-neutral-900 border-neutral-700 text-white" : "bg-white border-neutral-200 text-black";
+
   return (
     <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-[2rem] bg-white p-6 shadow-2xl">
+      <div className={`w-full max-w-md rounded-2xl border p-6 shadow-2xl ${panel}`}>
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xl font-bold text-slate-950">Swap crypto</h2>
-          <button type="button" onClick={onClose} className="rounded-full p-2 hover:bg-slate-100" aria-label="Close">
+          <h2 className="text-xl font-bold">Swap crypto</h2>
+          <button type="button" onClick={onClose} className={`rounded-lg p-2 ${isDark ? "hover:bg-neutral-800" : "hover:bg-neutral-100"}`} aria-label="Close">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {error ? <p className="text-sm text-rose-600 mb-3">{error}</p> : null}
+        {error ? <p className="text-sm text-red-500 mb-3 rounded-lg bg-red-500/10 px-3 py-2">{error}</p> : null}
 
-        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">From</label>
+        <label className={`text-xs font-semibold uppercase tracking-wide ${isDark ? "text-neutral-400" : "text-gray-500"}`}>From</label>
         <div className="flex gap-2 mt-1 mb-4">
-          <select value={fromKey} onChange={(e) => setFromKey(e.target.value)} className="flex-1 rounded-2xl border border-slate-200 px-3 py-3 text-sm">
+          <select value={fromKey} onChange={(e) => setFromKey(e.target.value)} className={`flex-1 rounded-xl border px-3 py-3 text-sm ${field}`}>
             {wallets.map((w) => (
               <option key={w.id} value={w.id}>{w.symbol} — {w.balance}</option>
             ))}
@@ -80,9 +85,9 @@ export function SwapModal({ wallets, onClose, onSwapped }: SwapModalProps) {
           {fromWallet ? <CryptoLogo symbol={fromWallet.symbol} size={44} /> : null}
         </div>
 
-        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">To</label>
+        <label className={`text-xs font-semibold uppercase tracking-wide ${isDark ? "text-neutral-400" : "text-gray-500"}`}>To</label>
         <div className="flex gap-2 mt-1 mb-4">
-          <select value={toKey} onChange={(e) => setToKey(e.target.value)} className="flex-1 rounded-2xl border border-slate-200 px-3 py-3 text-sm">
+          <select value={toKey} onChange={(e) => setToKey(e.target.value)} className={`flex-1 rounded-xl border px-3 py-3 text-sm ${field}`}>
             {wallets.map((w) => (
               <option key={w.id} value={w.id}>{w.symbol}</option>
             ))}
@@ -97,19 +102,19 @@ export function SwapModal({ wallets, onClose, onSwapped }: SwapModalProps) {
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder={`Amount in ${fromWallet?.symbol || "USDT"}`}
-          className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm mb-3"
+          className={`w-full rounded-xl border px-4 py-3 text-sm mb-3 ${field}`}
         />
 
-        <p className="text-sm text-slate-600 mb-5 flex items-center gap-2">
-          <ArrowLeftRight className="w-4 h-4 text-cyan-600" />
-          You receive ≈ <strong>{receiveAmount}</strong> {toWallet?.symbol}
+        <p className={`text-sm mb-5 flex items-center gap-2 rounded-xl px-3 py-2.5 ${isDark ? "bg-neutral-900 text-neutral-300" : "bg-neutral-50 text-gray-700"}`}>
+          <ArrowLeftRight className="w-4 h-4 shrink-0" />
+          Live rate · you receive ≈ <strong>{receiveAmount}</strong> {toWallet?.symbol}
         </p>
 
         <button
           type="button"
           onClick={submit}
           disabled={loading}
-          className="w-full rounded-2xl bg-slate-950 text-white py-3.5 text-sm font-semibold hover:bg-slate-800 disabled:opacity-60 flex items-center justify-center gap-2"
+          className="w-full rounded-xl bg-black text-white py-3.5 text-sm font-semibold hover:bg-neutral-800 disabled:opacity-60 flex items-center justify-center gap-2"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowLeftRight className="w-4 h-4" />}
           Confirm swap

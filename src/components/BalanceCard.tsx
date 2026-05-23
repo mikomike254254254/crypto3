@@ -5,6 +5,8 @@ import { useTheme } from "../context/ThemeContext";
 import { AnimatedNumber } from "./AnimatedNumber";
 import { CryptoLogo } from "./CryptoLogo";
 import { formatFiat } from "../lib/currency";
+import { computePortfolioDayChange } from "../lib/portfolioChange";
+import type { MarketAsset } from "../hooks/useLiveMarketPrices";
 
 interface BalanceCardProps {
   wallet: Wallet;
@@ -16,14 +18,16 @@ interface BalanceCardProps {
   onDeposit: () => void;
   onWithdraw: () => void;
   kycVerified: boolean;
+  priceAssets?: MarketAsset[];
 }
 
-export function BalanceCard({ wallet, wallets, totalValue, displayCurrency = "USD", selectedWallet, onWalletChange, onDeposit, onWithdraw, kycVerified }: BalanceCardProps) {
+export function BalanceCard({ wallet, wallets, totalValue, displayCurrency = "USD", selectedWallet, onWalletChange, onDeposit, onWithdraw, kycVerified, priceAssets = [] }: BalanceCardProps) {
   const [showBalance, setShowBalance] = useState(true);
   const [showWalletSelect, setShowWalletSelect] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const { isDark } = useTheme();
-  const walletChange = wallet.change ?? 0;
+  const { percent: dayChangePct } = computePortfolioDayChange(wallets, priceAssets);
+  const isUp = dayChangePct >= 0;
 
   const moreOptions = [
     { id: 'qr', label: 'Show QR Code', icon: QrCode, description: 'Scan to receive' },
@@ -77,9 +81,16 @@ export function BalanceCard({ wallet, wallets, totalValue, displayCurrency = "US
               {showBalance ? <Eye className="w-4 h-4 text-white/60" /> : <EyeOff className="w-4 h-4 text-white/60" />}
             </button>
           </div>
-          <div className={`ml-auto px-2 py-1 rounded-md flex items-center gap-1 border ${walletChange >= 0 ? "bg-white/10 border-white/25 text-white" : "bg-white/10 border-white/25 text-white/90"}`}>
-            {walletChange >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-            <span className="text-[10px] font-bold">{walletChange >= 0 ? "+" : ""}{walletChange.toFixed(2)}%</span>
+          <div
+            className={`ml-auto px-2.5 py-1 rounded-md flex items-center gap-1 border text-[10px] font-bold ${
+              isUp
+                ? "bg-emerald-500/20 border-emerald-400/40 text-emerald-300"
+                : "bg-red-500/20 border-red-400/40 text-red-300"
+            }`}
+          >
+            {isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+            <span>{isUp ? "+" : ""}{dayChangePct.toFixed(2)}%</span>
+            <span className="text-white/50 font-normal hidden sm:inline">24h</span>
           </div>
         </div>
 

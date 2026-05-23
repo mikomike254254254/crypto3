@@ -26,10 +26,10 @@ export function Footer({ activeTab, onTabChange }: FooterProps) {
               <button
                 key={index}
                 onClick={() => onTabChange(index)}
-                className="flex flex-col items-center justify-center gap-1 px-3 py-1 transition-transform active:scale-95"
+                className="flex flex-col items-center justify-center gap-1 px-3 py-1 transition-all duration-300 ease-out active:scale-90"
               >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${
-                  isActive ? "bg-white scale-110 shadow-lg" : "bg-transparent"
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ease-out ${
+                  isActive ? "bg-white scale-110 shadow-lg ring-2 ring-white/30" : "bg-transparent scale-100"
                 }`}>
                   <Icon 
                     className={`w-5 h-5 transition-colors ${
