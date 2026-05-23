@@ -111,9 +111,8 @@ export function WalletPage({
     <div className="px-4 pt-2 pb-6">
       <h1 className={`text-xl font-bold mb-4 ${isDark ? "text-white" : "text-black"}`}>Wallet</h1>
 
-      <div className="relative overflow-hidden bg-black rounded-2xl p-5 mb-4 border border-neutral-800 shadow-xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent pointer-events-none" />
-        <div className="relative">
+      <div className="balance-card-silver relative overflow-hidden rounded-2xl p-5 mb-4 border shadow-xl bg-black border-neutral-800">
+        <div className="relative z-[2]">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Total Balance</p>
             <button type="button" onClick={() => setIsHidden(!isHidden)} className="p-1 rounded-md hover:bg-white/10" aria-label="Toggle balance">
@@ -142,6 +141,8 @@ export function WalletPage({
               </span>
             ) : null}
           </div>
+
+          <p className="text-[10px] text-emerald-400/90 font-medium mb-2">Receive &amp; Paystack top-up — no KYC required</p>
 
           <div className="flex gap-2">
             <button

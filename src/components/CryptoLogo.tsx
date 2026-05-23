@@ -1,4 +1,7 @@
-const ICON_BASE = "https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/svg/color";
+import { useState } from "react";
+
+/** npm package has broader coverage than the old spothq master path */
+const ICON_BASE = "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color";
 
 const slugMap: Record<string, string> = {
   BTC: "btc",
@@ -16,16 +19,22 @@ const slugMap: Record<string, string> = {
   TRX: "trx",
   LINK: "link",
   DOT: "dot",
-  SHIB: "shib",
   ATOM: "atom",
   UNI: "uni",
   XLM: "xlm",
   BCH: "bch",
-  NEAR: "near",
+};
+
+/** Icons missing from cryptocurrency-icons — use CoinGecko CDN */
+const iconOverrides: Record<string, string> = {
+  SHIB: "https://coin-images.coingecko.com/coins/images/11939/small/shiba.png",
+  NEAR: "https://coin-images.coingecko.com/coins/images/10365/small/near.jpg",
 };
 
 export function cryptoIconUrl(symbol: string) {
-  const slug = slugMap[symbol.toUpperCase()] || symbol.toLowerCase();
+  const upper = symbol.toUpperCase();
+  if (iconOverrides[upper]) return iconOverrides[upper];
+  const slug = slugMap[upper] || symbol.toLowerCase();
   return `${ICON_BASE}/${slug}.svg`;
 }
 
@@ -37,32 +46,27 @@ interface CryptoLogoProps {
 
 export function CryptoLogo({ symbol, size = 40, className = "" }: CryptoLogoProps) {
   const initials = symbol.slice(0, 3).toUpperCase();
+  const [failed, setFailed] = useState(false);
+  const src = cryptoIconUrl(symbol);
 
   return (
     <div
       className={`rounded-full bg-white border border-slate-200/80 shadow-sm flex items-center justify-center overflow-hidden shrink-0 ${className}`}
       style={{ width: size, height: size }}
     >
-      <img
-        src={cryptoIconUrl(symbol)}
-        alt={`${symbol} logo`}
-        width={Math.round(size * 0.72)}
-        height={Math.round(size * 0.72)}
-        className="object-contain"
-        loading="lazy"
-        onError={(event) => {
-          const target = event.currentTarget;
-          target.style.display = "none";
-          const parent = target.parentElement;
-          if (parent && !parent.querySelector("[data-fallback]")) {
-            const fallback = document.createElement("span");
-            fallback.dataset.fallback = "true";
-            fallback.className = "text-[10px] font-bold text-slate-600";
-            fallback.textContent = initials;
-            parent.appendChild(fallback);
-          }
-        }}
-      />
+      {!failed ? (
+        <img
+          src={src}
+          alt={`${symbol} logo`}
+          width={Math.round(size * 0.72)}
+          height={Math.round(size * 0.72)}
+          className="object-contain"
+          loading="lazy"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <span className="text-[10px] font-bold text-slate-600">{initials}</span>
+      )}
     </div>
   );
 }

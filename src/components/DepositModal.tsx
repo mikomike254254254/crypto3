@@ -254,14 +254,15 @@ export function DepositModal({ wallet, wallets, onClose, onDeposit: _onDeposit, 
                 ))}
               </div>
 
-              <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 mb-5">
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 mb-5">
                 <div className="flex items-start gap-3 mb-3">
                   <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center">
                     <BadgeDollarSign className="w-5 h-5 text-white" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-black">Top up with Paystack</p>
-                    <p className="text-xs text-gray-500">Pay in USD — credited to your selected wallet in real time.</p>
+                    <p className="text-xs text-gray-600">Pay in USD — credited to your selected wallet in real time.</p>
+                    <p className="text-xs font-semibold text-emerald-700 mt-1">No KYC required to deposit or receive.</p>
                   </div>
                 </div>
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Wallet to credit</label>
