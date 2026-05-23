@@ -53,6 +53,7 @@ export async function fetchProfileFromBackend() {
       full_name?: string;
       avatar_gradient?: string;
       avatar_character?: string;
+      avatar_url?: string;
       onboarding_complete?: boolean;
     };
   }>("/api/profile");
@@ -74,6 +75,7 @@ export async function updateProfileInBackend(profile: {
   fullName?: string;
   avatarGradient?: string;
   avatarCharacter?: string;
+  avatarUrl?: string;
   kycStatus?: string;
   onboardingComplete?: boolean;
 }) {
@@ -83,6 +85,7 @@ export async function updateProfileInBackend(profile: {
       full_name?: string;
       avatar_gradient?: string;
       avatar_character?: string;
+      avatar_url?: string;
       onboarding_complete?: boolean;
     };
   }>("/api/profile", {

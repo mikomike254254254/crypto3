@@ -44,6 +44,8 @@ function AppContent() {
   const [kycStatus, setKycStatus] = useState<"not_started" | "pending" | "verified" | "rejected">("not_started");
   const [onboardingComplete, setOnboardingComplete] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [profileCharacter, setProfileCharacter] = useState<string | null>(null);
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
   const [selectedWallet, setSelectedWallet] = useState("usdt");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [notifications, setNotifications] = useState<WalletNotification[]>([]);
@@ -83,6 +85,8 @@ function AppContent() {
       .then(({ profile }) => {
         setKycStatus((profile.kyc_status as "not_started" | "pending" | "verified" | "rejected") || "not_started");
         setOnboardingComplete(Boolean(profile.onboarding_complete));
+        setProfileCharacter(profile.avatar_character || null);
+        setProfileAvatarUrl(profile.avatar_url || null);
       })
       .catch(() => {
         setOnboardingComplete(false);
@@ -222,8 +226,7 @@ function AppContent() {
       case 0:
         return (
           <>
-            <Header walletId={currentWallet.accountNumber || currentWallet.address} />
-            <div className="px-4 pb-4 pt-2">
+            <div className="px-4 pb-4 pt-1">
               <BalanceCard
                 wallet={currentWallet}
                 wallets={wallets}
@@ -261,7 +264,22 @@ function AppContent() {
       case 2:
         return <WalletPage wallets={wallets} totalValue={totalWalletValue} transactions={transactions} onDeposit={() => setShowDeposit(true)} onWithdraw={() => setShowWithdraw(true)} kycVerified={kycStatus === "verified"} />;
       case 3:
-        return <ProfilePage user={user} wallets={wallets} transactions={transactions} totalValue={totalWalletValue} kycStatus={kycStatus} onKYC={() => setShowKYC(true)} />;
+        return (
+          <ProfilePage
+            user={user}
+            wallets={wallets}
+            transactions={transactions}
+            totalValue={totalWalletValue}
+            kycStatus={kycStatus}
+            avatarCharacterId={profileCharacter}
+            avatarUrl={profileAvatarUrl}
+            onKYC={() => setShowKYC(true)}
+            onAvatarSaved={(characterId, url) => {
+              setProfileCharacter(characterId);
+              setProfileAvatarUrl(url);
+            }}
+          />
+        );
       case 4:
         return (
           <SettingsPage
@@ -309,6 +327,11 @@ function AppContent() {
         <div className={`min-h-screen overflow-y-auto pb-28 pt-1 transition-colors duration-300 scroll-smooth-y ${isDark ? 'bg-black' : 'bg-neutral-100'}`}>
           <div className="mx-auto w-full max-w-5xl">
             <NotificationBanner notifications={notifications} onDismiss={handleDismissNotification} />
+            <Header
+              walletId={currentWallet.accountNumber || currentWallet.address}
+              avatarCharacterId={profileCharacter}
+              avatarUrl={profileAvatarUrl}
+            />
             {renderPage()}
           </div>
         </div>

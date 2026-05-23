@@ -15,17 +15,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           kyc_status: normalizeKycStatus(userRow.kyc_status),
           onboarding_complete: Boolean(userRow.onboarding_complete),
           avatar_character: userRow.avatar_character,
+          avatar_url: userRow.avatar_url,
         },
       });
     }
 
     if (req.method === "POST") {
-      const { fullName, avatarGradient, avatarCharacter, kycStatus, onboardingComplete } = req.body ?? {};
+      const { fullName, avatarGradient, avatarCharacter, avatarUrl, kycStatus, onboardingComplete } = req.body ?? {};
       const patch: Record<string, string | boolean> = {};
 
       if (typeof fullName === "string") patch.full_name = fullName;
       if (typeof avatarGradient === "string") patch.avatar_gradient = avatarGradient;
       if (typeof avatarCharacter === "string") patch.avatar_character = avatarCharacter;
+      if (typeof avatarUrl === "string") patch.avatar_url = avatarUrl;
       if (typeof kycStatus === "string") patch.kyc_status = toDatabaseKycStatus(kycStatus);
       if (typeof onboardingComplete === "boolean") patch.onboarding_complete = onboardingComplete;
 
@@ -49,6 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           kyc_status: normalizeKycStatus(data.kyc_status),
           onboarding_complete: Boolean(data.onboarding_complete),
           avatar_character: data.avatar_character,
+          avatar_url: data.avatar_url,
         },
       });
     }

@@ -10,8 +10,8 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { WALLEX_CHARACTERS } from "../constants/characters";
-import { WallexAvatar } from "../components/WallexAvatar";
+import { CUSTOM_AVATAR_ID, getCharacter, WALLEX_CHARACTERS } from "../constants/characters";
+import { ProfileAvatarPicker } from "../components/ProfileAvatarPicker";
 import { updateProfileInBackend } from "../services/walletBackend";
 
 interface OnboardingPageProps {
@@ -40,6 +40,7 @@ export function OnboardingPage({ onComplete, initialEmail = "", skipAuth = false
   const [password, setPassword] = useState("");
   const [name, setName] = useState(user?.user_metadata?.full_name || "");
   const [selectedCharacter, setSelectedCharacter] = useState(WALLEX_CHARACTERS[0].id);
+  const [customAvatarUrl, setCustomAvatarUrl] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -52,11 +53,13 @@ export function OnboardingPage({ onComplete, initialEmail = "", skipAuth = false
   }, [user?.email]);
 
   const finishOnboarding = async () => {
-    const character = WALLEX_CHARACTERS.find((item) => item.id === selectedCharacter) || WALLEX_CHARACTERS[0];
+    const character = getCharacter(selectedCharacter);
+    const isCustom = selectedCharacter === CUSTOM_AVATAR_ID;
     await updateProfileInBackend({
       fullName: name.trim(),
-      avatarCharacter: character.id,
+      avatarCharacter: isCustom ? CUSTOM_AVATAR_ID : character.id,
       avatarGradient: character.gradient,
+      avatarUrl: isCustom ? customAvatarUrl.trim() : character.imageUrl,
       onboardingComplete: true,
     });
     onComplete();
@@ -199,34 +202,16 @@ export function OnboardingPage({ onComplete, initialEmail = "", skipAuth = false
             </button>
           )}
 
-          <h1 className="text-2xl font-bold text-slate-950">Choose your profile character</h1>
-          <p className="text-sm text-slate-500 mt-1 mb-6">
-            Six chibi crypto heroes — Bull Trader, Crypto Queen, Hacker, Astronaut, Street Ape, and Luxury Whale.
-          </p>
+          <h1 className="text-2xl font-bold text-slate-950">Choose your profile picture</h1>
+          <p className="text-sm text-slate-500 mt-1 mb-6">Pick one of six ape avatars or paste your own image URL.</p>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-            {WALLEX_CHARACTERS.map((character) => (
-              <button
-                key={character.id}
-                type="button"
-                onClick={() => setSelectedCharacter(character.id)}
-                className={`rounded-3xl p-3 flex flex-col items-center gap-2 transition-all border-2 bg-white ${
-                  selectedCharacter === character.id ? "border-slate-950 shadow-lg scale-[1.03]" : "border-slate-200 hover:border-slate-300"
-                }`}
-              >
-                <WallexAvatar
-                  character={character}
-                  size={72}
-                  selected={selectedCharacter === character.id}
-                  animate={selectedCharacter === character.id}
-                />
-                <div className="text-center">
-                  <p className="text-sm font-bold text-slate-950">{character.name}</p>
-                  <p className="text-[11px] text-slate-500">{character.tagline}</p>
-                </div>
-              </button>
-            ))}
-          </div>
+          <ProfileAvatarPicker
+            selectedId={selectedCharacter}
+            customUrl={customAvatarUrl}
+            onSelectId={setSelectedCharacter}
+            onCustomUrlChange={setCustomAvatarUrl}
+            avatarSize={72}
+          />
 
           <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Your name</label>
           <div className="relative mt-2 mb-6">

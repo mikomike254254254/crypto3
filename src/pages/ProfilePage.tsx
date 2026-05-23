@@ -1,11 +1,24 @@
-import { useState } from "react";
-import { 
-  User, Shield, Bell, CreditCard, FileText, ChevronRight, 
-  Check, AlertTriangle, UserCheck, ArrowRight, Copy
+import { useEffect, useState } from "react";
+import {
+  Shield,
+  Bell,
+  CreditCard,
+  FileText,
+  ChevronRight,
+  Check,
+  AlertTriangle,
+  UserCheck,
+  ArrowRight,
+  Copy,
+  Loader2,
 } from "lucide-react";
 import { User as SupabaseUser } from "@supabase/supabase-js";
 import { Transaction, Wallet } from "../types/crypto";
 import { useTheme } from "../context/ThemeContext";
+import { ProfileAvatar } from "../components/ProfileAvatar";
+import { ProfileAvatarPicker } from "../components/ProfileAvatarPicker";
+import { CUSTOM_AVATAR_ID, getCharacter, WALLEX_CHARACTERS } from "../constants/characters";
+import { updateProfileInBackend } from "../services/walletBackend";
 
 interface ProfilePageProps {
   onKYC?: () => void;
@@ -14,18 +27,39 @@ interface ProfilePageProps {
   totalValue?: number;
   kycStatus?: "not_started" | "pending" | "verified" | "rejected";
   user?: SupabaseUser | null;
+  avatarCharacterId?: string | null;
+  avatarUrl?: string | null;
+  onAvatarSaved?: (characterId: string, avatarUrl: string | null) => void;
 }
 
-export function ProfilePage({ onKYC, wallets = [], transactions = [], totalValue = 0, kycStatus = "not_started", user: authUser }: ProfilePageProps) {
+export function ProfilePage({
+  onKYC,
+  wallets = [],
+  transactions = [],
+  totalValue = 0,
+  kycStatus = "not_started",
+  user: authUser,
+  avatarCharacterId,
+  avatarUrl,
+  onAvatarSaved,
+}: ProfilePageProps) {
   const [copied, setCopied] = useState(false);
+  const [selectedCharacter, setSelectedCharacter] = useState(avatarCharacterId || WALLEX_CHARACTERS[0].id);
+  const [customAvatarUrl, setCustomAvatarUrl] = useState(avatarUrl || "");
+  const [avatarSaving, setAvatarSaving] = useState(false);
+  const [avatarNotice, setAvatarNotice] = useState("");
   const { isDark } = useTheme();
+
+  useEffect(() => {
+    setSelectedCharacter(avatarCharacterId || WALLEX_CHARACTERS[0].id);
+    setCustomAvatarUrl(avatarUrl || "");
+  }, [avatarCharacterId, avatarUrl]);
   const fullName = authUser?.user_metadata?.full_name || authUser?.email?.split("@")[0] || "Wallet User";
   const email = authUser?.email || "signed-in user";
   const primaryWallet = wallets[0]?.address || "No wallet yet";
   const totalTransactions = transactions.length;
   const totalVolume = transactions.reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
   const joinDate = authUser?.created_at ? new Date(authUser.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "Recently";
-  const initials = fullName.split(" ").map((part: string) => part[0]).join("").slice(0, 2).toUpperCase();
   const kycVerified = kycStatus === "verified";
   const kycPending = kycStatus === "pending";
 
@@ -42,6 +76,27 @@ export function ProfilePage({ onKYC, wallets = [], transactions = [], totalValue
     window.setTimeout(() => setCopied(false), 1800);
   };
 
+  const saveAvatar = async () => {
+    setAvatarSaving(true);
+    setAvatarNotice("");
+    try {
+      const character = getCharacter(selectedCharacter);
+      const isCustom = selectedCharacter === CUSTOM_AVATAR_ID;
+      const nextUrl = isCustom ? customAvatarUrl.trim() : character.imageUrl;
+      await updateProfileInBackend({
+        avatarCharacter: isCustom ? CUSTOM_AVATAR_ID : character.id,
+        avatarGradient: character.gradient,
+        avatarUrl: nextUrl,
+      });
+      onAvatarSaved?.(isCustom ? CUSTOM_AVATAR_ID : character.id, nextUrl);
+      setAvatarNotice("Profile picture saved.");
+    } catch (err) {
+      setAvatarNotice(err instanceof Error ? err.message : "Could not save picture");
+    } finally {
+      setAvatarSaving(false);
+    }
+  };
+
   return (
     <div className="px-4 pt-2 pb-6">
       {/* Header */}
@@ -50,9 +105,7 @@ export function ProfilePage({ onKYC, wallets = [], transactions = [], totalValue
       {/* Profile Card */}
       <div className={`rounded-2xl p-4 mb-4 shadow-sm ${isDark ? "bg-neutral-900 border border-neutral-800" : "bg-white"}`}>
         <div className="flex items-center gap-4 mb-4">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center">
-            <span className="text-white text-xl font-bold">{initials || "WU"}</span>
-          </div>
+          <ProfileAvatar characterId={avatarCharacterId} avatarUrl={avatarUrl} size={64} />
           <div className="flex-1">
             <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-black"}`}>{fullName}</h2>
             <p className={`text-xs ${isDark ? "text-neutral-400" : "text-gray-500"}`}>{email}</p>
@@ -86,6 +139,28 @@ export function ProfilePage({ onKYC, wallets = [], transactions = [], totalValue
             <p className={`text-lg font-bold ${isDark ? "text-white" : "text-black"}`}>{totalVolume.toLocaleString("en-US", { maximumFractionDigits: 2 })}</p>
           </div>
         </div>
+      </div>
+
+      <div className={`rounded-2xl p-4 mb-4 shadow-sm ${isDark ? "bg-neutral-900 border border-neutral-800" : "bg-white"}`}>
+        <h3 className={`text-sm font-bold mb-1 ${isDark ? "text-white" : "text-black"}`}>Profile picture</h3>
+        <p className={`text-xs mb-4 ${isDark ? "text-neutral-400" : "text-gray-500"}`}>Choose an avatar or paste an image URL.</p>
+        <ProfileAvatarPicker
+          selectedId={selectedCharacter}
+          customUrl={customAvatarUrl}
+          onSelectId={setSelectedCharacter}
+          onCustomUrlChange={setCustomAvatarUrl}
+          avatarSize={64}
+        />
+        {avatarNotice ? <p className="text-xs mt-3 text-emerald-600">{avatarNotice}</p> : null}
+        <button
+          type="button"
+          onClick={saveAvatar}
+          disabled={avatarSaving}
+          className="mt-4 w-full rounded-xl bg-black text-white py-3 text-sm font-semibold disabled:opacity-60 flex items-center justify-center gap-2"
+        >
+          {avatarSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+          Save profile picture
+        </button>
       </div>
 
       {/* KYC Status - Black/Grey gradient like Settings */}
