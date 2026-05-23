@@ -1,0 +1,17 @@
+{
+  "name": "Wallex Crypto Wallet",
+  "short_name": "Wallex",
+  "description": "Buy, receive, swap, and send crypto on wallex.online",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#7dd3fc",
+  "theme_color": "#0ea5e9",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

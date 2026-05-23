@@ -123,7 +123,7 @@ export function OnboardingPage({ onComplete, initialEmail = "", skipAuth = false
       {step === 0 && (
         <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center max-w-md mx-auto">
           <div className="w-20 h-20 rounded-3xl overflow-hidden shadow-xl mb-6 ring-4 ring-white">
-            <img src="/wallex-logo.jpg" alt="Wallex" className="w-full h-full object-cover" />
+            <img src="/logo.png" alt="Wallex" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-3xl font-bold text-slate-950">Welcome to Wallex</h1>
           <p className="text-sm text-slate-500 mt-2 mb-8">Log in or sign up, then choose your crypto profile character.</p>

@@ -190,7 +190,7 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           <a href="/" className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-black overflow-hidden ring-2 ring-slate-100">
-              <img src="/wallex-logo.jpg" alt="Wallex" className="w-full h-full object-cover" />
+              <img src="/logo.png" alt="Wallex" className="w-full h-full object-cover" />
             </div>
             <span className="text-xl font-bold tracking-tight text-slate-950">Wallex</span>
           </a>
@@ -377,7 +377,7 @@ export function LandingPage() {
           <div className="flex flex-col md:flex-row gap-8 items-start justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <img src="/wallex-logo.jpg" alt="" className="w-8 h-8 rounded-lg" />
+                <img src="/logo.png" alt="" className="w-8 h-8 rounded-lg" />
                 <span className="font-bold text-slate-950">Wallex</span>
               </div>
               <p className="text-sm text-black/60 mt-2 max-w-xs">Crypto wallet · wallex.online</p>

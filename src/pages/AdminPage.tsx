@@ -239,7 +239,7 @@ export function AdminPage() {
         <div className="w-full max-w-md bg-white/95 backdrop-blur rounded-3xl border border-slate-200 p-8 shadow-2xl">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 rounded-2xl bg-black overflow-hidden">
-              <img src="/wallex-logo.jpg" alt="Wallex" className="w-full h-full object-cover" />
+              <img src="/logo.png" alt="Wallex" className="w-full h-full object-cover" />
             </div>
             <div>
               <h1 className="text-2xl font-semibold text-slate-950">Wallex Admin</h1>
@@ -303,7 +303,7 @@ export function AdminPage() {
         <aside className="hidden md:flex w-72 bg-white border-r border-slate-200 p-6 flex-col">
           <div className="flex items-center gap-3 mb-10">
             <div className="w-11 h-11 bg-black rounded-2xl overflow-hidden">
-              <img src="/wallex-logo.jpg" alt="Wallex" className="w-full h-full object-cover" />
+              <img src="/logo.png" alt="Wallex" className="w-full h-full object-cover" />
             </div>
             <div>
               <h1 className="text-2xl font-semibold text-slate-950">Wallex</h1>

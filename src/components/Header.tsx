@@ -19,7 +19,7 @@ export function Header({ walletId = "Wallex account" }: HeaderProps) {
     <div className={`px-4 py-3 flex items-center justify-between transition-colors duration-300 ${isDark ? 'bg-black' : 'bg-neutral-100'}`}>
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center bg-black">
-          <img src="/wallex-logo.jpg" alt="Wallex" className="w-full h-full object-cover" />
+          <img src="/logo.png" alt="Wallex" className="w-full h-full object-cover" />
         </div>
         <div className="flex flex-col">
           <span className={`text-xs font-medium ${isDark ? 'text-neutral-400' : 'text-gray-500'}`}>
