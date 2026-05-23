@@ -66,6 +66,7 @@ export function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [accessDenied, setAccessDenied] = useState(false);
 
   const selectedUser = useMemo(
     () => data.users.find((item) => item.id === selectedUserId) || data.users[0],
@@ -86,12 +87,19 @@ export function AdminPage() {
 
     setLoading(true);
     setError("");
+    setAccessDenied(false);
     fetchAdminDashboard()
       .then((nextData) => {
         setData(nextData);
         setSelectedUserId((current) => current || nextData.users[0]?.id || "");
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Admin data could not be loaded"))
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : "Admin data could not be loaded";
+        if (message.toLowerCase().includes("denied")) {
+          setAccessDenied(true);
+        }
+        setError(message);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -178,9 +186,26 @@ export function AdminPage() {
           <p className="text-sm text-slate-500 mt-2">Sign in with an approved Google admin account to manage users, balances, KYC, and transactions.</p>
           <button
             onClick={() => signInWithGoogle("/mikeadmin")}
-            className="mt-6 w-full rounded-2xl bg-slate-950 text-white py-3 text-sm font-semibold hover:bg-slate-800"
+            className="mt-6 w-full rounded-2xl bg-slate-950 text-white py-3 text-sm font-semibold hover:bg-slate-800 flex items-center justify-center gap-2"
           >
+            <ShieldCheck className="w-4 h-4" />
             Continue with Google
+          </button>
+          <p className="mt-4 text-xs text-slate-400 text-center">Use mikomike420@gmail.com or another email listed in ADMIN_EMAILS.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-6">
+        <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200 p-8 shadow-sm text-center">
+          <ShieldCheck className="w-12 h-12 text-amber-500 mx-auto" />
+          <h1 className="text-2xl font-semibold text-slate-950 mt-4">Admin access denied</h1>
+          <p className="text-sm text-slate-500 mt-2">{user.email} is not on the admin allow list. Contact the project owner to add your email to ADMIN_EMAILS.</p>
+          <button onClick={() => signOut()} className="mt-6 w-full rounded-2xl border border-slate-200 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            Sign out
           </button>
         </div>
       </div>

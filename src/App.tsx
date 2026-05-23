@@ -195,7 +195,12 @@ function AppContent() {
               />
             </div>
             <div className="px-4 pb-5">
-              <QuickActions />
+              <QuickActions
+                onAction={(action) => {
+                  if (action === "buy") setShowDeposit(true);
+                  if (action === "sell") setShowWithdraw(true);
+                }}
+              />
             </div>
             <div className="px-4 pb-6">
               <Markets
