@@ -49,9 +49,11 @@ export function LandingAuthPanel() {
   return (
     <div id="signup" className="mt-8 rounded-[1.75rem] border border-slate-200/90 bg-white/95 backdrop-blur-sm p-6 shadow-[0_20px_50px_-12px_rgba(15,23,42,0.15)] max-w-md animate-fade-up ring-1 ring-white/80">
       <p className="text-xs font-semibold uppercase tracking-wider text-cyan-700 mb-1">Start here — wallex.online</p>
-      <h2 className="text-xl font-bold text-slate-950">{mode === "signup" ? "Create your wallet" : "Log in"}</h2>
+      <h2 className="text-xl font-bold text-slate-950">{mode === "signup" ? "Sign up free" : "Log in"}</h2>
       <p className="text-sm text-slate-500 mt-1 mb-4">
-        {mode === "signup" ? "Google sign-in or email with a 6-digit verification code." : "Google sign-in or email and password."}
+        {mode === "signup"
+          ? "Then choose your chibi crypto profile character (Bull, Queen, Hacker, Astronaut, Ape, or Whale)."
+          : "Welcome back — open your Wallex wallet."}
       </p>
 
       {error ? <p className="text-sm text-rose-600 mb-3">{error}</p> : null}

@@ -18,6 +18,8 @@ interface OnboardingPageProps {
   onComplete: () => void;
   initialEmail?: string;
   skipAuth?: boolean;
+  /** After landing login/signup — only pick profile character */
+  characterOnly?: boolean;
 }
 
 function GoogleIcon() {
@@ -31,9 +33,9 @@ function GoogleIcon() {
   );
 }
 
-export function OnboardingPage({ onComplete, initialEmail = "", skipAuth = false }: OnboardingPageProps) {
+export function OnboardingPage({ onComplete, initialEmail = "", skipAuth = false, characterOnly = false }: OnboardingPageProps) {
   const { user, signInWithGoogle, signUpWithEmail } = useAuth();
-  const [step, setStep] = useState(skipAuth ? 2 : 0);
+  const [step, setStep] = useState(characterOnly || skipAuth ? 2 : 0);
   const [email, setEmail] = useState(initialEmail || user?.email || "");
   const [password, setPassword] = useState("");
   const [name, setName] = useState(user?.user_metadata?.full_name || "");
@@ -124,7 +126,7 @@ export function OnboardingPage({ onComplete, initialEmail = "", skipAuth = false
             <img src="/wallex-logo.jpg" alt="Wallex" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-3xl font-bold text-slate-950">Welcome to Wallex</h1>
-          <p className="text-sm text-slate-500 mt-2 mb-8">Pick your crypto character and open your wallet on wallex.online</p>
+          <p className="text-sm text-slate-500 mt-2 mb-8">Log in or sign up, then choose your crypto profile character.</p>
 
           {error ? <div className="w-full mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div> : null}
 
@@ -197,8 +199,10 @@ export function OnboardingPage({ onComplete, initialEmail = "", skipAuth = false
             </button>
           )}
 
-          <h1 className="text-2xl font-bold text-slate-950">Choose your crypto character</h1>
-          <p className="text-sm text-slate-500 mt-1 mb-6">Pick your cartoon wallet hero — no emojis, just Wallex characters.</p>
+          <h1 className="text-2xl font-bold text-slate-950">Choose your profile character</h1>
+          <p className="text-sm text-slate-500 mt-1 mb-6">
+            Six chibi crypto heroes — Bull Trader, Crypto Queen, Hacker, Astronaut, Street Ape, and Luxury Whale.
+          </p>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
             {WALLEX_CHARACTERS.map((character) => (

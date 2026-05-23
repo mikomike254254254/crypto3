@@ -41,7 +41,8 @@ function AppContent() {
   const [showKYC, setShowKYC] = useState(false);
   const [showSwap, setShowSwap] = useState(false);
   const [kycStatus, setKycStatus] = useState<"not_started" | "pending" | "verified" | "rejected">("not_started");
-  const [onboardingComplete, setOnboardingComplete] = useState(true);
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState("usdt");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [notifications, setNotifications] = useState<WalletNotification[]>([]);
@@ -72,8 +73,12 @@ function AppContent() {
     }
 
     if (!user) {
+      setProfileLoading(false);
+      setOnboardingComplete(false);
       return;
     }
+
+    setProfileLoading(true);
 
     const savedStatus = localStorage.getItem(`kycStatus:${user.id}`);
     setKycStatus((savedStatus as "not_started" | "pending" | "verified" | "rejected") || "not_started");
@@ -87,7 +92,10 @@ function AppContent() {
         setKycStatus((profile.kyc_status as "not_started" | "pending" | "verified" | "rejected") || "not_started");
         setOnboardingComplete(Boolean(profile.onboarding_complete));
       })
-      .catch((error) => console.warn("Profile backend unavailable, using local profile state.", error));
+      .catch(() => {
+        setOnboardingComplete(false);
+      })
+      .finally(() => setProfileLoading(false));
 
     fetchTransactionsFromBackend()
       .then(({ transactions: backendTransactions }) => setTransactions(backendTransactions))
@@ -289,7 +297,7 @@ function AppContent() {
     }
   };
 
-  if (authLoading) {
+  if (authLoading || (user && profileLoading)) {
     return (
       <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-neutral-900' : 'bg-neutral-300'}`}>
         <div className="w-8 h-8 border-2 border-neutral-400 border-t-black rounded-full animate-spin" />
@@ -305,6 +313,7 @@ function AppContent() {
     return (
       <OnboardingPage
         skipAuth
+        characterOnly
         initialEmail={user.email || ""}
         onComplete={() => {
           setOnboardingComplete(true);

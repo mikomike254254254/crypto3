@@ -19,6 +19,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { CryptoLogo } from "../components/CryptoLogo";
 import { LandingAuthPanel } from "../components/LandingAuthPanel";
+import { LandingCharacterShowcase } from "../components/LandingCharacterShowcase";
 import { AnimatedNumber } from "../components/AnimatedNumber";
 
 type AuthMode = "signup" | "signin";
@@ -263,13 +264,14 @@ export function LandingPage() {
                 Production-ready crypto wallet · wallex.online
               </div>
               <h1 className="mt-6 text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-slate-950 leading-[1.05]">
-                Your crypto wallet.
-                <span className="block text-cyan-700">Built for real users.</span>
+                Log in or sign up.
+                <span className="block text-cyan-700">Pick your crypto character.</span>
               </h1>
               <p className="mt-6 max-w-xl text-lg text-slate-600 leading-relaxed">
-                Sign up with Google or email, buy with Paystack, receive instantly, and send wallet-to-wallet on Wallex — with KYC protection and live balances.
+                Start on Wallex with Google or email, choose a chibi profile hero, then buy, receive, swap, and send crypto on wallex.online.
               </p>
               <LandingAuthPanel />
+              <LandingCharacterShowcase />
 
               <div className="mt-10 flex flex-wrap gap-6 text-sm text-slate-500">
                 <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> 12+ assets</span>
