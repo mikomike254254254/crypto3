@@ -35,16 +35,21 @@ import {
 } from "./services/walletBackend";
 import { marketAssetsToCrypto, useLiveMarketPrices } from "./hooks/useLiveMarketPrices";
 import { AppLoadingSkeleton } from "./components/AppLoadingSkeleton";
+import { P2pModal } from "./components/P2pModal";
+import { DEFAULT_P2P_TRADER, type P2pTrader } from "./lib/p2pTrader";
 
 function AppContent() {
   const { isDark } = useTheme();
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, session, loading: authLoading, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
   const [activeMarketTab, setActiveMarketTab] = useState("watchlist");
   const [showDeposit, setShowDeposit] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [showKYC, setShowKYC] = useState(false);
   const [showSwap, setShowSwap] = useState(false);
+  const [showP2p, setShowP2p] = useState(false);
+  const [p2pTrader, setP2pTrader] = useState<P2pTrader>(DEFAULT_P2P_TRADER);
+  const [walletsReady, setWalletsReady] = useState(false);
   const [kycStatus, setKycStatus] = useState<"not_started" | "pending" | "verified" | "rejected">("not_started");
   const [onboardingComplete, setOnboardingComplete] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
@@ -65,26 +70,35 @@ function AppContent() {
   const { assets: liveAssets } = useLiveMarketPrices();
   const cryptoData: Crypto[] = marketAssetsToCrypto(liveAssets);
 
-  // Check auth and user data on mount
-  useEffect(() => {
-    if (authLoading) {
-      return;
+  const loadWalletData = async () => {
+    if (!session?.access_token) return;
+    try {
+      const { wallets: backendWallets, p2pTrader: trader } = await fetchWalletsFromBackend();
+      if (backendWallets.length) setWallets(backendWallets);
+      setP2pTrader(trader);
+      setWalletsReady(true);
+    } catch (error) {
+      console.warn("Wallet backend unavailable.", error);
     }
+  };
 
-    if (!user) {
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!user || !session) {
       setProfileLoading(false);
       setOnboardingComplete(false);
+      setWalletsReady(false);
       return;
     }
 
     setProfileLoading(true);
+    setWalletsReady(false);
 
     const savedStatus = localStorage.getItem(`kycStatus:${user.id}`);
     setKycStatus((savedStatus as "not_started" | "pending" | "verified" | "rejected") || "not_started");
 
-    fetchWalletsFromBackend()
-      .then(({ wallets: backendWallets }) => setWallets(backendWallets))
-      .catch((error) => console.warn("Wallet backend unavailable, using local wallet state.", error));
+    void loadWalletData().finally(() => setWalletsReady(true));
 
     fetchProfileFromBackend()
       .then(({ profile }) => {
@@ -109,26 +123,30 @@ function AppContent() {
       .then(({ transactions: backendTransactions }) => setTransactions(backendTransactions))
       .catch((error) => console.warn("Transaction backend unavailable, using local transaction state.", error));
 
-    fetchNotificationsFromBackend()
-      .then(({ notifications: items }) => setNotifications(items))
-      .catch((error) => console.warn("Notifications unavailable.", error));
-  }, [authLoading, user]);
-
-  useEffect(() => {
-    if (!user || !onboardingComplete) return;
-
-    const interval = window.setInterval(() => {
+    if (session?.access_token) {
       fetchNotificationsFromBackend()
         .then(({ notifications: items }) => setNotifications(items))
         .catch(() => undefined);
+    }
+  }, [authLoading, user, session?.access_token]);
 
+  useEffect(() => {
+    if (!user || !onboardingComplete || !session?.access_token) return;
+
+    const refresh = () => {
+      if (document.visibilityState !== "visible") return;
+      fetchNotificationsFromBackend()
+        .then(({ notifications: items }) => setNotifications(items))
+        .catch(() => undefined);
       fetchTransactionsFromBackend()
         .then(({ transactions: backendTransactions }) => setTransactions(backendTransactions))
         .catch(() => undefined);
-    }, 20000);
+      loadWalletData().catch(() => undefined);
+    };
 
+    const interval = window.setInterval(refresh, 60000);
     return () => window.clearInterval(interval);
-  }, [onboardingComplete, user]);
+  }, [onboardingComplete, user, session?.access_token]);
 
   const currentWallet = wallets.find(w => w.id === selectedWallet) || wallets[0];
   const priceBySymbol = Object.fromEntries(cryptoData.map((crypto) => [crypto.symbol, crypto.price]));
@@ -230,7 +248,7 @@ function AppContent() {
 
   const refreshWalletData = async () => {
     await Promise.all([
-      fetchWalletsFromBackend().then(({ wallets: w }) => setWallets(w)).catch(() => undefined),
+      loadWalletData(),
       fetchTransactionsFromBackend().then(({ transactions: t }) => setTransactions(t)).catch(() => undefined),
       fetchNotificationsFromBackend().then(({ notifications: n }) => setNotifications(n)).catch(() => undefined),
     ]);
@@ -286,6 +304,7 @@ function AppContent() {
                     setShowWithdraw(true);
                   }
                   if (action === "swap") setShowSwap(true);
+                  if (action === "p2p") setShowP2p(true);
                 }}
               />
             </div>
@@ -348,7 +367,7 @@ function AppContent() {
     }
   };
 
-  if (authLoading || (user && profileLoading)) {
+  if (authLoading || (user && (profileLoading || !walletsReady))) {
     return <AppLoadingSkeleton />;
   }
 
@@ -390,7 +409,7 @@ function AppContent() {
               setProfileAvatarUrl(profile.avatar_url || null);
             })
             .catch(() => undefined);
-          fetchWalletsFromBackend().then(({ wallets: backendWallets }) => setWallets(backendWallets)).catch(() => undefined);
+          loadWalletData().catch(() => undefined);
           const pendingRef = localStorage.getItem("wallex.pendingReferral");
           if (pendingRef) {
             applyReferralCode(pendingRef)
@@ -485,6 +504,19 @@ function AppContent() {
               setWallets(nextWallets);
               fetchTransactionsFromBackend()
                 .then(({ transactions: backendTransactions }) => setTransactions(backendTransactions))
+                .catch(() => undefined);
+            }}
+          />
+        )}
+        {showP2p && (
+          <P2pModal
+            trader={p2pTrader}
+            wallets={wallets}
+            onClose={() => setShowP2p(false)}
+            onOrdered={() => {
+              loadWalletData();
+              fetchTransactionsFromBackend()
+                .then(({ transactions: t }) => setTransactions(t))
                 .catch(() => undefined);
             }}
           />

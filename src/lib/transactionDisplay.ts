@@ -24,6 +24,15 @@ export function getTransactionDisplay(tx: Transaction): TxDisplay {
       isCredit: true,
     };
   }
+  if (note.includes("P2P")) {
+    const isBuy = /\bdeposit\b/i.test(note) || /\bbuy\b/i.test(note);
+    return {
+      title: isBuy ? "P2P buy (Jeff)" : "P2P sell (Jeff)",
+      subtitle: note.replace(/^P2P\s+/i, ""),
+      sign: isBuy ? "+" : "-",
+      isCredit: isBuy,
+    };
+  }
   if (note.startsWith("Swap ") || tx.type === "swap") {
     const isOut = tx.type === "send" || tx.type === "withdraw";
     return {

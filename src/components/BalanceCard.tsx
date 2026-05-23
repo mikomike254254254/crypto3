@@ -99,13 +99,13 @@ export function BalanceCard({ wallet, wallets, totalValue, displayCurrency = "US
         </p>
 
         <div className="flex items-center gap-2">
-          <button onClick={onWithdraw} className={`flex-1 rounded-xl py-2.5 flex items-center justify-center gap-1.5 transition-all border-2 hover:scale-[1.02] active:scale-[0.98] ${isDark ? 'bg-neutral-800 text-white border-neutral-700 hover:border-neutral-500' : 'bg-white text-black border-neutral-200 hover:border-neutral-300'}`}>
+          <button onClick={onWithdraw} className={`flex-1 rounded-full py-2.5 flex items-center justify-center gap-1.5 transition-all border-2 hover:scale-[1.02] active:scale-[0.98] ${isDark ? 'bg-neutral-800 text-white border-neutral-700 hover:border-neutral-500' : 'bg-white text-black border-neutral-200 hover:border-neutral-300'}`}>
             <ArrowUpRight className="w-3.5 h-3.5" />
             <span className="text-xs font-semibold">Send</span>
           </button>
           <button
             onClick={onDeposit}
-            className={`flex-1 rounded-lg py-2.5 flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02] active:scale-[0.98] border-2 ${
+            className={`flex-1 rounded-full py-2.5 flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02] active:scale-[0.98] border-2 ${
               isDark
                 ? "bg-transparent text-white border-white hover:bg-white/10"
                 : "bg-transparent text-white border-white hover:bg-white/10"

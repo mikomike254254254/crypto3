@@ -1,22 +1,33 @@
 import { supabase } from "../lib/supabase";
+import type { P2pTrader } from "../lib/p2pTrader";
+import { parseP2pTrader } from "../lib/p2pTrader";
 import { Transaction, Wallet } from "../types/crypto";
 
-async function authHeaders(): Promise<Record<string, string>> {
+async function authHeaders(forceRefresh = false): Promise<Record<string, string>> {
+  if (forceRefresh) {
+    await supabase.auth.refreshSession().catch(() => undefined);
+  }
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
-
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const headers = new Headers(init.headers);
-  headers.set("Content-Type", "application/json");
-  Object.entries(await authHeaders()).forEach(([key, value]) => headers.set(key, value));
+async function apiRequest<T>(path: string, init: RequestInit = {}, allowEmptyOn401 = false): Promise<T> {
+  const run = async (refresh: boolean) => {
+    const headers = new Headers(init.headers);
+    headers.set("Content-Type", "application/json");
+    Object.entries(await authHeaders(refresh)).forEach(([key, value]) => headers.set(key, value));
+    return fetch(path, { ...init, headers });
+  };
 
-  const response = await fetch(path, {
-    ...init,
-    headers,
-  });
+  let response = await run(false);
+  if (response.status === 401) {
+    response = await run(true);
+  }
+
+  if (response.status === 401 && allowEmptyOn401) {
+    return {} as T;
+  }
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
@@ -26,12 +37,48 @@ async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   return response.json();
 }
 
+export type WalletNotification = {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  amount?: number;
+  token?: string;
+  fromWallet?: string;
+  readAt?: string | null;
+  createdAt: string;
+};
+
 export async function fetchWalletsFromBackend() {
-  return apiRequest<{ wallets: Wallet[] }>("/api/wallets");
+  const data = await apiRequest<{ wallets: Wallet[]; p2pTrader?: P2pTrader }>("/api/wallets", {}, true);
+  return {
+    wallets: data.wallets || [],
+    p2pTrader: parseP2pTrader(data.p2pTrader),
+  };
 }
 
 export async function fetchTransactionsFromBackend() {
-  return apiRequest<{ transactions: Transaction[] }>("/api/transactions");
+  const data = await apiRequest<{ transactions: Transaction[] }>("/api/transactions", {}, true);
+  return { transactions: data.transactions || [] };
+}
+
+export async function fetchNotificationsFromBackend() {
+  const data = await apiRequest<{ notifications: WalletNotification[] }>("/api/notifications", {}, true);
+  return { notifications: data.notifications || [] };
+}
+
+export async function createP2pOrder(amount: number, side: "buy" | "sell", traderName: string) {
+  const type = side === "buy" ? "deposit" : "withdraw";
+  return apiRequest<{ wallets: Wallet[] }>("/api/transactions", {
+    method: "POST",
+    body: JSON.stringify({
+      type,
+      walletId: "usdt",
+      amount,
+      address: `P2P:${traderName}`,
+      network: "P2P",
+    }),
+  });
 }
 
 export async function createWalletTransaction(
@@ -59,18 +106,6 @@ export async function fetchProfileFromBackend() {
   }>("/api/profile");
 }
 
-export type WalletNotification = {
-  id: string;
-  type: string;
-  title: string;
-  body: string;
-  amount?: number;
-  token?: string;
-  fromWallet?: string;
-  readAt?: string | null;
-  createdAt: string;
-};
-
 export async function updateProfileInBackend(profile: {
   fullName?: string;
   avatarGradient?: string;
@@ -92,10 +127,6 @@ export async function updateProfileInBackend(profile: {
     method: "POST",
     body: JSON.stringify(profile),
   });
-}
-
-export async function fetchNotificationsFromBackend() {
-  return apiRequest<{ notifications: WalletNotification[] }>("/api/notifications");
 }
 
 export async function dismissNotification(id: string) {

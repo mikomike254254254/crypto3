@@ -138,11 +138,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ? "external"
       : userRow.wallet;
 
-    const status = transactionType === "withdraw" && !recipient ? "pending" : "completed";
-    const note = [
-      transactionType === "deposit" ? "External incoming deposit" : recipient ? "Wallex wallet transfer" : "External withdrawal request",
-      network ? `Network: ${network}` : "",
-    ].filter(Boolean).join(" - ");
+    const networkStr = String(network || "");
+    const isP2P = networkStr.toUpperCase() === "P2P" || String(address || "").toUpperCase().startsWith("P2P:");
+    const p2pTrader = isP2P ? String(address || "Jeff").replace(/^P2P:/i, "") : "";
+
+    let status = transactionType === "withdraw" && !recipient ? "pending" : "completed";
+    if (isP2P) status = "pending";
+
+    const note = isP2P
+      ? `P2P ${transactionType} — Trader ${p2pTrader || "Jeff"} — ${parsedAmount} ${token}`
+      : [
+          transactionType === "deposit" ? "External incoming deposit" : recipient ? "Wallex wallet transfer" : "External withdrawal request",
+          networkStr ? `Network: ${networkStr}` : "",
+        ]
+          .filter(Boolean)
+          .join(" - ");
 
     const { error: txError } = await supabase.from("transactions").insert({
       from_wallet: fromWallet,

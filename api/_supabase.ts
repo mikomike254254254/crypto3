@@ -225,6 +225,26 @@ export async function readTokenBalances(wallet: string) {
   return balancesFromTransactions(transactions || [], wallet);
 }
 
+export function getP2pTraderConfig() {
+  const rate = Number(process.env.P2P_TRADER_RATE || "15.9");
+  const currency = process.env.P2P_TRADER_RATE_CURRENCY || "CAD";
+  const symbol = currency === "CAD" ? "C$" : currency === "USD" ? "$" : `${currency} `;
+  return {
+    id: "jeff",
+    name: process.env.P2P_TRADER_NAME || "Jeff",
+    online: process.env.P2P_TRADER_ONLINE !== "false",
+    verified: true,
+    countryCode: "KE",
+    countryName: "Kenya",
+    rate,
+    rateCurrency: currency,
+    rateDisplay: `${symbol}${rate.toFixed(2)}`,
+    kesPerUsdt: Number(process.env.P2P_KES_PER_USDT || "129.5"),
+    completedTrades: Number(process.env.P2P_TRADER_TRADES || "1248"),
+    responseMins: Number(process.env.P2P_TRADER_RESPONSE_MINS || "3"),
+  };
+}
+
 export async function buildClientWallets(userRow: any) {
   const balances = await readTokenBalances(userRow.wallet);
 

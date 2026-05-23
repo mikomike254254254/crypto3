@@ -16,13 +16,23 @@ function formatMarketPrice(price: number) {
   return `$${price.toFixed(4)}`;
 }
 
+function ChangeBadge({ change, className = "" }: { change: number; className?: string }) {
+  const isUp = change >= 0;
+  return (
+    <div className={`flex items-center gap-0.5 font-bold ${isUp ? "text-emerald-500" : "text-red-500"} ${className}`}>
+      {isUp ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
+      <span>
+        {isUp ? "+" : ""}
+        {change.toFixed(2)}%
+      </span>
+    </div>
+  );
+}
+
 function CryptoRow({ crypto }: { crypto: Crypto }) {
   const [isStarred, setIsStarred] = useState(false);
   const { isDark } = useTheme();
   const change = crypto.change ?? crypto.change24h ?? 0;
-  const isUp = crypto.isUp ?? change >= 0;
-
-  const formatPrice = (price: number) => formatMarketPrice(price);
 
   return (
     <div className={`flex items-center gap-2 py-2.5 border-b last:border-0 ${isDark ? "border-neutral-800" : "border-neutral-100"}`}>
@@ -45,15 +55,47 @@ function CryptoRow({ crypto }: { crypto: Crypto }) {
         </div>
       </div>
       <div className="text-right min-w-[72px] flex-shrink-0">
-        <p className={`font-semibold text-xs ${isDark ? "text-white" : "text-black"}`}>{formatPrice(crypto.price)}</p>
-        <div className={`flex items-center justify-end gap-0.5 mt-0.5 ${isUp ? "text-green-500" : "text-red-500"}`}>
-          {isUp ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
-          <span className="text-[10px] font-bold">
-            {isUp ? "+" : ""}
-            {change.toFixed(2)}%
-          </span>
+        <p className={`font-semibold text-xs ${isDark ? "text-white" : "text-black"}`}>{formatMarketPrice(crypto.price)}</p>
+        <ChangeBadge change={change} className="justify-end mt-0.5 text-[10px]" />
+      </div>
+    </div>
+  );
+}
+
+function WatchBubble({ crypto, variant }: { crypto: Crypto; variant: "pill" | "card" }) {
+  const { isDark } = useTheme();
+  const change = crypto.change ?? 0;
+  const isUp = change >= 0;
+
+  if (variant === "pill") {
+    return (
+      <div
+        className={`watch-bubble-3d flex-shrink-0 flex items-center gap-2 rounded-full pl-1 pr-3 py-1.5 border ${
+          isDark ? "bg-neutral-900 border-neutral-700" : "bg-white border-slate-200"
+        }`}
+      >
+        <CryptoLogo symbol={crypto.symbol} size={28} />
+        <div className="min-w-0">
+          <p className={`text-xs font-bold ${isDark ? "text-white" : "text-black"}`}>{crypto.symbol}</p>
+          <ChangeBadge change={change} className="text-[10px]" />
         </div>
       </div>
+    );
+  }
+
+  return (
+    <div
+      className={`watch-bubble-3d flex flex-col items-center justify-center gap-1.5 rounded-2xl p-3 min-w-[88px] border ${
+        isDark ? "bg-neutral-900 border-neutral-700" : "bg-white border-slate-200"
+      }`}
+    >
+      <CryptoLogo symbol={crypto.symbol} size={36} />
+      <p className={`text-xs font-bold ${isDark ? "text-white" : "text-black"}`}>{crypto.symbol}</p>
+      <p className={`text-[10px] font-semibold ${isDark ? "text-neutral-400" : "text-gray-500"}`}>{formatMarketPrice(crypto.price)}</p>
+      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isUp ? "bg-emerald-500/15 text-emerald-500" : "bg-red-500/15 text-red-500"}`}>
+        {isUp ? "+" : ""}
+        {change.toFixed(1)}%
+      </span>
     </div>
   );
 }
@@ -68,6 +110,7 @@ export function Markets({ cryptoData, activeTab, onTabChange }: MarketsProps) {
   ];
 
   const watchlistCoins = cryptoData.slice(0, 8);
+  const marqueeCoins = [...watchlistCoins, ...watchlistCoins];
 
   return (
     <div>
@@ -81,7 +124,7 @@ export function Markets({ cryptoData, activeTab, onTabChange }: MarketsProps) {
             key={tab.id}
             type="button"
             onClick={() => onTabChange(tab.id)}
-            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-semibold whitespace-nowrap border ${
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-semibold whitespace-nowrap border transition-all duration-200 ${
               activeTab === tab.id
                 ? isDark
                   ? "bg-white text-black border-white"
@@ -98,25 +141,20 @@ export function Markets({ cryptoData, activeTab, onTabChange }: MarketsProps) {
       </div>
 
       <p className={`text-[10px] font-semibold uppercase tracking-wide mb-2 ${isDark ? "text-neutral-500" : "text-gray-500"}`}>
-        Watchlist
+        Watchlist · live
       </p>
-      <div className="flex gap-2 overflow-x-auto pb-3 mb-3 scrollbar-hide">
+
+      <div className="overflow-hidden mb-3 rounded-xl">
+        <div className="marquee-track gap-2 py-1">
+          {marqueeCoins.map((crypto, i) => (
+            <WatchBubble key={`${crypto.id}-marquee-${i}`} crypto={crypto} variant="pill" />
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-4 gap-2 mb-4 sm:grid-cols-4">
         {watchlistCoins.map((crypto) => (
-          <div
-            key={crypto.id}
-            className={`watch-bubble-3d flex-shrink-0 flex items-center gap-2 rounded-full pl-1 pr-3 py-1.5 border ${
-              isDark ? "bg-neutral-900 border-neutral-700" : "bg-white border-slate-200"
-            }`}
-          >
-            <CryptoLogo symbol={crypto.symbol} size={28} />
-            <div className="min-w-0">
-              <p className={`text-xs font-bold ${isDark ? "text-white" : "text-black"}`}>{crypto.symbol}</p>
-              <p className={`text-[10px] ${crypto.isUp ? "text-green-500" : "text-red-500"}`}>
-                {(crypto.change ?? 0) >= 0 ? "+" : ""}
-                {(crypto.change ?? 0).toFixed(1)}%
-              </p>
-            </div>
-          </div>
+          <WatchBubble key={`${crypto.id}-card`} crypto={crypto} variant="card" />
         ))}
       </div>
 
