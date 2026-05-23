@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { showDeviceNotification, ensureNotificationPermission } from "./lib/deviceNotifications";
 import { Header } from "./components/Header";
 import { BalanceCard } from "./components/BalanceCard";
 import { QuickActions } from "./components/QuickActions";
@@ -70,6 +71,26 @@ function AppContent() {
 
   const { assets: liveAssets } = useLiveMarketPrices();
   const cryptoData: Crypto[] = marketAssetsToCrypto(liveAssets);
+  const prevUnreadRef = useRef(0);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const settings = loadUserSettings(user.id);
+    if (settings.notifications) {
+      ensureNotificationPermission().catch(() => undefined);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    const unread = notifications.filter((n) => !n.readAt).length;
+    if (unread > prevUnreadRef.current && notifications.length > 0) {
+      const latest = notifications.find((n) => !n.readAt);
+      if (latest && user?.id && loadUserSettings(user.id).notifications) {
+        showDeviceNotification(latest.title, latest.body, latest.id);
+      }
+    }
+    prevUnreadRef.current = unread;
+  }, [notifications, user?.id]);
 
   const loadWalletData = async () => {
     if (!session?.access_token) return;

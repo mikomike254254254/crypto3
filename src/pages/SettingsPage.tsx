@@ -4,8 +4,10 @@ import {
   Bell,
   Check,
   ChevronRight,
+  Copy,
   CreditCard,
   DollarSign,
+  Link2,
   Eye,
   FileText,
   Globe,
@@ -26,6 +28,7 @@ import { supabase } from "../lib/supabase";
 import { loadUserSettings, saveUserSettings } from "../lib/userSettings";
 import { updateProfileInBackend, fetchReferralInfo, applyReferralCode } from "../services/walletBackend";
 import { canInstallPwa, isPwaInstalled, promptPwaInstall } from "../lib/pwaInstall";
+import { canUseDeviceNotifications, promptNotificationPermission } from "../lib/deviceNotifications";
 import { SUPPORT_EMAIL, supportMailto } from "../constants/support";
 
 interface SettingsPageProps {
@@ -194,14 +197,32 @@ export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, kycVerif
   const notificationSettings = [
     {
       icon: Bell,
-      label: "Push Notifications",
-      description: "General alerts",
+      label: "In-app notifications",
+      description: "Alerts inside Wallex",
       toggle: true,
       value: notifications,
       onChange: () => {
         const next = !notifications;
         setNotifications(next);
         persist({ notifications: next });
+      },
+    },
+    {
+      icon: Smartphone,
+      label: "Phone alerts",
+      description: canUseDeviceNotifications() ? "Banner on your device when signed in" : "Not supported in this browser",
+      toggle: false,
+      onClick: async () => {
+        if (!canUseDeviceNotifications()) {
+          setSettingsError("This browser does not support phone notifications.");
+          return;
+        }
+        try {
+          const ok = await promptNotificationPermission();
+          setSettingsNotice(ok ? "Phone alerts enabled." : "Permission denied — enable in browser settings.");
+        } catch (err) {
+          setSettingsError(err instanceof Error ? err.message : "Could not enable alerts.");
+        }
       },
     },
     {
@@ -286,9 +307,9 @@ export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, kycVerif
         >
           <div className={`w-5 h-5 rounded-full bg-white shadow-md absolute top-0.5 transition-all ${item.value ? "right-0.5" : "left-0.5"}`} />
         </button>
-      ) : (
+      ) : item.onClick ? (
         <ChevronRight className={`w-4 h-4 flex-shrink-0 ${isDark ? "text-neutral-500" : "text-gray-400"}`} />
-      )}
+      ) : null}
     </div>
   );
 
@@ -308,84 +329,113 @@ export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, kycVerif
       {settingsNotice ? <div className={`mb-3 rounded-lg border px-4 py-2 text-sm ${isDark ? "border-neutral-700 bg-neutral-900 text-neutral-200" : "border-neutral-200 bg-neutral-100 text-neutral-800"}`}>{settingsNotice}</div> : null}
       {settingsError ? <div className="mb-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">{settingsError}</div> : null}
 
-      <button
-        onClick={() => setShowCurrencyModal(true)}
-        className="w-full text-left bg-gradient-to-br from-black via-neutral-800 to-neutral-600 rounded-2xl p-4 mb-4"
-        style={{ boxShadow: "0 4px 14px rgba(0, 0, 0, 0.3)" }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-white">Currency</p>
-              <p className="text-xs text-white/70">Display amounts in your preferred currency</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-white bg-white/20 px-3 py-1 rounded-full">{selectedCurrency}</span>
-            <ChevronRight className="w-4 h-4 text-white/60" />
-          </div>
-        </div>
-      </button>
-
       <div className="mb-4">
-        <h3 className={`text-xs font-semibold uppercase mb-2 px-1 ${isDark ? "text-neutral-500" : "text-gray-500"}`}>Referral</h3>
-        <div className={`rounded-lg border p-4 space-y-3 ${isDark ? "bg-neutral-900 border-neutral-800" : "bg-white border-neutral-200"}`}>
-          <div>
-            <p className={`text-xs ${isDark ? "text-neutral-400" : "text-gray-500"}`}>Your code</p>
-            <div className="flex gap-2 mt-1">
-              <code className={`flex-1 rounded-md px-3 py-2 text-sm font-mono ${isDark ? "bg-neutral-950 text-white" : "bg-neutral-100 text-black"}`}>
-                {referralCode || "—"}
-              </code>
-              <button
-                type="button"
-                onClick={() => {
-                  if (referralLink) {
-                    navigator.clipboard.writeText(referralLink);
-                    setSettingsNotice("Referral link copied.");
-                  }
-                }}
-                className="rounded-md bg-black text-white px-3 py-2 text-xs font-semibold"
-              >
-                Copy link
-              </button>
+        <h3 className={`text-xs font-semibold uppercase mb-2 px-1 ${isDark ? "text-neutral-500" : "text-gray-500"}`}>Invite friends</h3>
+        <div className={`rounded-lg border overflow-hidden ${isDark ? "bg-neutral-900 border-neutral-800" : "bg-white border-neutral-200"}`}>
+          <div className={`flex items-center gap-3 p-4 border-b ${isDark ? "border-neutral-800" : "border-neutral-100"}`}>
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center ${isDark ? "bg-neutral-800" : "bg-neutral-100"}`}>
+              <Link2 className={`w-4 h-4 ${isDark ? "text-white" : "text-black"}`} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={`text-sm font-medium ${isDark ? "text-white" : "text-black"}`}>Your referral link</p>
+              <p className={`text-xs ${isDark ? "text-neutral-400" : "text-gray-500"}`}>Share Wallex — friends sign up with your code</p>
             </div>
           </div>
-          {referralApplied ? (
-            <p className={`text-xs ${isDark ? "text-neutral-400" : "text-gray-600"}`}>Referred by: {referralApplied}</p>
-          ) : (
+          <div className="p-4 space-y-3">
             <div>
-              <p className={`text-xs mb-1 ${isDark ? "text-neutral-400" : "text-gray-500"}`}>Have a friend&apos;s code?</p>
+              <p className={`text-[10px] uppercase font-semibold mb-1 ${isDark ? "text-neutral-500" : "text-gray-500"}`}>Code</p>
               <div className="flex gap-2">
-                <input
-                  value={referralInput}
-                  onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
-                  placeholder="WLX..."
-                  className={`flex-1 rounded-md border px-3 py-2 text-sm ${isDark ? "bg-neutral-950 border-neutral-700 text-white" : "bg-white border-neutral-200"}`}
-                />
+                <code className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-mono truncate ${isDark ? "bg-neutral-950 text-white border border-neutral-800" : "bg-neutral-50 text-black border border-neutral-200"}`}>
+                  {referralCode || "—"}
+                </code>
                 <button
                   type="button"
-                  onClick={async () => {
-                    setSettingsError("");
-                    try {
-                      const res = await applyReferralCode(referralInput);
-                      setReferralApplied(res.referredBy);
-                      setSettingsNotice(res.message);
-                    } catch (err) {
-                      setSettingsError(err instanceof Error ? err.message : "Invalid code");
+                  onClick={() => {
+                    if (referralCode) {
+                      navigator.clipboard.writeText(referralCode);
+                      setSettingsNotice("Referral code copied.");
                     }
                   }}
-                  className="rounded-md bg-black text-white px-3 py-2 text-xs font-semibold"
+                  className="rounded-lg bg-black text-white px-3 py-2 text-xs font-semibold shrink-0"
                 >
-                  Apply
+                  <Copy className="w-4 h-4" />
                 </button>
               </div>
             </div>
-          )}
+            <div>
+              <p className={`text-[10px] uppercase font-semibold mb-1 ${isDark ? "text-neutral-500" : "text-gray-500"}`}>Link</p>
+              <div className="flex gap-2">
+                <input
+                  readOnly
+                  value={referralLink}
+                  className={`flex-1 rounded-lg px-3 py-2 text-xs truncate ${isDark ? "bg-neutral-950 border border-neutral-700 text-neutral-300" : "bg-neutral-50 border border-neutral-200 text-gray-700"}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (referralLink) {
+                      navigator.clipboard.writeText(referralLink);
+                      setSettingsNotice("Referral link copied.");
+                    }
+                  }}
+                  className="rounded-lg bg-black text-white px-3 py-2 text-xs font-semibold shrink-0"
+                >
+                  Copy link
+                </button>
+              </div>
+            </div>
+            {referralApplied ? (
+              <p className={`text-xs rounded-lg px-3 py-2 ${isDark ? "bg-neutral-800 text-neutral-300" : "bg-neutral-100 text-gray-700"}`}>
+                Referred by: <strong>{referralApplied}</strong>
+              </p>
+            ) : (
+              <div>
+                <p className={`text-[10px] uppercase font-semibold mb-1 ${isDark ? "text-neutral-500" : "text-gray-500"}`}>Enter a friend&apos;s code</p>
+                <div className="flex gap-2">
+                  <input
+                    value={referralInput}
+                    onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
+                    placeholder="WLX..."
+                    className={`flex-1 rounded-lg border px-3 py-2.5 text-sm ${isDark ? "bg-neutral-950 border-neutral-700 text-white" : "bg-white border-neutral-200"}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setSettingsError("");
+                      try {
+                        const res = await applyReferralCode(referralInput);
+                        setReferralApplied(res.referredBy);
+                        setSettingsNotice(res.message);
+                        setReferralInput("");
+                      } catch (err) {
+                        setSettingsError(err instanceof Error ? err.message : "Invalid code");
+                      }
+                    }}
+                    className="rounded-lg bg-black text-white px-4 py-2.5 text-xs font-semibold shrink-0"
+                  >
+                    Apply
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={() => setShowCurrencyModal(true)}
+        className={`w-full text-left rounded-lg border p-4 mb-4 flex items-center gap-3 transition-colors ${isDark ? "bg-neutral-900 border-neutral-800 hover:bg-neutral-800" : "bg-white border-neutral-200 hover:bg-neutral-50"}`}
+      >
+        <div className={`w-9 h-9 rounded-full flex items-center justify-center ${isDark ? "bg-neutral-800" : "bg-neutral-100"}`}>
+          <DollarSign className={`w-4 h-4 ${isDark ? "text-white" : "text-black"}`} />
+        </div>
+        <div className="flex-1">
+          <p className={`text-sm font-medium ${isDark ? "text-white" : "text-black"}`}>Currency</p>
+          <p className={`text-xs ${isDark ? "text-neutral-400" : "text-gray-500"}`}>Display: {selectedCurrency}</p>
+        </div>
+        <ChevronRight className={`w-4 h-4 ${isDark ? "text-neutral-500" : "text-gray-400"}`} />
+      </button>
 
       {renderSection("Account", accountSettings)}
       {renderSection("Security", securitySettings)}

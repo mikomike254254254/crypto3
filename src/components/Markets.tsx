@@ -20,7 +20,7 @@ function ChangeBadge({ change, className = "" }: { change: number; className?: s
   const isUp = change >= 0;
   return (
     <div className={`flex items-center gap-0.5 font-bold ${isUp ? "text-emerald-500" : "text-red-500"} ${className}`}>
-      {isUp ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
+      {isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
       <span>
         {isUp ? "+" : ""}
         {change.toFixed(2)}%
@@ -62,40 +62,25 @@ function CryptoRow({ crypto }: { crypto: Crypto }) {
   );
 }
 
-function WatchBubble({ crypto, variant }: { crypto: Crypto; variant: "pill" | "card" }) {
+function WatchlistRow({ crypto }: { crypto: Crypto }) {
   const { isDark } = useTheme();
   const change = crypto.change ?? 0;
-  const isUp = change >= 0;
-
-  if (variant === "pill") {
-    return (
-      <div
-        className={`watch-bubble-3d flex-shrink-0 flex items-center gap-2 rounded-full pl-1 pr-3 py-1.5 border ${
-          isDark ? "bg-neutral-900 border-neutral-700" : "bg-white border-slate-200"
-        }`}
-      >
-        <CryptoLogo symbol={crypto.symbol} size={28} />
-        <div className="min-w-0">
-          <p className={`text-xs font-bold ${isDark ? "text-white" : "text-black"}`}>{crypto.symbol}</p>
-          <ChangeBadge change={change} className="text-[10px]" />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div
-      className={`watch-bubble-3d flex flex-col items-center justify-center gap-1.5 rounded-2xl p-3 min-w-[88px] border ${
+      className={`watch-bubble-3d flex items-center gap-3 w-full rounded-xl border px-3 py-3 ${
         isDark ? "bg-neutral-900 border-neutral-700" : "bg-white border-slate-200"
       }`}
     >
-      <CryptoLogo symbol={crypto.symbol} size={36} />
-      <p className={`text-xs font-bold ${isDark ? "text-white" : "text-black"}`}>{crypto.symbol}</p>
-      <p className={`text-[10px] font-semibold ${isDark ? "text-neutral-400" : "text-gray-500"}`}>{formatMarketPrice(crypto.price)}</p>
-      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isUp ? "bg-emerald-500/15 text-emerald-500" : "bg-red-500/15 text-red-500"}`}>
-        {isUp ? "+" : ""}
-        {change.toFixed(1)}%
-      </span>
+      <CryptoLogo symbol={crypto.symbol} size={40} />
+      <div className="flex-1 min-w-0 text-left">
+        <p className={`text-sm font-bold ${isDark ? "text-white" : "text-black"}`}>{crypto.name}</p>
+        <p className={`text-xs ${isDark ? "text-neutral-500" : "text-gray-500"}`}>{crypto.symbol}</p>
+      </div>
+      <div className="text-right shrink-0">
+        <p className={`text-sm font-semibold tabular-nums ${isDark ? "text-white" : "text-black"}`}>{formatMarketPrice(crypto.price)}</p>
+        <ChangeBadge change={change} className="justify-end mt-1 text-xs" />
+      </div>
     </div>
   );
 }
@@ -110,7 +95,6 @@ export function Markets({ cryptoData, activeTab, onTabChange }: MarketsProps) {
   ];
 
   const watchlistCoins = cryptoData.slice(0, 8);
-  const marqueeCoins = [...watchlistCoins, ...watchlistCoins];
 
   return (
     <div>
@@ -141,20 +125,12 @@ export function Markets({ cryptoData, activeTab, onTabChange }: MarketsProps) {
       </div>
 
       <p className={`text-[10px] font-semibold uppercase tracking-wide mb-2 ${isDark ? "text-neutral-500" : "text-gray-500"}`}>
-        Watchlist · live
+        Watchlist
       </p>
 
-      <div className="overflow-hidden mb-3 rounded-xl">
-        <div className="marquee-track gap-2 py-1">
-          {marqueeCoins.map((crypto, i) => (
-            <WatchBubble key={`${crypto.id}-marquee-${i}`} crypto={crypto} variant="pill" />
-          ))}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-4 gap-2 mb-4 sm:grid-cols-4">
+      <div className="flex flex-col gap-2 mb-4">
         {watchlistCoins.map((crypto) => (
-          <WatchBubble key={`${crypto.id}-card`} crypto={crypto} variant="card" />
+          <WatchlistRow key={crypto.id} crypto={crypto} />
         ))}
       </div>
 

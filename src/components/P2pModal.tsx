@@ -1,19 +1,11 @@
 import { useMemo, useState } from "react";
-import { BadgeCheck, Loader2, MessageCircle, X } from "lucide-react";
+import { BadgeCheck, Loader2, Mail, MessageCircle, X } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { createP2pOrder } from "../services/walletBackend";
 import type { P2pTrader } from "../lib/p2pTrader";
 import type { Wallet } from "../types/crypto";
-
-function KenyaFlag({ className = "w-5 h-3.5" }: { className?: string }) {
-  return (
-    <span className={`inline-flex overflow-hidden rounded-sm border border-black/10 shrink-0 ${className}`} aria-hidden>
-      <span className="w-1/3 h-full bg-black" />
-      <span className="w-1/3 h-full bg-red-600" />
-      <span className="w-1/3 h-full bg-emerald-600" />
-    </span>
-  );
-}
+import { KenyaFlag } from "./KenyaFlag";
+import { SUPPORT_EMAIL } from "../constants/support";
 
 interface P2pModalProps {
   trader: P2pTrader;
@@ -55,7 +47,11 @@ export function P2pModal({ trader, wallets, onClose, onOrdered }: P2pModalProps)
     setError("");
     try {
       await createP2pOrder(amount, side, trader.name);
-      setSuccess(`Order sent to ${trader.name}. He typically replies in ~${trader.responseMins} min.`);
+      setSuccess(
+        side === "buy"
+          ? `Order sent. ${trader.name} replies by email — check ${SUPPORT_EMAIL} within ~${trader.responseMins} min.`
+          : `Sell order sent. ${trader.name} will reply by email at ${SUPPORT_EMAIL}.`,
+      );
       onOrdered();
       window.setTimeout(onClose, 2200);
     } catch (err) {
@@ -86,7 +82,7 @@ export function P2pModal({ trader, wallets, onClose, onOrdered }: P2pModalProps)
                     <BadgeCheck className="w-4 h-4" />
                   </span>
                 ) : null}
-                <KenyaFlag />
+                <KenyaFlag className="h-4 w-6" />
                 <span className={`text-[10px] font-medium ${isDark ? "text-neutral-400" : "text-gray-500"}`}>{trader.countryName}</span>
               </div>
               <p className={`text-xs mt-0.5 ${isDark ? "text-neutral-400" : "text-gray-600"}`}>
@@ -151,6 +147,15 @@ export function P2pModal({ trader, wallets, onClose, onOrdered }: P2pModalProps)
               </p>
             )}
           </div>
+
+          {side === "buy" ? (
+            <div className={`rounded-xl px-3 py-2.5 text-xs flex items-start gap-2 ${isDark ? "bg-sky-950/50 border border-sky-900 text-sky-200" : "bg-sky-50 border border-sky-100 text-sky-900"}`}>
+              <Mail className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
+                After you buy, <strong>{trader.name}</strong> replies by <strong>email</strong> ({SUPPORT_EMAIL}) with payment steps.
+              </span>
+            </div>
+          ) : null}
 
           {error ? <p className="text-sm text-red-500">{error}</p> : null}
           {success ? <p className="text-sm text-emerald-600">{success}</p> : null}

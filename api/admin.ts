@@ -493,12 +493,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (req.method === "POST") {
-      const action = req.body?.action as AdminAction;
+      const action = String(req.body?.action || "");
+
+      if (action === "broadcast_notification") {
+        const title = String(req.body?.title || "Wallex");
+        const body = String(req.body?.body || req.body?.message || "");
+        const targetAuthUserId = req.body?.authUserId || req.body?.auth_user_id;
+        const supabase = adminClient();
+
+        if (!body.trim()) {
+          return res.status(400).json({ error: "Notification message is required." });
+        }
+
+        if (targetAuthUserId) {
+          await createNotification(String(targetAuthUserId), {
+            type: "system",
+            title,
+            body,
+          });
+        } else {
+          const { data: rows, error } = await supabase.from("users").select("auth_user_id").not("auth_user_id", "is", null);
+          if (error) throw error;
+          for (const row of rows || []) {
+            if (row.auth_user_id) {
+              await createNotification(row.auth_user_id, { type: "broadcast", title, body });
+            }
+          }
+        }
+
+        const data = await readAdminData();
+        return res.status(200).json(data);
+      }
+
       if (!["set_balance", "award", "create_transaction", "update_kyc", "wallet_transfer"].includes(action)) {
         return res.status(400).json({ error: "Invalid admin action." });
       }
 
-      await writeAdminAction(action, req.body, adminSession.email);
+      await writeAdminAction(action as AdminAction, req.body, adminSession.email);
       const data = await readAdminData();
       return res.status(200).json(data);
     }

@@ -84,6 +84,9 @@ export function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [notifyTitle, setNotifyTitle] = useState("Wallex");
+  const [notifyBody, setNotifyBody] = useState("");
+  const [notifyTargetEmail, setNotifyTargetEmail] = useState("");
 
   const selectedUser = useMemo(
     () => data.users.find((item) => item.id === selectedUserId) || data.users[0],
@@ -211,6 +214,40 @@ export function AdminPage() {
     { id: "transactions" as const, label: "Transactions", icon: BadgeDollarSign },
     { id: "balances" as const, label: "Balances", icon: Wallet },
   ];
+
+  const sendBroadcast = async () => {
+    if (!notifyBody.trim()) {
+      setError("Enter a notification message.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      const payload: Record<string, unknown> = {
+        action: "broadcast_notification",
+        title: notifyTitle.trim() || "Wallex",
+        body: notifyBody.trim(),
+      };
+      const email = notifyTargetEmail.trim().toLowerCase();
+      if (email) {
+        const target = data.users.find((u) => u.email?.toLowerCase() === email);
+        if (!target) {
+          setError("No user found with that email.");
+          setSaving(false);
+          return;
+        }
+        payload.authUserId = target.id;
+      }
+      const next = await runAdminAction(payload);
+      setData(next);
+      setNotice(email ? `Notification sent to ${email}.` : "Notification sent to all users.");
+      setNotifyBody("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Broadcast failed");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const reviewKyc = async (authUserId: string | undefined, submissionId: string, status: string) => {
     if (!authUserId) return;
@@ -367,24 +404,59 @@ export function AdminPage() {
             {notice && <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</div>}
 
             {section === "dashboard" && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                <div className="bg-white rounded-2xl border border-slate-200 p-6">
-                  <p className="text-sm text-slate-500">TVL</p>
-                  <p className="text-3xl font-semibold text-slate-950 mt-2">{money.format(dashboardTvl)}</p>
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+                  <div className="bg-white rounded-2xl border border-slate-200 p-6">
+                    <p className="text-sm text-slate-500">TVL</p>
+                    <p className="text-3xl font-semibold text-slate-950 mt-2">{money.format(dashboardTvl)}</p>
+                  </div>
+                  <div className="bg-white rounded-2xl border border-slate-200 p-6">
+                    <p className="text-sm text-slate-500">Users</p>
+                    <p className="text-3xl font-semibold text-slate-950 mt-2">{data.totals.users}</p>
+                  </div>
+                  <div className="bg-white rounded-2xl border border-slate-200 p-6">
+                    <p className="text-sm text-slate-500">Pending KYC</p>
+                    <p className="text-3xl font-semibold text-amber-600 mt-2">{data.totals.pendingKyc}</p>
+                  </div>
+                  <div className="bg-white rounded-2xl border border-slate-200 p-6">
+                    <p className="text-sm text-slate-500">Transactions</p>
+                    <p className="text-3xl font-semibold text-slate-950 mt-2">{data.totals.transactions}</p>
+                  </div>
                 </div>
-                <div className="bg-white rounded-2xl border border-slate-200 p-6">
-                  <p className="text-sm text-slate-500">Users</p>
-                  <p className="text-3xl font-semibold text-slate-950 mt-2">{data.totals.users}</p>
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-2xl">
+                  <h3 className="text-lg font-semibold text-slate-950">Push notification</h3>
+                  <p className="text-sm text-slate-500 mt-1">Send to one user (by email) or leave email empty to notify everyone.</p>
+                  <div className="space-y-3 mt-4">
+                    <input
+                      value={notifyTitle}
+                      onChange={(e) => setNotifyTitle(e.target.value)}
+                      placeholder="Title"
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
+                    />
+                    <textarea
+                      value={notifyBody}
+                      onChange={(e) => setNotifyBody(e.target.value)}
+                      placeholder="Message body"
+                      rows={3}
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
+                    />
+                    <input
+                      value={notifyTargetEmail}
+                      onChange={(e) => setNotifyTargetEmail(e.target.value)}
+                      placeholder="User email (optional — blank = all users)"
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
+                    />
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={sendBroadcast}
+                      className="rounded-xl bg-slate-950 text-white px-5 py-3 text-sm font-semibold disabled:opacity-60"
+                    >
+                      Send notification
+                    </button>
+                  </div>
                 </div>
-                <div className="bg-white rounded-2xl border border-slate-200 p-6">
-                  <p className="text-sm text-slate-500">Pending KYC</p>
-                  <p className="text-3xl font-semibold text-amber-600 mt-2">{data.totals.pendingKyc}</p>
-                </div>
-                <div className="bg-white rounded-2xl border border-slate-200 p-6">
-                  <p className="text-sm text-slate-500">Transactions</p>
-                  <p className="text-3xl font-semibold text-slate-950 mt-2">{data.totals.transactions}</p>
-                </div>
-              </div>
+              </>
             )}
 
             {(section === "users" || section === "balances") && (
