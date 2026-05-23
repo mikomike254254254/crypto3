@@ -26,7 +26,31 @@ const MARKET_COINS = [
 let cache: { at: number; assets: unknown[] } | null = null;
 const CACHE_MS = 60_000;
 
-export default async function handler(_req: VercelRequest, res: VercelResponse) {
+const COIN_ID_MAP: Record<string, string> = Object.fromEntries(
+  MARKET_COINS.map((c) => [c.symbol.toLowerCase(), c.id]),
+);
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const chartSymbol = String(req.query.chart || "").toLowerCase();
+  const days = String(req.query.days || "1");
+
+  if (chartSymbol) {
+    const geckoId = COIN_ID_MAP[chartSymbol] || chartSymbol;
+    try {
+      const chartRes = await fetch(
+        `https://api.coingecko.com/api/v3/coins/${geckoId}/market_chart?vs_currency=usd&days=${days}`,
+        { headers: { accept: "application/json" } },
+      );
+      if (!chartRes.ok) throw new Error(`Chart ${chartRes.status}`);
+      const chartData = (await chartRes.json()) as { prices?: [number, number][] };
+      res.setHeader("Cache-Control", "public, s-maxage=120, stale-while-revalidate=300");
+      return res.status(200).json({ prices: chartData.prices || [] });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Chart unavailable";
+      return res.status(502).json({ error: message, prices: [] });
+    }
+  }
+
   try {
     const now = Date.now();
     if (cache && now - cache.at < CACHE_MS) {

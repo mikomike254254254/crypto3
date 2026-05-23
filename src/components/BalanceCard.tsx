@@ -16,18 +16,20 @@ interface BalanceCardProps {
   selectedWallet: string;
   onWalletChange: (id: string) => void;
   onDeposit: () => void;
-  onWithdraw: () => void;
+  onSend: () => void;
+  onWithdraw?: () => void;
   kycVerified: boolean;
   priceAssets?: MarketAsset[];
 }
 
-export function BalanceCard({ wallet, wallets, totalValue, displayCurrency = "USD", selectedWallet, onWalletChange, onDeposit, onWithdraw, kycVerified, priceAssets = [] }: BalanceCardProps) {
+export function BalanceCard({ wallet, wallets, totalValue, displayCurrency = "USD", selectedWallet, onWalletChange, onDeposit, onSend, onWithdraw, kycVerified, priceAssets = [] }: BalanceCardProps) {
   const [showBalance, setShowBalance] = useState(true);
   const [showWalletSelect, setShowWalletSelect] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const { isDark } = useTheme();
   const { percent: dayChangePct } = computePortfolioDayChange(wallets, priceAssets);
   const isUp = dayChangePct >= 0;
+  const priceBySymbol = Object.fromEntries(priceAssets.map((a) => [a.symbol, a.price]));
 
   const moreOptions = [
     { id: 'qr', label: 'Show QR Code', icon: QrCode, description: 'Scan to receive' },
@@ -43,7 +45,7 @@ export function BalanceCard({ wallet, wallets, totalValue, displayCurrency = "US
 
   return (
     <div className="relative">
-      <div className={`rounded-2xl p-4 shadow-lg border transition-colors duration-300 ${isDark ? "bg-neutral-900 border-neutral-700" : "bg-black border-black text-white"}`}>
+      <div className={`balance-card-silver rounded-2xl p-4 shadow-lg border transition-colors duration-300 relative overflow-hidden ${isDark ? "bg-neutral-900 border-neutral-700" : "bg-black border-black text-white"}`}>
         <div className="relative mb-3">
           <button onClick={() => setShowWalletSelect(!showWalletSelect)} className={`flex items-center gap-2 rounded-full px-3 py-1.5 transition-all ${isDark ? "bg-neutral-800 hover:bg-neutral-700 border border-neutral-700" : "bg-white/10 hover:bg-white/15 border border-white/20"}`}>
             <CryptoLogo symbol={wallet.symbol} size={22} className="!border-white/30" />
@@ -58,7 +60,13 @@ export function BalanceCard({ wallet, wallets, totalValue, displayCurrency = "US
                   <CryptoLogo symbol={w.symbol} size={22} />
                   <div className="text-left flex-1">
                     <p className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-black'}`}>{w.name}</p>
-                    <p className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>${w.balance.toLocaleString()}</p>
+                    <p className={`text-[10px] ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                      {w.balance.toLocaleString(undefined, { maximumFractionDigits: 6 })} {w.symbol}
+                      <span className="opacity-70">
+                        {" "}
+                        · ${(w.balance * (priceBySymbol[w.symbol] || (w.symbol === "USDT" ? 1 : 0))).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                      </span>
+                    </p>
                   </div>
                 </button>
               ))}
@@ -99,7 +107,7 @@ export function BalanceCard({ wallet, wallets, totalValue, displayCurrency = "US
         </p>
 
         <div className="flex items-center gap-2">
-          <button onClick={onWithdraw} className={`flex-1 rounded-full py-2.5 flex items-center justify-center gap-1.5 transition-all border-2 hover:scale-[1.02] active:scale-[0.98] ${isDark ? 'bg-neutral-800 text-white border-neutral-700 hover:border-neutral-500' : 'bg-white text-black border-neutral-200 hover:border-neutral-300'}`}>
+          <button type="button" onClick={onSend} className={`flex-1 rounded-full py-2.5 flex items-center justify-center gap-1.5 transition-all border-2 hover:scale-[1.02] active:scale-[0.98] ${isDark ? "bg-neutral-800 text-white border-neutral-700 hover:border-neutral-500" : "bg-white text-black border-neutral-200 hover:border-neutral-300"}`}>
             <ArrowUpRight className="w-3.5 h-3.5" />
             <span className="text-xs font-semibold">Send</span>
           </button>

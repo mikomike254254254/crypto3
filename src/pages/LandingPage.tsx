@@ -23,6 +23,7 @@ import { AnimatedNumber } from "../components/AnimatedNumber";
 import { SkyClouds } from "../components/SkyClouds";
 import { TestimonialsMarquee } from "../components/landing/TestimonialsMarquee";
 import { FaqSection } from "../components/landing/FaqSection";
+import { MpesaBanner } from "../components/landing/MpesaBanner";
 import { useLiveMarketPrices } from "../hooks/useLiveMarketPrices";
 import { SUPPORT_EMAIL, supportMailto } from "../constants/support";
 
@@ -333,6 +334,8 @@ export function LandingPage() {
             ))}
           </div>
         </section>
+
+        <MpesaBanner />
 
         <section id="assets" className="bg-white border-y border-slate-200">
           <div className="max-w-7xl mx-auto px-4 md:px-6 py-16">

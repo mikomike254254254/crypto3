@@ -32,6 +32,7 @@ interface DepositModalProps {
   onPaystackDeposit?: (wallets: WalletType[]) => void | Promise<void>;
   kycVerified?: boolean;
   onKYC?: () => void;
+  initialTab?: "deposit" | "send";
 }
 
 const networks = [
@@ -42,11 +43,11 @@ const networks = [
   { id: "MATIC", name: "Polygon", fee: "0.1 USDT", time: "~2 min", confirmations: "128" },
 ];
 
-export function DepositModal({ wallet, wallets, onClose, onDeposit: _onDeposit, onSend, onPaystackDeposit, kycVerified = true, onKYC }: DepositModalProps) {
+export function DepositModal({ wallet, wallets, onClose, onDeposit: _onDeposit, onSend, onPaystackDeposit, kycVerified = true, onKYC, initialTab = "deposit" }: DepositModalProps) {
   const { user } = useAuth();
   const { assets: liveAssets } = useLiveMarketPrices(60_000);
   const [copied, setCopied] = useState("");
-  const [activeTab, setActiveTab] = useState<"deposit" | "send">("deposit");
+  const [activeTab, setActiveTab] = useState<"deposit" | "send">(initialTab);
   const [selectedNetwork, setSelectedNetwork] = useState("TRC20");
   const [showQR, setShowQR] = useState(true);
   const [sendAmount, setSendAmount] = useState("");

@@ -15,7 +15,8 @@ interface WalletPageProps {
   priceAssets?: MarketAsset[];
   transactions?: Transaction[];
   onDeposit: () => void;
-  onWithdraw: () => void;
+  onSend: () => void;
+  onWithdraw?: () => void;
   kycVerified?: boolean;
 }
 
@@ -26,7 +27,7 @@ export function WalletPage({
   priceAssets = [],
   transactions = [],
   onDeposit,
-  onWithdraw,
+  onSend,
 }: WalletPageProps) {
   const [selectedWallet, setSelectedWallet] = useState(0);
   const [isHidden, setIsHidden] = useState(false);
@@ -146,15 +147,15 @@ export function WalletPage({
             <button
               type="button"
               onClick={onDeposit}
-              className="flex-1 flex items-center justify-center gap-2 bg-white text-black rounded-xl py-2.5 font-semibold text-sm hover:bg-neutral-100 transition-all active:scale-[0.98]"
+              className="flex-1 flex items-center justify-center gap-2 bg-white text-black rounded-full py-2.5 font-semibold text-sm hover:bg-neutral-100 transition-all active:scale-[0.98]"
             >
               <ArrowDownToLine className="w-4 h-4" />
               Deposit
             </button>
             <button
               type="button"
-              onClick={onWithdraw}
-              className="flex-1 flex items-center justify-center gap-2 bg-transparent text-white rounded-xl py-2.5 font-semibold text-sm border-2 border-white/80 hover:bg-white/10 transition-all active:scale-[0.98]"
+              onClick={onSend}
+              className="flex-1 flex items-center justify-center gap-2 bg-transparent text-white rounded-full py-2.5 font-semibold text-sm border-2 border-white/80 hover:bg-white/10 transition-all active:scale-[0.98]"
             >
               <ArrowUpFromLine className="w-4 h-4" />
               Send

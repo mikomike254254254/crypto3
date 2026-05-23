@@ -3,6 +3,7 @@ import { Search, TrendingUp, TrendingDown, Star, Filter } from "lucide-react";
 import { Crypto } from "../types/crypto";
 import { useTheme } from "../context/ThemeContext";
 import { CryptoLogo } from "../components/CryptoLogo";
+import { CoinProfileModal } from "../components/CoinProfileModal";
 
 interface ExplorePageProps {
   cryptoData: Crypto[];
@@ -12,6 +13,7 @@ export function ExplorePage({ cryptoData }: ExplorePageProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [watchlist, setWatchlist] = useState<string[]>(["btc", "eth", "sol"]);
+  const [selectedCoin, setSelectedCoin] = useState<Crypto | null>(null);
   const { isDark } = useTheme();
 
   const categories = [
@@ -93,9 +95,11 @@ export function ExplorePage({ cryptoData }: ExplorePageProps) {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-5">
         {cryptoData.slice(0, 6).map((crypto) => (
-          <div
+          <button
+            type="button"
             key={crypto.id}
-            className={`rounded-2xl p-3 border ${isDark ? "bg-neutral-900 border-neutral-800" : "bg-white border-slate-100 shadow-sm"}`}
+            onClick={() => setSelectedCoin(crypto)}
+            className={`rounded-2xl p-3 border text-left transition-transform hover:scale-[1.02] active:scale-[0.98] ${isDark ? "bg-neutral-900 border-neutral-800" : "bg-white border-slate-100 shadow-sm"}`}
           >
             <div className="flex items-center gap-2 mb-2">
               <CryptoLogo symbol={crypto.symbol} size={36} />
@@ -106,15 +110,23 @@ export function ExplorePage({ cryptoData }: ExplorePageProps) {
               {(crypto.change ?? 0) >= 0 ? "+" : ""}
               {(crypto.change ?? 0).toFixed(2)}%
             </p>
-          </div>
+          </button>
         ))}
       </div>
 
+      {filteredCrypto.length === 0 ? (
+        <div className={`rounded-2xl p-8 text-center mb-4 ${isDark ? "bg-neutral-900 border border-neutral-800" : "bg-white border border-slate-100"}`}>
+          <p className={`text-sm ${isDark ? "text-neutral-400" : "text-gray-500"}`}>No coins match &quot;{searchQuery}&quot;</p>
+        </div>
+      ) : null}
+
       <div className="space-y-2">
         {filteredCrypto.map((crypto) => (
-          <div
+          <button
+            type="button"
             key={crypto.id}
-            className={`rounded-2xl p-3.5 shadow-sm flex items-center gap-3 ${isDark ? "bg-neutral-900 border border-neutral-800" : "bg-white border border-slate-100"}`}
+            onClick={() => setSelectedCoin(crypto)}
+            className={`w-full rounded-2xl p-3.5 shadow-sm flex items-center gap-3 text-left transition-colors ${isDark ? "bg-neutral-900 border border-neutral-800 hover:bg-neutral-800" : "bg-white border border-slate-100 hover:bg-neutral-50"}`}
           >
             <CryptoLogo symbol={crypto.symbol} size={44} />
             <div className="flex-1 min-w-0">
@@ -134,16 +146,26 @@ export function ExplorePage({ cryptoData }: ExplorePageProps) {
                 </span>
               </div>
             </div>
-            <button type="button" onClick={() => toggleWatchlist(crypto.id)} className="p-1 flex-shrink-0" aria-label="Watchlist">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleWatchlist(crypto.id);
+              }}
+              className="p-1 flex-shrink-0"
+              aria-label="Watchlist"
+            >
               <Star
                 className={`w-5 h-5 transition-colors ${
                   watchlist.includes(crypto.id) ? "fill-yellow-400 text-yellow-400" : isDark ? "text-neutral-600" : "text-gray-300"
                 }`}
               />
             </button>
-          </div>
+          </button>
         ))}
       </div>
+
+      {selectedCoin ? <CoinProfileModal crypto={selectedCoin} onClose={() => setSelectedCoin(null)} /> : null}
     </div>
   );
 }

@@ -44,6 +44,7 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState(0);
   const [activeMarketTab, setActiveMarketTab] = useState("watchlist");
   const [showDeposit, setShowDeposit] = useState(false);
+  const [depositInitialTab, setDepositInitialTab] = useState<"deposit" | "send">("deposit");
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [showKYC, setShowKYC] = useState(false);
   const [showSwap, setShowSwap] = useState(false);
@@ -220,6 +221,17 @@ function AppContent() {
     }
   };
 
+  const openReceive = () => {
+    setDepositInitialTab("deposit");
+    setShowDeposit(true);
+  };
+
+  const openSend = () => {
+    if (!requireKycForSend()) return;
+    setDepositInitialTab("send");
+    setShowDeposit(true);
+  };
+
   const requireKycForSend = () => {
     if (kycStatus !== "verified") {
       setShowKYC(true);
@@ -290,8 +302,8 @@ function AppContent() {
                 priceAssets={liveAssets}
                 selectedWallet={selectedWallet}
                 onWalletChange={setSelectedWallet}
-                onDeposit={() => setShowDeposit(true)}
-                onWithdraw={() => setShowWithdraw(true)}
+                onDeposit={openReceive}
+                onSend={openSend}
                 kycVerified={kycStatus === "verified"}
               />
             </div>
@@ -327,8 +339,8 @@ function AppContent() {
             displayCurrency={displayCurrency}
             priceAssets={liveAssets}
             transactions={transactions}
-            onDeposit={() => setShowDeposit(true)}
-            onWithdraw={() => setShowWithdraw(true)}
+            onDeposit={openReceive}
+            onSend={openSend}
             kycVerified={kycStatus === "verified"}
           />
         );
@@ -468,6 +480,7 @@ function AppContent() {
           <DepositModal 
             wallet={currentWallet}
             wallets={wallets}
+            initialTab={depositInitialTab}
             onClose={() => setShowDeposit(false)}
             onDeposit={handleDeposit}
             onSend={handleSend}
