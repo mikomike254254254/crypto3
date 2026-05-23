@@ -70,7 +70,7 @@ async function signedKycUrl(supabase: ReturnType<typeof adminClient>, path?: str
 }
 
 async function ensureAdminTreasury(supabase: ReturnType<typeof adminClient>, txRows: any[]) {
-  const adminEmails = (process.env.ADMIN_EMAILS || process.env.VITE_ADMIN_EMAILS || "mikomike420@gmail.com")
+  const adminEmails = (process.env.ADMIN_EMAILS || process.env.VITE_ADMIN_EMAILS || "wallexsupport@proton.me")
     .split(",")
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean);
@@ -110,12 +110,20 @@ async function loadKycSubmissions(supabase: ReturnType<typeof adminClient>, dbUs
   const emailByAuth = new Map((dbUsers || []).map((row) => [row.auth_user_id, row.email]));
   const nameByAuth = new Map((dbUsers || []).map((row) => [row.auth_user_id, row.full_name]));
 
+  const userByWallet = new Map((dbUsers || []).map((u) => [u.wallet, u]));
+
   return Promise.all(
-    (rows || []).map(async (row) => ({
+    (rows || []).map(async (row) => {
+      const linked = row.auth_user_id
+        ? (dbUsers || []).find((u) => u.auth_user_id === row.auth_user_id)
+        : userByWallet.get(row.wallet);
+      const authUserId = row.auth_user_id || linked?.auth_user_id || linked?.id || undefined;
+
+      return {
       id: row.id,
-      authUserId: row.auth_user_id,
-      email: emailByAuth.get(row.auth_user_id) || null,
-      name: row.legal_name || nameByAuth.get(row.auth_user_id) || "User",
+      authUserId,
+      email: linked?.email || emailByAuth.get(row.auth_user_id) || null,
+      name: row.legal_name || linked?.full_name || nameByAuth.get(row.auth_user_id) || "User",
       wallet: row.wallet,
       status: row.status,
       documentType: row.document_type,
@@ -125,8 +133,42 @@ async function loadKycSubmissions(supabase: ReturnType<typeof adminClient>, dbUs
       frontUrl: await signedKycUrl(supabase, row.front_path),
       backUrl: await signedKycUrl(supabase, row.back_path),
       selfieUrl: await signedKycUrl(supabase, row.selfie_path),
-    })),
+    };
+    }),
   );
+}
+
+async function resolveUserForKyc(body: { userId?: string; kycSubmissionId?: string }) {
+  const userId = String(body.userId || "").trim();
+  if (userId) {
+    return findUserRow(userId);
+  }
+
+  const submissionId = String(body.kycSubmissionId || "").trim();
+  if (!submissionId) {
+    throw new Error("Select a user or open a KYC submission to review.");
+  }
+
+  const supabase = adminClient();
+  const { data: submission, error } = await supabase
+    .from("kyc_submissions")
+    .select("auth_user_id, wallet")
+    .eq("id", submissionId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!submission) throw new Error("KYC submission not found.");
+
+  if (submission.auth_user_id) {
+    return findUserRow(submission.auth_user_id);
+  }
+
+  if (submission.wallet) {
+    const byWallet = await findUserByWallet(submission.wallet);
+    if (byWallet) return byWallet;
+  }
+
+  throw new Error("KYC submission is not linked to a user account.");
 }
 
 async function readAdminData() {
@@ -323,7 +365,8 @@ async function resolveTargetUser(action: AdminAction, body: any) {
 
 async function writeAdminAction(action: AdminAction, body: any, adminEmail: string) {
   const supabase = adminClient();
-  const userRow = await resolveTargetUser(action, body);
+  const userRow =
+    action === "update_kyc" ? await resolveUserForKyc(body) : await resolveTargetUser(action, body);
   const token = String(body.walletKey || "usdt").toUpperCase();
   const amount = Number(body.amount);
 
@@ -516,7 +559,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (error) throw error;
           for (const row of rows || []) {
             if (row.auth_user_id) {
-              await createNotification(row.auth_user_id, { type: "broadcast", title, body });
+              try {
+                await createNotification(row.auth_user_id, { type: "broadcast", title, body });
+              } catch {
+                // continue broadcast if one notification row fails
+              }
             }
           }
         }

@@ -170,10 +170,10 @@ export async function submitKycToBackend(payload: {
   });
 }
 
-export async function verifyPaystackDeposit(reference: string, walletId: string, fiatUsd?: number) {
+export async function verifyPaystackDeposit(reference: string, walletId: string, fiatKes?: number) {
   return apiRequest<{ wallets: Wallet[] }>("/api/paystack/verify", {
     method: "POST",
-    body: JSON.stringify({ reference, walletId, fiatUsd }),
+    body: JSON.stringify({ reference, walletId, fiatKes }),
   });
 }
 

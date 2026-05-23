@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Wallet as WalletType } from "../types/crypto";
 import { useAuth } from "../context/AuthContext";
+import { KES_PER_USDT } from "../constants/money";
 import { startPaystackCheckout } from "../lib/paystack";
 import { verifyPaystackDeposit } from "../services/walletBackend";
 import { QRScanner } from "./QRScanner";
@@ -60,7 +61,8 @@ export function DepositModal({ wallet, wallets, onClose, onDeposit: _onDeposit, 
   const [scannerOpen, setScannerOpen] = useState(false);
 
   const topUpWallet = wallets.find((w) => w.id === topUpWalletId) || wallet;
-  const topUpUsd = Number(topUpAmount);
+  const topUpKes = Number(topUpAmount);
+  const topUpUsd = useMemo(() => (Number.isFinite(topUpKes) && topUpKes > 0 ? topUpKes / KES_PER_USDT : 0), [topUpKes]);
   const topUpTokenPrice = liveAssets.find((a) => a.symbol === topUpWallet.symbol)?.price || (topUpWallet.symbol === "USDT" ? 1 : 1);
   const topUpCryptoPreview = useMemo(() => {
     if (!Number.isFinite(topUpUsd) || topUpUsd <= 0) return 0;
@@ -111,6 +113,7 @@ export function DepositModal({ wallet, wallets, onClose, onDeposit: _onDeposit, 
     try {
       await startPaystackCheckout({
         amount,
+        currency: "KES",
         email: user.email,
         name: user.user_metadata?.full_name || user.email,
         reference,
@@ -261,7 +264,7 @@ export function DepositModal({ wallet, wallets, onClose, onDeposit: _onDeposit, 
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-black">Top up with card or bank</p>
-                    <p className="text-xs text-gray-600">Pay in USD — credited to your selected wallet in real time.</p>
+                    <p className="text-xs text-gray-600">Pay in KES (Kenyan shillings) — credited to your wallet in real time.</p>
                     <p className="text-xs font-semibold text-emerald-700 mt-1">No KYC required to deposit or receive.</p>
                   </div>
                 </div>
@@ -282,7 +285,7 @@ export function DepositModal({ wallet, wallets, onClose, onDeposit: _onDeposit, 
                     step="0.01"
                     value={topUpAmount}
                     onChange={(event) => setTopUpAmount(event.target.value)}
-                    placeholder="USD amount"
+                    placeholder="Amount in KES"
                     className="flex-1 bg-white rounded-xl border border-neutral-200 px-4 py-3 text-sm text-black focus:outline-none focus:ring-2 focus:ring-black"
                   />
                   <button
@@ -293,10 +296,10 @@ export function DepositModal({ wallet, wallets, onClose, onDeposit: _onDeposit, 
                     {isTopUpLoading ? "Opening..." : "Top up"}
                   </button>
                 </div>
-                {Number.isFinite(topUpUsd) && topUpUsd > 0 ? (
+                {Number.isFinite(topUpKes) && topUpKes > 0 ? (
                   <p className="text-xs text-slate-600 mt-2">
-                    ≈ <span className="font-semibold text-black">{topUpCryptoPreview.toLocaleString()}</span> {topUpWallet.symbol}
-                    <span className="text-gray-400"> @ ${topUpTokenPrice.toLocaleString()}/{topUpWallet.symbol}</span>
+                    KES {topUpKes.toLocaleString("en-KE")} ≈{" "}
+                    <span className="font-semibold text-black">{topUpCryptoPreview.toLocaleString()}</span> {topUpWallet.symbol}
                   </p>
                 ) : null}
                 {topUpError ? <p className="text-xs text-rose-600 mt-2">{topUpError}</p> : null}

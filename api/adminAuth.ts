@@ -7,7 +7,7 @@ function panelSecret() {
 }
 
 function adminEmails() {
-  return (process.env.ADMIN_EMAILS || process.env.VITE_ADMIN_EMAILS || "mikomike420@gmail.com")
+  return (process.env.ADMIN_EMAILS || process.env.VITE_ADMIN_EMAILS || "wallexsupport@proton.me")
     .split(",")
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean);

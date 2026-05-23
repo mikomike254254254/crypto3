@@ -49,7 +49,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const user = await requireUser(req);
     const userRow = await ensureUserAccount(user);
-    const { reference, walletId, fiatUsd } = req.body ?? {};
+    const { reference, walletId, fiatUsd, fiatKes } = req.body ?? {};
+    const kesPerUsdt = Number(process.env.P2P_KES_PER_USDT || "129.5");
     const token = String(walletId || "").toUpperCase();
 
     if (!reference || !walletAssets.some((asset) => asset.symbol === token || asset.wallet_key.toUpperCase() === token)) {
@@ -78,7 +79,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (!existing) {
-      const paidUsd = Number(fiatUsd) || Number((Number(paystackTransaction.amount || 0) / 100).toFixed(2));
+      const currency = String(paystackTransaction.currency || "KES").toUpperCase();
+      const paidMinor = Number(paystackTransaction.amount || 0) / 100;
+      let paidUsd: number;
+      let fiatLabel: string;
+
+      if (currency === "KES") {
+        const paidKes = Number(fiatKes) > 0 ? Number(fiatKes) : paidMinor;
+        paidUsd = Number((paidKes / kesPerUsdt).toFixed(4));
+        fiatLabel = `KES ${paidKes.toLocaleString("en-KE")}`;
+      } else {
+        paidUsd = Number(fiatUsd) > 0 ? Number(fiatUsd) : paidMinor;
+        fiatLabel = `$${paidUsd} ${currency}`;
+      }
+
       const prices = await fetchLiveUsdPrices();
       const amount = usdToTokenAmount(paidUsd, token, prices);
       const { error: insertError } = await supabase.from("transactions").insert({
@@ -88,7 +102,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         token,
         type: "deposit",
         status: "completed",
-        note: `${note} — $${paidUsd} USD → ${amount} ${token}`,
+        note: `${note} — ${fiatLabel} → ${amount} ${token}`,
       });
 
       if (insertError) {

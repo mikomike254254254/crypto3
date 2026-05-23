@@ -51,7 +51,7 @@ function openV2Checkout(publicKey: string, options: PaystackCheckoutOptions) {
     key: publicKey,
     email: options.email,
     amount: Math.round(options.amount * 100),
-    currency: options.currency || "USD",
+    currency: options.currency || "KES",
     reference: options.reference,
     firstName: options.name?.split(" ")[0],
     lastName: options.name?.split(" ").slice(1).join(" ") || undefined,
@@ -77,7 +77,7 @@ function openV1Checkout(publicKey: string, options: PaystackCheckoutOptions) {
     key: publicKey,
     email: options.email,
     amount: Math.round(options.amount * 100),
-    currency: options.currency || "USD",
+    currency: options.currency || "KES",
     ref: options.reference,
     firstname: options.name?.split(" ")[0],
     lastname: options.name?.split(" ").slice(1).join(" ") || undefined,
@@ -91,6 +91,8 @@ function openV1Checkout(publicKey: string, options: PaystackCheckoutOptions) {
   handler.openIframe();
 }
 
+export const PAYSTACK_CURRENCY = "KES";
+
 export async function startPaystackCheckout(options: PaystackCheckoutOptions) {
   const publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY as string | undefined;
   if (!publicKey || publicKey.includes("xxx")) {
@@ -99,17 +101,19 @@ export async function startPaystackCheckout(options: PaystackCheckoutOptions) {
 
   await loadPaystack();
 
+  const checkoutOptions = { ...options, currency: options.currency || PAYSTACK_CURRENCY };
+
   const Pop = window.PaystackPop as unknown as
     | (new () => { newTransaction: (options: Record<string, unknown>) => void })
     | { setup: (config: Record<string, unknown>) => { openIframe: () => void } };
 
   if (Pop && typeof Pop === "function" && "setup" in Pop && typeof Pop.setup === "function") {
-    openV1Checkout(publicKey, options);
+    openV1Checkout(publicKey, checkoutOptions);
     return;
   }
 
   if (window.PaystackPop) {
-    openV2Checkout(publicKey, options);
+    openV2Checkout(publicKey, checkoutOptions);
     return;
   }
 

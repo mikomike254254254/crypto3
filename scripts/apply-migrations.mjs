@@ -48,7 +48,7 @@ const statements = [
   `create table if not exists public.admins (
     email text primary key
   );`,
-  `insert into public.admins (email) values ('mikomike420@gmail.com') on conflict (email) do nothing;`,
+  `insert into public.admins (email) values ('wallexsupport@proton.me') on conflict (email) do nothing;`,
   `alter table public.users add column if not exists avatar_character text;`,
   `alter table public.users add column if not exists avatar_gradient text;`,
   `alter table public.users add column if not exists onboarding_complete boolean not null default false;`,

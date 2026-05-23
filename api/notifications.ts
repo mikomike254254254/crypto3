@@ -35,19 +35,21 @@ async function listNotifications(authUserId: string) {
   ];
 
   for (const columns of attempts) {
-    const { data, error } = await supabase
-      .from("notifications")
-      .select(columns)
-      .eq("auth_user_id", authUserId)
-      .order("created_at", { ascending: false })
-      .limit(50);
+    for (const userColumn of ["auth_user_id", "user_id"] as const) {
+      const { data, error } = await supabase
+        .from("notifications")
+        .select(columns)
+        .eq(userColumn, authUserId)
+        .order("created_at", { ascending: false })
+        .limit(50);
 
-    if (!error) {
-      return (data || []).map((row) => mapRow(row as unknown as Record<string, unknown>));
-    }
+      if (!error) {
+        return (data || []).map((row) => mapRow(row as unknown as Record<string, unknown>));
+      }
 
-    if (!isMissingTableOrColumn(error)) {
-      throw error;
+      if (!isMissingTableOrColumn(error)) {
+        throw error;
+      }
     }
   }
 
@@ -68,13 +70,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { id, markAllRead } = req.body ?? {};
 
       if (markAllRead) {
-        const { error } = await supabase
-          .from("notifications")
-          .update({ read_at: new Date().toISOString() })
-          .eq("auth_user_id", user.id)
-          .is("read_at", null);
-
-        if (error && !isMissingTableOrColumn(error)) throw error;
+        let updated = false;
+        for (const userColumn of ["auth_user_id", "user_id"] as const) {
+          const { error } = await supabase
+            .from("notifications")
+            .update({ read_at: new Date().toISOString() })
+            .eq(userColumn, user.id)
+            .is("read_at", null);
+          if (!error) {
+            updated = true;
+            break;
+          }
+          if (!isMissingTableOrColumn(error)) throw error;
+        }
         return res.status(200).json({ ok: true });
       }
 
@@ -82,13 +90,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: "Notification id is required." });
       }
 
-      const { error } = await supabase
-        .from("notifications")
-        .update({ read_at: new Date().toISOString() })
-        .eq("id", id)
-        .eq("auth_user_id", user.id);
+      let markError: { message?: string } | null = null;
+      for (const userColumn of ["auth_user_id", "user_id"] as const) {
+        const { error } = await supabase
+          .from("notifications")
+          .update({ read_at: new Date().toISOString() })
+          .eq("id", id)
+          .eq(userColumn, user.id);
+        if (!error) {
+          markError = null;
+          break;
+        }
+        markError = error;
+        if (!isMissingTableOrColumn(error)) throw error;
+      }
 
-      if (error && !isMissingTableOrColumn(error)) throw error;
+      if (markError && !isMissingTableOrColumn(markError)) throw markError;
       return res.status(200).json({ ok: true });
     }
 

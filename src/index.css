@@ -111,6 +111,26 @@ body {
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
+/* Soft 3D watchlist rows on home */
+.watchlist-row-3d {
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.06),
+    0 8px 24px -4px rgba(0, 0, 0, 0.12),
+    0 16px 32px -8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.04);
+  transform: translateZ(0);
+  backdrop-filter: blur(6px);
+}
+
+.dark .watchlist-row-3d {
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.45),
+    0 12px 28px -6px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+}
+
 @keyframes testimonial-scroll {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }

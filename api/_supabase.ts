@@ -108,29 +108,35 @@ export async function createNotification(
   authUserId: string,
   payload: { type: string; title: string; body: string; amount?: number; token?: string; fromWallet?: string },
 ) {
+  if (!authUserId) return;
+
   const supabase = adminClient();
-  const fullRow = {
-    auth_user_id: authUserId,
+  const base = {
     type: payload.type,
     title: payload.title,
     body: payload.body,
-    amount: payload.amount ?? null,
-    token: payload.token ?? null,
-    from_wallet: payload.fromWallet ?? null,
   };
 
-  let { error } = await supabase.from("notifications").insert(fullRow);
-
-  if (error && isMissingColumnError(error)) {
-    ({ error } = await supabase.from("notifications").insert({
+  const attempts: Record<string, unknown>[] = [
+    {
       auth_user_id: authUserId,
-      type: payload.type,
-      title: payload.title,
-      body: payload.body,
-    }));
-  }
+      ...base,
+      amount: payload.amount ?? null,
+      token: payload.token ?? null,
+      from_wallet: payload.fromWallet ?? null,
+    },
+    { auth_user_id: authUserId, ...base },
+    { user_id: authUserId, ...base },
+  ];
 
-  if (error) throw error;
+  for (const row of attempts) {
+    const { error } = await supabase.from("notifications").insert(row);
+    if (!error) return;
+    if (!isMissingColumnError(error)) {
+      console.warn("Notification insert failed:", error.message);
+      return;
+    }
+  }
 }
 
 export function normalizeKycStatus(status?: string) {

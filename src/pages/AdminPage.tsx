@@ -15,7 +15,14 @@ import {
   Wallet,
 } from "lucide-react";
 import { clearAdminSession, readAdminSession, writeAdminSession } from "../lib/adminSession";
-import { AdminDashboardData, AdminUser, fetchAdminDashboard, loginAdminPanel, runAdminAction } from "../services/adminBackend";
+import {
+  AdminDashboardData,
+  AdminKycSubmission,
+  AdminUser,
+  fetchAdminDashboard,
+  loginAdminPanel,
+  runAdminAction,
+} from "../services/adminBackend";
 
 type AdminSection = "dashboard" | "users" | "transactions" | "balances" | "kyc";
 
@@ -63,7 +70,7 @@ function walletUsdValue(user: AdminUser) {
 
 export function AdminPage() {
   const [adminSession, setAdminSession] = useState(readAdminSession());
-  const [loginEmail, setLoginEmail] = useState("mikomike420@gmail.com");
+  const [loginEmail, setLoginEmail] = useState("wallexsupport@proton.me");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
@@ -249,17 +256,18 @@ export function AdminPage() {
     }
   };
 
-  const reviewKyc = async (authUserId: string | undefined, submissionId: string, status: string) => {
-    if (!authUserId) return;
+  const reviewKyc = async (item: AdminKycSubmission, status: string) => {
+    const userId =
+      item.authUserId || data.users.find((u) => u.walletAddress === item.wallet)?.id || undefined;
     setSaving(true);
     setError("");
     setNotice("");
     try {
       const nextData = await runAdminAction({
         action: "update_kyc",
-        userId: authUserId,
+        userId,
         kycStatus: status,
-        kycSubmissionId: submissionId,
+        kycSubmissionId: item.id,
       });
       setData(nextData);
       setNotice(`KYC marked as ${status}.`);
@@ -468,7 +476,7 @@ export function AdminPage() {
                         <tr>
                           <th className="p-4 text-left font-medium">User</th>
                           <th className="p-4 text-left font-medium">Wallet</th>
-                          <th className="p-4 text-left font-medium">Balance</th>
+                          <th className="p-4 text-left font-medium">Balances</th>
                           <th className="p-4 text-left font-medium">KYC</th>
                           <th className="p-4 text-left font-medium">Action</th>
                         </tr>
@@ -481,7 +489,14 @@ export function AdminPage() {
                               <p className="text-xs text-slate-500">{item.email}</p>
                             </td>
                             <td className="p-4 font-mono text-xs text-slate-500">{item.walletAddress || item.id.slice(0, 12)}</td>
-                            <td className="p-4 font-semibold text-slate-950">{money.format(walletUsdValue(item))}</td>
+                            <td className="p-4">
+                              <p className="font-semibold text-slate-950">{money.format(walletUsdValue(item))}</p>
+                              <p className="text-[10px] text-slate-500 mt-1 max-w-[200px]">
+                                {item.wallets
+                                  .map((w) => `${w.balance.toLocaleString(undefined, { maximumFractionDigits: 4 })} ${w.symbol}`)
+                                  .join(" · ")}
+                              </p>
+                            </td>
                             <td className="p-4">
                               <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusClass(item.kycStatus)}`}>{item.kycStatus.replace("_", " ")}</span>
                             </td>
@@ -620,13 +635,13 @@ export function AdminPage() {
                         ))}
                       </div>
                       <div className="flex flex-wrap gap-2 mt-4">
-                        <button type="button" disabled={saving} onClick={() => reviewKyc(item.authUserId, item.id, "verified")} className="rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm font-semibold">
+                        <button type="button" disabled={saving} onClick={() => reviewKyc(item, "verified")} className="rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm font-semibold">
                           Approve
                         </button>
-                        <button type="button" disabled={saving} onClick={() => reviewKyc(item.authUserId, item.id, "rejected")} className="rounded-xl bg-rose-600 text-white px-4 py-2 text-sm font-semibold">
+                        <button type="button" disabled={saving} onClick={() => reviewKyc(item, "rejected")} className="rounded-xl bg-rose-600 text-white px-4 py-2 text-sm font-semibold">
                           Reject
                         </button>
-                        <button type="button" disabled={saving} onClick={() => reviewKyc(item.authUserId, item.id, "pending")} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold">
+                        <button type="button" disabled={saving} onClick={() => reviewKyc(item, "pending")} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold">
                           Mark pending
                         </button>
                       </div>
