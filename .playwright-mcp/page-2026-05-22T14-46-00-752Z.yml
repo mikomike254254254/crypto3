@@ -1,0 +1,5 @@
+- generic [ref=e4]:
+  - img "Wallex" [ref=e6]
+  - heading "Wallex Admin" [level=1] [ref=e7]
+  - paragraph [ref=e8]: Sign in with the Google account listed in ADMIN_EMAILS to manage users, balances, KYC, and transactions.
+  - button "Continue with Google" [ref=e9] [cursor=pointer]

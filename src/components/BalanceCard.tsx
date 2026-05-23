@@ -1,0 +1,135 @@
+import { useState } from "react";
+import { ChevronDown, Eye, EyeOff, ArrowUpRight, ArrowDownLeft, MoreHorizontal, TrendingUp, TrendingDown, QrCode, Share2, Clock, Star, AlertCircle, X } from "lucide-react";
+import { Wallet } from "../types/crypto";
+import { useTheme } from "../context/ThemeContext";
+
+interface BalanceCardProps {
+  wallet: Wallet;
+  wallets: Wallet[];
+  totalValue: number;
+  selectedWallet: string;
+  onWalletChange: (id: string) => void;
+  onDeposit: () => void;
+  onWithdraw: () => void;
+  kycVerified: boolean;
+}
+
+export function BalanceCard({ wallet, wallets, totalValue, selectedWallet, onWalletChange, onDeposit, onWithdraw, kycVerified }: BalanceCardProps) {
+  const [showBalance, setShowBalance] = useState(true);
+  const [showWalletSelect, setShowWalletSelect] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const { isDark } = useTheme();
+  const walletChange = wallet.change ?? 0;
+
+  const moreOptions = [
+    { id: 'qr', label: 'Show QR Code', icon: QrCode, description: 'Scan to receive' },
+    { id: 'share', label: 'Share Address', icon: Share2, description: 'Copy or share' },
+    { id: 'history', label: 'Transaction History', icon: Clock, description: 'View all transactions' },
+    { id: 'watchlist', label: 'Add to Watchlist', icon: Star, description: 'Track this wallet' },
+    { id: 'alert', label: 'Price Alert', icon: AlertCircle, description: 'Set price notifications' },
+  ];
+
+  const formatBalance = (value: number) => {
+    return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  return (
+    <div className="relative">
+      <div className={`rounded-2xl p-4 shadow-lg border transition-colors duration-300 ${isDark ? 'bg-neutral-900 border-neutral-700' : 'bg-white border-neutral-100'}`}>
+        <div className="relative mb-3">
+          <button onClick={() => setShowWalletSelect(!showWalletSelect)} className={`flex items-center gap-2 rounded-full px-3 py-1.5 transition-all ${isDark ? 'bg-neutral-800 hover:bg-neutral-700 border border-neutral-700' : 'bg-neutral-50 hover:bg-neutral-100 border border-neutral-200'}`}>
+            <div className={`w-5 h-5 rounded-full flex items-center justify-center shadow-sm ${wallet.color === 'green' ? 'bg-gradient-to-br from-green-400 to-green-600' : wallet.color === 'orange' ? 'bg-gradient-to-br from-orange-400 to-orange-600' : 'bg-gradient-to-br from-blue-400 to-blue-600'}`}>
+              <span className="text-white text-[7px] font-bold">{wallet.symbol}</span>
+            </div>
+            <span className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-black'}`}>{wallet.name}</span>
+            <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${showWalletSelect ? 'rotate-180' : ''} ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+          </button>
+
+          {showWalletSelect && (
+            <div className={`absolute top-full left-0 mt-2 rounded-xl shadow-xl overflow-hidden z-20 min-w-[180px] border animate-in fade-in-0 zoom-in-95 duration-200 ${isDark ? 'bg-neutral-800 border-neutral-700' : 'bg-white border-neutral-200'}`}>
+              {wallets.map((w) => (
+                <button key={w.id} onClick={() => { onWalletChange(w.id); setShowWalletSelect(false); }} className={`w-full px-3 py-2.5 flex items-center gap-2.5 border-b last:border-0 transition-colors ${isDark ? 'border-neutral-700 hover:bg-neutral-700' : 'border-neutral-100 hover:bg-neutral-50'}`}>
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center shadow-sm ${w.color === 'green' ? 'bg-gradient-to-br from-green-400 to-green-600' : w.color === 'orange' ? 'bg-gradient-to-br from-orange-400 to-orange-600' : 'bg-gradient-to-br from-blue-400 to-blue-600'}`}>
+                    <span className="text-white text-[7px] font-bold">{w.symbol}</span>
+                  </div>
+                  <div className="text-left flex-1">
+                    <p className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-black'}`}>{w.name}</p>
+                    <p className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>${w.balance.toLocaleString()}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <p className={`text-[10px] mb-0.5 font-bold tracking-widest uppercase ${isDark ? 'text-gray-400' : 'text-gray-400'}`}>Total Value</p>
+
+        <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-1.5">
+            <h2 className={`text-2xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-black'}`}>
+              {showBalance ? `$${formatBalance(totalValue)}` : '******'}
+            </h2>
+            <button onClick={() => setShowBalance(!showBalance)} className={`p-1 rounded-full transition-all ${isDark ? 'hover:bg-neutral-800' : 'hover:bg-neutral-100'}`}>
+              {showBalance ? <Eye className="w-4 h-4 text-gray-400" /> : <EyeOff className="w-4 h-4 text-gray-400" />}
+            </button>
+          </div>
+          <div className={`ml-auto px-2 py-1 rounded-full flex items-center gap-1 ${walletChange >= 0 ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-gradient-to-r from-red-500 to-rose-500'}`} style={{ boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)' }}>
+            {walletChange >= 0 ? <TrendingUp className="w-3 h-3 text-white" /> : <TrendingDown className="w-3 h-3 text-white" />}
+            <span className="text-[10px] text-white font-bold">{walletChange >= 0 ? '+' : ''}{walletChange.toFixed(2)}%</span>
+          </div>
+        </div>
+
+        <p className={`text-[11px] mb-3 ${isDark ? 'text-neutral-400' : 'text-gray-500'}`}>
+          {wallet.name}: {showBalance ? `${wallet.balance.toLocaleString("en-US", { maximumFractionDigits: 8 })} ${wallet.symbol}` : "******"}
+        </p>
+
+        <div className="flex items-center gap-2">
+          <button onClick={onWithdraw} className={`flex-1 rounded-xl py-2.5 flex items-center justify-center gap-1.5 transition-all border-2 hover:scale-[1.02] active:scale-[0.98] ${isDark ? 'bg-neutral-800 text-white border-neutral-700 hover:border-neutral-500' : 'bg-white text-black border-neutral-200 hover:border-neutral-300'}`}>
+            <ArrowUpRight className="w-3.5 h-3.5" />
+            <span className="text-xs font-semibold">Send</span>
+          </button>
+          <button onClick={onDeposit} className="flex-1 bg-black text-white rounded-xl py-2.5 flex items-center justify-center gap-1.5 hover:bg-neutral-800 transition-all hover:scale-[1.02] active:scale-[0.98]" style={{ boxShadow: '0 2px 10px rgba(0, 0, 0, 0.3)' }}>
+            <ArrowDownLeft className="w-3.5 h-3.5" />
+            <span className="text-xs font-semibold">Receive</span>
+          </button>
+          <button onClick={() => setShowMoreMenu(!showMoreMenu)} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all border-2 hover:scale-105 active:scale-95 ${isDark ? 'bg-neutral-800 border-neutral-700 hover:bg-neutral-700' : 'bg-white border-neutral-200 hover:bg-neutral-50'}`}>
+            <MoreHorizontal className={`w-4 h-4 ${isDark ? 'text-white' : 'text-black'}`} />
+          </button>
+        </div>
+      </div>
+
+      {showMoreMenu && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setShowMoreMenu(false)} />
+          <div className={`absolute bottom-full left-0 right-0 mb-2 rounded-2xl shadow-2xl border overflow-hidden z-50 animate-in fade-in-0 slide-in-from-bottom-4 duration-200 ${isDark ? 'bg-neutral-800 border-neutral-700' : 'bg-white border-neutral-200'}`}>
+            <div className={`p-3 border-b ${isDark ? 'border-neutral-700' : 'border-neutral-100'}`}>
+              <div className="flex items-center justify-between">
+                <h3 className={`text-sm font-bold ${isDark ? 'text-white' : 'text-black'}`}>More Options</h3>
+                <button onClick={() => setShowMoreMenu(false)} className={`p-1 rounded-full ${isDark ? 'hover:bg-neutral-700' : 'hover:bg-neutral-100'}`}>
+                  <X className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+                </button>
+              </div>
+            </div>
+            <div className="p-2">
+              {moreOptions.map((option) => {
+                const Icon = option.icon;
+                return (
+                  <button key={option.id} onClick={() => setShowMoreMenu(false)} className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${isDark ? 'hover:bg-neutral-700' : 'hover:bg-neutral-50'}`}>
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center ${isDark ? 'bg-neutral-700' : 'bg-neutral-100'}`}>
+                      <Icon className={`w-4 h-4 ${isDark ? 'text-white' : 'text-black'}`} />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>{option.label}</p>
+                      <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{option.description}</p>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 -rotate-90 ${isDark ? 'text-gray-400' : 'text-gray-400'}`} />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,163 @@
+import { createClient } from "@supabase/supabase-js";
+import type { VercelRequest } from "@vercel/node";
+
+export const walletAssets = [
+  { wallet_key: "usdt", name: "USDT Wallet", symbol: "USDT", change: 0.4, color: "green" },
+  { wallet_key: "xrp", name: "XRP Wallet", symbol: "XRP", change: 1.1, color: "blue" },
+  { wallet_key: "btc", name: "BTC Wallet", symbol: "BTC", change: -2.1, color: "orange" },
+  { wallet_key: "eth", name: "ETH Wallet", symbol: "ETH", change: 3.8, color: "blue" },
+];
+
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+export function adminClient() {
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.");
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+}
+
+export async function requireUser(req: VercelRequest) {
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.replace(/^Bearer\s+/i, "");
+
+  if (!token) {
+    throw new Error("Missing bearer token.");
+  }
+
+  const supabase = adminClient();
+  const { data, error } = await supabase.auth.getUser(token);
+
+  if (error || !data.user) {
+    throw new Error("Invalid session.");
+  }
+
+  return data.user;
+}
+
+export function toClientWallet(row: any) {
+  return {
+    id: row.wallet_key,
+    name: row.name,
+    symbol: row.symbol,
+    balance: Number(row.balance),
+    change: Number(row.change),
+    color: row.color,
+    accountNumber: row.account_number,
+    address: row.address,
+  };
+}
+
+export function walletAddressForUserId(userId: string) {
+  return `r${userId.replace(/-/g, "")}`;
+}
+
+export function normalizeKycStatus(status?: string) {
+  if (status === "verified" || status === "pending" || status === "rejected") {
+    return status;
+  }
+
+  return "not_started";
+}
+
+export function toDatabaseKycStatus(status?: string) {
+  return status === "not_started" ? "unverified" : status || "unverified";
+}
+
+export async function ensureUserAccount(user: Awaited<ReturnType<typeof requireUser>>) {
+  const supabase = adminClient();
+  const { data: existing, error: readError } = await supabase
+    .from("users")
+    .select("*")
+    .eq("auth_user_id", user.id)
+    .maybeSingle();
+
+  if (readError) throw readError;
+  if (existing) return existing;
+
+  const wallet = walletAddressForUserId(user.id);
+  const fullName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "Wallet User";
+
+  const { data: inserted, error: insertError } = await supabase
+    .from("users")
+    .insert({
+      auth_user_id: user.id,
+      wallet,
+      email: user.email,
+      full_name: fullName,
+      avatar_url: user.user_metadata?.avatar_url || null,
+      kyc_status: "unverified",
+      signup_bonus_awarded: false,
+    })
+    .select("*")
+    .single();
+
+  if (insertError) throw insertError;
+
+  await upsertBalance(wallet, 0);
+  return inserted;
+}
+
+export async function upsertBalance(wallet: string, amount: number) {
+  const supabase = adminClient();
+  const { error } = await supabase
+    .from("balances")
+    .upsert({ wallet, amount, updated_at: new Date().toISOString() }, { onConflict: "wallet" });
+
+  if (error) throw error;
+}
+
+export function balancesFromTransactions(transactions: any[], wallet: string) {
+  const balances = new Map<string, number>();
+
+  for (const tx of transactions) {
+    const token = String(tx.token || "USDT").toUpperCase();
+    const amount = Number(tx.amount || 0);
+    if (!Number.isFinite(amount) || amount <= 0 || tx.status === "failed") continue;
+
+    if (tx.to_wallet === wallet && tx.status === "completed") {
+      balances.set(token, (balances.get(token) || 0) + amount);
+    }
+
+    if (tx.from_wallet === wallet) {
+      balances.set(token, (balances.get(token) || 0) - amount);
+    }
+  }
+
+  return balances;
+}
+
+export async function readTokenBalances(wallet: string) {
+  const supabase = adminClient();
+  const { data: transactions, error } = await supabase
+    .from("transactions")
+    .select("*")
+    .or(`from_wallet.eq.${wallet},to_wallet.eq.${wallet}`)
+    .order("created_at", { ascending: true });
+
+  if (error) throw error;
+
+  return balancesFromTransactions(transactions || [], wallet);
+}
+
+export async function buildClientWallets(userRow: any) {
+  const balances = await readTokenBalances(userRow.wallet);
+
+  return walletAssets.map((asset) => ({
+    id: asset.wallet_key,
+    name: asset.name,
+    symbol: asset.symbol,
+    balance: Number((balances.get(asset.symbol) || 0).toFixed(8)),
+    change: asset.change,
+    color: asset.color,
+    accountNumber: userRow.wallet,
+    address: userRow.wallet,
+  }));
+}

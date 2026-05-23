@@ -1,0 +1,158 @@
+- generic [ref=e279]:
+  - generic [ref=e691]:
+    - heading "Settings" [level=1] [ref=e692]
+    - button "Currency Display amounts in your preferred currency USD" [ref=e693] [cursor=pointer]:
+      - generic [ref=e694]:
+        - generic [ref=e695]:
+          - img [ref=e697]
+          - generic [ref=e699]:
+            - paragraph [ref=e700]: Currency
+            - paragraph [ref=e701]: Display amounts in your preferred currency
+        - generic [ref=e702]:
+          - generic [ref=e703]: USD
+          - img [ref=e704]
+    - generic [ref=e706]:
+      - heading "Account" [level=3] [ref=e707]
+      - generic [ref=e708]:
+        - generic [ref=e709]:
+          - img [ref=e711]
+          - generic [ref=e714]:
+            - paragraph [ref=e715]: Personal Info
+            - paragraph [ref=e716]: Name, email, phone number
+          - img [ref=e717]
+        - generic [ref=e719]:
+          - img [ref=e721]
+          - generic [ref=e723]:
+            - paragraph [ref=e724]: Payment Methods
+            - paragraph [ref=e725]: Cards & bank accounts
+          - img [ref=e726]
+        - generic [ref=e728] [cursor=pointer]:
+          - img [ref=e730]
+          - generic [ref=e733]:
+            - paragraph [ref=e734]: Documents
+            - paragraph [ref=e735]: KYC & verification
+          - img [ref=e736]
+    - generic [ref=e738]:
+      - heading "Security" [level=3] [ref=e739]
+      - generic [ref=e740]:
+        - generic [ref=e741]:
+          - img [ref=e743]
+          - generic [ref=e746]:
+            - paragraph [ref=e747]: Change Password
+            - paragraph [ref=e748]: Update your password
+          - img [ref=e749]
+        - generic [ref=e751] [cursor=pointer]:
+          - img [ref=e753]
+          - generic [ref=e755]:
+            - paragraph [ref=e756]: Two-Factor Auth
+            - paragraph [ref=e757]: Extra security layer
+          - button [ref=e758]
+        - generic [ref=e760]:
+          - img [ref=e762]
+          - generic [ref=e765]:
+            - paragraph [ref=e766]: Auto-Lock
+            - paragraph [ref=e767]: 5 min
+          - img [ref=e768]
+    - generic [ref=e770]:
+      - heading "Privacy" [level=3] [ref=e771]
+      - generic [ref=e773] [cursor=pointer]:
+        - img [ref=e775]
+        - generic [ref=e778]:
+          - paragraph [ref=e779]: Hide Balance
+          - paragraph [ref=e780]: Hide amounts on balance screens
+        - button [ref=e781]
+    - generic [ref=e783]:
+      - heading "Notifications" [level=3] [ref=e784]
+      - generic [ref=e785]:
+        - generic [ref=e786] [cursor=pointer]:
+          - img [ref=e788]
+          - generic [ref=e791]:
+            - paragraph [ref=e792]: Push Notifications
+            - paragraph [ref=e793]: General alerts
+          - button [ref=e794]
+        - generic [ref=e796] [cursor=pointer]:
+          - img [ref=e798]
+          - generic [ref=e800]:
+            - paragraph [ref=e801]: Price Alerts
+            - paragraph [ref=e802]: Crypto price changes
+          - button [ref=e803]
+        - generic [ref=e805] [cursor=pointer]:
+          - img [ref=e807]
+          - generic [ref=e809]:
+            - paragraph [ref=e810]: Transaction Alerts
+            - paragraph [ref=e811]: Send & receive notifications
+          - button [ref=e812]
+    - generic [ref=e814]:
+      - heading "Support" [level=3] [ref=e815]
+      - generic [ref=e816]:
+        - generic [ref=e817] [cursor=pointer]:
+          - img [ref=e819]
+          - generic [ref=e822]:
+            - paragraph [ref=e823]: Help Center
+            - paragraph [ref=e824]: FAQs & guides
+          - img [ref=e825]
+        - generic [ref=e827] [cursor=pointer]:
+          - img [ref=e829]
+          - generic [ref=e831]:
+            - paragraph [ref=e832]: Contact Support
+            - paragraph [ref=e833]: Chat with us
+          - img [ref=e834]
+        - generic [ref=e836] [cursor=pointer]:
+          - img [ref=e838]
+          - generic [ref=e841]:
+            - paragraph [ref=e842]: Feedback
+            - paragraph [ref=e843]: Send suggestions
+          - img [ref=e844]
+        - generic [ref=e846] [cursor=pointer]:
+          - img [ref=e848]
+          - generic [ref=e850]:
+            - paragraph [ref=e851]: About
+            - paragraph [ref=e852]: App version & info
+          - img [ref=e853]
+    - generic [ref=e855]:
+      - heading "Appearance" [level=3] [ref=e856]
+      - generic [ref=e857]:
+        - generic [ref=e858]:
+          - img [ref=e860]
+          - generic [ref=e862]:
+            - paragraph [ref=e863]: Dark Mode
+            - paragraph [ref=e864]: Switch to dark theme
+          - button [active] [ref=e865] [cursor=pointer]
+        - generic [ref=e867]:
+          - img [ref=e869]
+          - generic [ref=e872]:
+            - paragraph [ref=e873]: Language
+            - paragraph [ref=e874]: English (US)
+          - img [ref=e875]
+    - generic [ref=e877]:
+      - heading "Danger Zone" [level=3] [ref=e878]
+      - generic [ref=e879]:
+        - button "Log Out Sign out of your account" [ref=e880] [cursor=pointer]:
+          - img [ref=e882]
+          - generic [ref=e885]:
+            - paragraph [ref=e886]: Log Out
+            - paragraph [ref=e887]: Sign out of your account
+        - button "Delete Account Permanently delete your account" [ref=e888] [cursor=pointer]:
+          - img [ref=e890]
+          - generic [ref=e893]:
+            - paragraph [ref=e894]: Delete Account
+            - paragraph [ref=e895]: Permanently delete your account
+    - generic [ref=e896]:
+      - paragraph [ref=e897]: Version 1.0.0
+      - paragraph [ref=e898]: (c) 2026 Wallex
+  - generic [ref=e572]:
+    - button "Home" [ref=e573] [cursor=pointer]:
+      - img [ref=e575]
+      - generic [ref=e578]: Home
+    - button "Explore" [ref=e579] [cursor=pointer]:
+      - img [ref=e581]
+      - generic [ref=e584]: Explore
+    - button "Wallet" [ref=e585] [cursor=pointer]:
+      - img [ref=e587]
+      - generic [ref=e590]: Wallet
+    - button "Profile" [ref=e591] [cursor=pointer]:
+      - img [ref=e593]
+      - generic [ref=e596]: Profile
+    - button "Settings" [ref=e597] [cursor=pointer]:
+      - img [ref=e599]
+      - generic [ref=e602]: Settings

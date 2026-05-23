@@ -1,0 +1,202 @@
+- generic [ref=e279]:
+  - generic [ref=e281]:
+    - generic [ref=e282]:
+      - generic [ref=e283]:
+        - img "Wallex" [ref=e285]
+        - generic [ref=e286]:
+          - generic [ref=e287]: "Wallet ID:"
+          - generic [ref=e288]: r97a354d8028840c092c6962693dfe365b
+      - generic [ref=e289]:
+        - button [ref=e290] [cursor=pointer]:
+          - img [ref=e291]
+        - button [ref=e296] [cursor=pointer]:
+          - img [ref=e297]
+    - generic [ref=e303]:
+      - button "USDT USDT Wallet" [ref=e305] [cursor=pointer]:
+        - generic [ref=e307]: USDT
+        - generic [ref=e308]: USDT Wallet
+        - img [ref=e309]
+      - paragraph [ref=e311]: Total Value
+      - generic [ref=e312]:
+        - generic [ref=e313]:
+          - heading "$5.65" [level=2] [ref=e603]
+          - button [ref=e315] [cursor=pointer]:
+            - img [ref=e316]
+        - generic [ref=e319]:
+          - img [ref=e320]
+          - generic [ref=e323]: +0.40%
+      - paragraph [ref=e324]: "USDT Wallet: 0 USDT"
+      - generic [ref=e325]:
+        - button "Send" [ref=e326] [cursor=pointer]:
+          - img [ref=e327]
+          - generic [ref=e330]: Send
+        - button "Receive" [ref=e331] [cursor=pointer]:
+          - img [ref=e332]
+          - generic [ref=e335]: Receive
+        - button [ref=e336] [cursor=pointer]:
+          - img [ref=e337]
+    - generic [ref=e342]:
+      - generic [ref=e343]:
+        - heading "Quick Actions" [level=3] [ref=e344]
+        - button "More" [ref=e345] [cursor=pointer]
+      - generic [ref=e346]:
+        - button "Buy" [ref=e347] [cursor=pointer]:
+          - img [ref=e349]
+          - generic [ref=e352]: Buy
+        - button "Sell" [ref=e353] [cursor=pointer]:
+          - img [ref=e355]
+          - generic [ref=e358]: Sell
+        - button "Swap" [ref=e359] [cursor=pointer]:
+          - img [ref=e361]
+          - generic [ref=e364]: Swap
+        - button "P2P" [ref=e365] [cursor=pointer]:
+          - img [ref=e367]
+          - generic [ref=e372]: P2P
+    - generic [ref=e374]:
+      - generic [ref=e375]:
+        - heading "Markets" [level=3] [ref=e376]
+        - button "Edit" [ref=e377] [cursor=pointer]
+      - generic [ref=e378]:
+        - button "Watchlist" [ref=e379] [cursor=pointer]:
+          - img [ref=e380]
+          - text: Watchlist
+        - button "Turnover" [ref=e382] [cursor=pointer]
+        - button "Assets" [ref=e383] [cursor=pointer]
+        - button "Hot" [ref=e384] [cursor=pointer]
+      - generic [ref=e385]:
+        - generic [ref=e386]:
+          - button [ref=e387] [cursor=pointer]:
+            - img [ref=e388]
+          - generic [ref=e392]: BTC
+          - generic [ref=e393]:
+            - generic [ref=e394]:
+              - generic [ref=e395]: Bitcoin
+              - generic [ref=e396]: BTC
+            - generic [ref=e397]: "MCap: 847.2B"
+          - img [ref=e398]
+          - generic [ref=e402]:
+            - paragraph [ref=e403]: $43,250.00
+            - generic [ref=e404]:
+              - img [ref=e405]
+              - generic [ref=e408]: +2.34%
+        - generic [ref=e409]:
+          - button [ref=e410] [cursor=pointer]:
+            - img [ref=e411]
+          - generic [ref=e415]: ETH
+          - generic [ref=e416]:
+            - generic [ref=e417]:
+              - generic [ref=e418]: Ethereum
+              - generic [ref=e419]: ETH
+            - generic [ref=e420]: "MCap: 274.8B"
+          - img [ref=e421]
+          - generic [ref=e425]:
+            - paragraph [ref=e426]: $2,285.50
+            - generic [ref=e427]:
+              - img [ref=e428]
+              - generic [ref=e431]: "-1.28%"
+        - generic [ref=e432]:
+          - button [ref=e433] [cursor=pointer]:
+            - img [ref=e434]
+          - generic [ref=e438]: BNB
+          - generic [ref=e439]:
+            - generic [ref=e440]:
+              - generic [ref=e441]: BNB
+              - generic [ref=e442]: BNB
+            - generic [ref=e443]: "MCap: 48.2B"
+          - img [ref=e444]
+          - generic [ref=e448]:
+            - paragraph [ref=e449]: $312.45
+            - generic [ref=e450]:
+              - img [ref=e451]
+              - generic [ref=e454]: +4.56%
+        - generic [ref=e455]:
+          - button [ref=e456] [cursor=pointer]:
+            - img [ref=e457]
+          - generic [ref=e461]: SOL
+          - generic [ref=e462]:
+            - generic [ref=e463]:
+              - generic [ref=e464]: Solana
+              - generic [ref=e465]: SOL
+            - generic [ref=e466]: "MCap: 42.1B"
+          - img [ref=e467]
+          - generic [ref=e471]:
+            - paragraph [ref=e472]: $98.72
+            - generic [ref=e473]:
+              - img [ref=e474]
+              - generic [ref=e477]: +8.92%
+        - generic [ref=e478]:
+          - button [ref=e479] [cursor=pointer]:
+            - img [ref=e480]
+          - generic [ref=e484]: XRP
+          - generic [ref=e485]:
+            - generic [ref=e486]:
+              - generic [ref=e487]: XRP
+              - generic [ref=e488]: XRP
+            - generic [ref=e489]: "MCap: 28.4B"
+          - img [ref=e490]
+          - generic [ref=e494]:
+            - paragraph [ref=e495]: $0.5234
+            - generic [ref=e496]:
+              - img [ref=e497]
+              - generic [ref=e500]: "-0.85%"
+        - generic [ref=e501]:
+          - button [ref=e502] [cursor=pointer]:
+            - img [ref=e503]
+          - generic [ref=e507]: ADA
+          - generic [ref=e508]:
+            - generic [ref=e509]:
+              - generic [ref=e510]: Cardano
+              - generic [ref=e511]: ADA
+            - generic [ref=e512]: "MCap: 16.1B"
+          - img [ref=e513]
+          - generic [ref=e517]:
+            - paragraph [ref=e518]: $0.4521
+            - generic [ref=e519]:
+              - img [ref=e520]
+              - generic [ref=e523]: +1.23%
+        - generic [ref=e524]:
+          - button [ref=e525] [cursor=pointer]:
+            - img [ref=e526]
+          - generic [ref=e530]: DOGE
+          - generic [ref=e531]:
+            - generic [ref=e532]:
+              - generic [ref=e533]: Dogecoin
+              - generic [ref=e534]: DOGE
+            - generic [ref=e535]: "MCap: 11.7B"
+          - img [ref=e536]
+          - generic [ref=e540]:
+            - paragraph [ref=e541]: $0.0821
+            - generic [ref=e542]:
+              - img [ref=e543]
+              - generic [ref=e546]: +12.45%
+        - generic [ref=e547]:
+          - button [ref=e548] [cursor=pointer]:
+            - img [ref=e549]
+          - generic [ref=e553]: AVAX
+          - generic [ref=e554]:
+            - generic [ref=e555]:
+              - generic [ref=e556]: Avalanche
+              - generic [ref=e557]: AVAX
+            - generic [ref=e558]: "MCap: 13.2B"
+          - img [ref=e559]
+          - generic [ref=e563]:
+            - paragraph [ref=e564]: $35.67
+            - generic [ref=e565]:
+              - img [ref=e566]
+              - generic [ref=e569]: "-3.21%"
+  - generic [ref=e572]:
+    - button "Home" [ref=e573] [cursor=pointer]:
+      - img [ref=e575]
+      - generic [ref=e578]: Home
+    - button "Explore" [ref=e579] [cursor=pointer]:
+      - img [ref=e581]
+      - generic [ref=e584]: Explore
+    - button "Wallet" [ref=e585] [cursor=pointer]:
+      - img [ref=e587]
+      - generic [ref=e590]: Wallet
+    - button "Profile" [ref=e591] [cursor=pointer]:
+      - img [ref=e593]
+      - generic [ref=e596]: Profile
+    - button "Settings" [ref=e597] [cursor=pointer]:
+      - img [ref=e599]
+      - generic [ref=e602]: Settings

@@ -1,0 +1,250 @@
+- generic [ref=e3]:
+  - navigation [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: W
+        - generic [ref=e8]: Wallex
+      - generic [ref=e9]:
+        - link "Rates" [ref=e10] [cursor=pointer]:
+          - /url: "#rates"
+        - link "Currencies" [ref=e11] [cursor=pointer]:
+          - /url: "#currencies"
+        - link "Security" [ref=e12] [cursor=pointer]:
+          - /url: "#security"
+        - link "Admin" [ref=e13] [cursor=pointer]:
+          - /url: /admin
+      - generic [ref=e14]:
+        - button "Log in" [ref=e15] [cursor=pointer]
+        - button "Open wallet" [ref=e16] [cursor=pointer]
+  - main [ref=e17]:
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - img [ref=e22]
+          - text: Secure crypto wallet for everyday use
+        - heading "Wallex" [level=1] [ref=e24]
+        - paragraph [ref=e25]: Create a wallet, sign in with Google or email, track supported assets, submit KYC, and receive admin-issued rewards directly in your Supabase-backed account.
+        - generic [ref=e26]:
+          - button "Open your wallet" [active] [ref=e27] [cursor=pointer]:
+            - text: Open your wallet
+            - img [ref=e28]
+          - button "Log in" [ref=e30] [cursor=pointer]
+        - generic [ref=e31]:
+          - generic [ref=e32]:
+            - paragraph [ref=e33]: 12+
+            - paragraph [ref=e34]: Assets
+          - generic [ref=e35]:
+            - paragraph [ref=e36]: KYC
+            - paragraph [ref=e37]: Ready
+          - generic [ref=e38]:
+            - paragraph [ref=e39]: Admin
+            - paragraph [ref=e40]: Rewards
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - generic [ref=e43]:
+            - generic [ref=e44]:
+              - paragraph [ref=e45]: Total balance
+              - paragraph [ref=e46]: $12,573.00
+            - img [ref=e47]
+          - generic [ref=e50]:
+            - generic [ref=e51]:
+              - paragraph [ref=e52]: ₿
+              - paragraph [ref=e53]: BTC
+            - generic [ref=e54]:
+              - paragraph [ref=e55]: Ξ
+              - paragraph [ref=e56]: ETH
+            - generic [ref=e57]:
+              - paragraph [ref=e58]: ₮
+              - paragraph [ref=e59]: USDT
+        - generic [ref=e60]:
+          - generic [ref=e61]:
+            - generic [ref=e62]:
+              - generic [ref=e63]: ₿
+              - generic [ref=e64]:
+                - paragraph [ref=e65]: Bitcoin
+                - paragraph [ref=e66]: BTC
+            - generic [ref=e67]:
+              - paragraph [ref=e68]: $67,443.01
+              - paragraph [ref=e69]: +2.5%
+          - generic [ref=e70]:
+            - generic [ref=e71]:
+              - generic [ref=e72]: Ξ
+              - generic [ref=e73]:
+                - paragraph [ref=e74]: Ethereum
+                - paragraph [ref=e75]: ETH
+            - generic [ref=e76]:
+              - paragraph [ref=e77]: $3,520.05
+              - paragraph [ref=e78]: "-1.4%"
+          - generic [ref=e79]:
+            - generic [ref=e80]:
+              - generic [ref=e81]: ₮
+              - generic [ref=e82]:
+                - paragraph [ref=e83]: Tether
+                - paragraph [ref=e84]: USDT
+            - generic [ref=e85]:
+              - paragraph [ref=e86]: $0.9948
+              - paragraph [ref=e87]: "-0.1%"
+    - generic [ref=e88]:
+      - generic [ref=e89]:
+        - generic [ref=e90]:
+          - heading "Live USD Rates" [level=2] [ref=e91]
+          - paragraph [ref=e92]: Auto-updating demo prices for the supported Wallex assets.
+        - generic [ref=e93]: Live
+      - generic [ref=e95]:
+        - generic [ref=e96]:
+          - generic [ref=e97]:
+            - generic [ref=e98]: ₿
+            - generic [ref=e99]:
+              - paragraph [ref=e100]: Bitcoin
+              - paragraph [ref=e101]: BTC
+          - generic [ref=e102]:
+            - paragraph [ref=e103]: $67,443.01
+            - paragraph [ref=e104]:
+              - img [ref=e105]
+              - text: +2.5%
+        - generic [ref=e108]:
+          - generic [ref=e109]:
+            - generic [ref=e110]: Ξ
+            - generic [ref=e111]:
+              - paragraph [ref=e112]: Ethereum
+              - paragraph [ref=e113]: ETH
+          - generic [ref=e114]:
+            - paragraph [ref=e115]: $3,520.05
+            - paragraph [ref=e116]:
+              - img [ref=e117]
+              - text: "-1.4%"
+        - generic [ref=e120]:
+          - generic [ref=e121]:
+            - generic [ref=e122]: ₮
+            - generic [ref=e123]:
+              - paragraph [ref=e124]: Tether
+              - paragraph [ref=e125]: USDT
+          - generic [ref=e126]:
+            - paragraph [ref=e127]: $0.9948
+            - paragraph [ref=e128]:
+              - img [ref=e247]
+              - text: "-0.1%"
+        - generic [ref=e132]:
+          - generic [ref=e133]:
+            - generic [ref=e134]: ◎
+            - generic [ref=e135]:
+              - paragraph [ref=e136]: Solana
+              - paragraph [ref=e137]: SOL
+          - generic [ref=e138]:
+            - paragraph [ref=e139]: $141.88
+            - paragraph [ref=e140]:
+              - img [ref=e141]
+              - text: +6.0%
+        - generic [ref=e144]:
+          - generic [ref=e145]:
+            - generic [ref=e146]: ✕
+            - generic [ref=e147]:
+              - paragraph [ref=e148]: XRP
+              - paragraph [ref=e149]: XRP
+          - generic [ref=e150]:
+            - paragraph [ref=e151]: $0.5242
+            - paragraph [ref=e152]:
+              - img [ref=e153]
+              - text: "-0.8%"
+        - generic [ref=e156]:
+          - generic [ref=e157]:
+            - generic [ref=e158]: ₳
+            - generic [ref=e159]:
+              - paragraph [ref=e160]: Cardano
+              - paragraph [ref=e161]: ADA
+          - generic [ref=e162]:
+            - paragraph [ref=e163]: $0.4499
+            - paragraph [ref=e164]:
+              - img [ref=e165]
+              - text: +2.8%
+    - generic [ref=e169]:
+      - heading "Supported crypto symbols" [level=2] [ref=e170]
+      - paragraph [ref=e171]: Clean, readable symbols with standard asset tickers.
+      - generic [ref=e172]:
+        - generic [ref=e173]:
+          - generic [ref=e174]: ₿
+          - paragraph [ref=e175]: Bitcoin
+          - paragraph [ref=e176]: BTC
+        - generic [ref=e177]:
+          - generic [ref=e178]: Ξ
+          - paragraph [ref=e179]: Ethereum
+          - paragraph [ref=e180]: ETH
+        - generic [ref=e181]:
+          - generic [ref=e182]: ₮
+          - paragraph [ref=e183]: Tether
+          - paragraph [ref=e184]: USDT
+        - generic [ref=e185]:
+          - generic [ref=e186]: ◎
+          - paragraph [ref=e187]: Solana
+          - paragraph [ref=e188]: SOL
+        - generic [ref=e189]:
+          - generic [ref=e190]: ✕
+          - paragraph [ref=e191]: XRP
+          - paragraph [ref=e192]: XRP
+        - generic [ref=e193]:
+          - generic [ref=e194]: ₳
+          - paragraph [ref=e195]: Cardano
+          - paragraph [ref=e196]: ADA
+        - generic [ref=e197]:
+          - generic [ref=e198]: Ð
+          - paragraph [ref=e199]: Dogecoin
+          - paragraph [ref=e200]: DOGE
+        - generic [ref=e201]:
+          - generic [ref=e202]: B
+          - paragraph [ref=e203]: BNB
+          - paragraph [ref=e204]: BNB
+        - generic [ref=e205]:
+          - generic [ref=e206]: A
+          - paragraph [ref=e207]: Avalanche
+          - paragraph [ref=e208]: AVAX
+        - generic [ref=e209]:
+          - generic [ref=e210]: P
+          - paragraph [ref=e211]: Polygon
+          - paragraph [ref=e212]: MATIC
+        - generic [ref=e213]:
+          - generic [ref=e214]: Ł
+          - paragraph [ref=e215]: Litecoin
+          - paragraph [ref=e216]: LTC
+        - generic [ref=e217]:
+          - generic [ref=e218]: T
+          - paragraph [ref=e219]: Tron
+          - paragraph [ref=e220]: TRX
+    - generic [ref=e221]:
+      - generic [ref=e222]:
+        - img [ref=e223]
+        - heading "Supabase auth" [level=3] [ref=e226]
+        - paragraph [ref=e227]: Google OAuth and email/password sessions are handled through the same auth provider as the wallet app.
+      - generic [ref=e228]:
+        - img [ref=e229]
+        - heading "Private admin access" [level=3] [ref=e233]
+        - paragraph [ref=e234]: Admin actions run through server routes with the service role key kept out of browser code.
+      - generic [ref=e235]:
+        - img [ref=e236]
+        - heading "Reward flow" [level=3] [ref=e238]
+        - paragraph [ref=e239]: Admins can credit balances and create transaction history that users see when they open their wallet.
+  - contentinfo [ref=e240]:
+    - generic [ref=e241]:
+      - generic [ref=e242]:
+        - img [ref=e243]
+        - text: Wallex wallet, auth, admin, and rewards connected.
+      - button "Create wallet" [ref=e246] [cursor=pointer]
+  - generic [ref=e251]:
+    - generic [ref=e252]:
+      - generic [ref=e253]:
+        - heading "Open your Wallex wallet" [level=2] [ref=e254]
+        - paragraph [ref=e255]: Supabase keeps your wallet account and session secure.
+      - button "Close" [ref=e256] [cursor=pointer]:
+        - img [ref=e257]
+    - generic [ref=e260]:
+      - button "Continue with Google" [ref=e261] [cursor=pointer]
+      - generic [ref=e264]: or
+      - textbox "Full name" [ref=e266]
+      - generic [ref=e267]:
+        - img [ref=e268]
+        - textbox "you@email.com" [ref=e271]
+      - generic [ref=e272]:
+        - textbox "Password" [ref=e273]
+        - button "Toggle password visibility" [ref=e274] [cursor=pointer]:
+          - img [ref=e275]
+      - button "Create wallet" [ref=e278] [cursor=pointer]
+      - button "Already have a wallet? Log in" [ref=e279] [cursor=pointer]

@@ -1,0 +1,94 @@
+- generic [ref=e3]:
+  - navigation [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - img "Wallex" [ref=e8]
+        - generic [ref=e9]: Wallex
+      - generic [ref=e10]:
+        - link "Rates" [ref=e11] [cursor=pointer]:
+          - /url: "#rates"
+        - link "Currencies" [ref=e12] [cursor=pointer]:
+          - /url: "#currencies"
+        - link "Security" [ref=e13] [cursor=pointer]:
+          - /url: "#security"
+        - link "Admin" [ref=e14] [cursor=pointer]:
+          - /url: /admin
+      - generic [ref=e15]:
+        - button "Log in" [ref=e16] [cursor=pointer]
+        - button "Open wallet" [ref=e17] [cursor=pointer]
+  - main [ref=e18]:
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - generic [ref=e22]
+        - heading "Wallex" [level=1] [ref=e25]
+        - paragraph [ref=e26]: Create a wallet, sign in with Google or email, track supported assets, submit KYC, and receive admin-issued rewards directly in your Supabase-backed account.
+        - generic [ref=e27]
+        - generic [ref=e32]
+      - generic [ref=e42]:
+        - generic [ref=e43]
+        - generic [ref=e61]
+    - generic [ref=e89]:
+      - generic [ref=e90]:
+        - generic [ref=e91]
+        - generic [ref=e94]: Live
+      - generic [ref=e96]:
+        - generic [ref=e97]
+        - generic [ref=e109]
+        - generic [ref=e121]
+        - generic [ref=e133]
+        - generic [ref=e145]
+        - generic [ref=e157]
+    - generic [ref=e170]:
+      - heading "Supported crypto symbols" [level=2] [ref=e171]
+      - paragraph [ref=e172]: Clean, readable symbols with standard asset tickers.
+      - generic [ref=e173]:
+        - generic [ref=e174]
+        - generic [ref=e178]
+        - generic [ref=e182]
+        - generic [ref=e186]
+        - generic [ref=e190]
+        - generic [ref=e194]
+        - generic [ref=e198]
+        - generic [ref=e202]
+        - generic [ref=e206]
+        - generic [ref=e210]
+        - generic [ref=e214]
+        - generic [ref=e218]
+    - generic [ref=e222]:
+      - generic [ref=e223]:
+        - img [ref=e224]
+        - heading "Supabase auth" [level=3] [ref=e227]
+        - paragraph [ref=e228]: Google OAuth and email/password sessions are handled through the same auth provider as the wallet app.
+      - generic [ref=e229]:
+        - img [ref=e230]
+        - heading "Private admin access" [level=3] [ref=e234]
+        - paragraph [ref=e235]: Admin actions run through server routes with the service role key kept out of browser code.
+      - generic [ref=e236]:
+        - img [ref=e237]
+        - heading "Reward flow" [level=3] [ref=e239]
+        - paragraph [ref=e240]: Admins can credit balances and create transaction history that users see when they open their wallet.
+  - contentinfo [ref=e241]:
+    - generic [ref=e242]:
+      - generic [ref=e243]:
+        - img [ref=e244]
+        - text: Wallex wallet, auth, admin, and rewards connected.
+      - button "Create wallet" [active] [ref=e247] [cursor=pointer]
+  - generic [ref=e255]:
+    - generic [ref=e256]:
+      - generic [ref=e257]:
+        - heading "Open your Wallex wallet" [level=2] [ref=e258]
+        - paragraph [ref=e259]: Supabase keeps your wallet account and session secure.
+      - button "Close" [ref=e260] [cursor=pointer]:
+        - img [ref=e261]
+    - generic [ref=e264]:
+      - button "Continue with Google" [ref=e265] [cursor=pointer]
+      - generic [ref=e268]: or
+      - textbox "Full name" [ref=e270]
+      - generic [ref=e271]:
+        - img [ref=e272]
+        - textbox "you@email.com" [ref=e275]
+      - generic [ref=e276]:
+        - textbox "Password" [ref=e277]
+        - button "Toggle password visibility" [ref=e278] [cursor=pointer]
+      - button "Create wallet" [ref=e282] [cursor=pointer]
+      - button "Already have a wallet? Log in" [ref=e283] [cursor=pointer]
