@@ -33,16 +33,26 @@ body {
   animation: marquee-scroll 55s linear infinite;
 }
 
-/* Subtle Wakanda-inspired silver tribal pattern */
+/* Wakanda-inspired silver tribal pattern — visible and always moving */
 .balance-card-silver::before {
   content: "";
   position: absolute;
-  inset: 0;
-  opacity: 0.11;
-  background-image: url("data:image/svg+xml,%3Csvg width='160' height='160' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23c0c0c0' stroke-width='0.45'%3E%3Cpath d='M80 8l12 20-12 20-12-20z'/%3E%3Cpath d='M8 80l20 12 20-12-20-12z'/%3E%3Cpath d='M152 80l-20 12-20-12 20-12z'/%3E%3Cpath d='M80 152l-12-20 12-20 12 20z'/%3E%3Ccircle cx='80' cy='80' r='22'/%3E%3Cpath d='M40 40h80M40 120h80M40 40v80M120 40v80'/%3E%3Cpath d='M55 55l50 50M105 55L55 105'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: 160px 160px;
+  inset: -20%;
+  opacity: 0.28;
+  background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23d4d4d8' stroke-width='0.65'%3E%3Cpath d='M60 6l10 16-10 16-10-16z'/%3E%3Cpath d='M6 60l16 10 16-10-16-10z'/%3E%3Cpath d='M114 60l-16 10-16-10 16-10z'/%3E%3Cpath d='M60 114l-10-16 10-16 10 16z'/%3E%3Ccircle cx='60' cy='60' r='18'/%3E%3Cpath d='M30 30h60M30 90h60M30 30v60M90 30v60'/%3E%3Cpath d='M42 42l36 36M78 42L42 78'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 120px 120px;
+  animation: wakanda-pattern-drift 20s linear infinite;
   pointer-events: none;
   z-index: 0;
+}
+
+@keyframes wakanda-pattern-drift {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 120px 120px;
+  }
 }
 
 .balance-card-silver::after {
@@ -51,9 +61,9 @@ body {
   inset: 0;
   background: linear-gradient(
     105deg,
-    transparent 38%,
-    rgba(255, 255, 255, 0.22) 50%,
-    transparent 62%
+    transparent 32%,
+    rgba(255, 255, 255, 0.38) 50%,
+    transparent 68%
   );
   animation: balance-glare 1.5s ease-in-out infinite;
   pointer-events: none;

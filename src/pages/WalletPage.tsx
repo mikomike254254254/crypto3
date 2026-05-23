@@ -142,7 +142,7 @@ export function WalletPage({
             ) : null}
           </div>
 
-          <p className="text-[10px] text-emerald-400/90 font-medium mb-2">Receive &amp; Paystack top-up — no KYC required</p>
+          <p className="text-[10px] text-emerald-400/90 font-medium mb-2">Receive &amp; top up — no KYC required</p>
 
           <div className="flex gap-2">
             <button

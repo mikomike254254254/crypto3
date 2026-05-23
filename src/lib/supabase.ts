@@ -7,7 +7,7 @@ const supabaseKey = (
 ) as string | undefined;
 
 if (!supabaseUrl || !supabaseKey) {
-  console.warn("Supabase client is missing VITE_SUPABASE_URL or publishable/anon key.");
+  console.warn("Wallex database client is missing configuration.");
 }
 
 export const supabase = createClient(supabaseUrl ?? "", supabaseKey ?? "", {
@@ -19,7 +19,7 @@ export const supabase = createClient(supabaseUrl ?? "", supabaseKey ?? "", {
   global: {
     fetch: (url, options = {}) =>
       fetch(url, { ...options }).catch((err) => {
-        console.warn("Supabase network request failed (will retry on next action).", err);
+        console.warn("Database network request failed (will retry on next action).", err);
         throw err;
       }),
   },

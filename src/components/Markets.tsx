@@ -80,52 +80,48 @@ function CryptoRow({ crypto, onSelect }: { crypto: Crypto; onSelect?: (crypto: C
   );
 }
 
-function WatchBubble({
-  crypto,
-  variant,
-  onSelect,
-}: {
-  crypto: Crypto;
-  variant: "pill" | "card";
-  onSelect: (crypto: Crypto) => void;
-}) {
+function WatchMarqueePill({ crypto, onSelect }: { crypto: Crypto; onSelect: (crypto: Crypto) => void }) {
   const { isDark } = useTheme();
   const change = crypto.change ?? 0;
-  const isUp = change >= 0;
-
-  if (variant === "pill") {
-    return (
-      <button
-        type="button"
-        onClick={() => onSelect(crypto)}
-        className={`watch-bubble-3d flex-shrink-0 flex items-center gap-2 rounded-full pl-1 pr-3 py-1.5 border transition-transform hover:scale-[1.03] active:scale-[0.98] ${
-          isDark ? "bg-neutral-900 border-neutral-700" : "bg-white border-slate-200"
-        }`}
-      >
-        <CryptoLogo symbol={crypto.symbol} size={28} />
-        <div className="min-w-0 text-left">
-          <p className={`text-xs font-bold ${isDark ? "text-white" : "text-black"}`}>{crypto.symbol}</p>
-          <ChangeBadge change={change} className="text-[10px]" />
-        </div>
-      </button>
-    );
-  }
 
   return (
     <button
       type="button"
       onClick={() => onSelect(crypto)}
-      className={`watch-bubble-3d flex flex-col items-center justify-center gap-1.5 rounded-2xl p-3 min-w-[88px] border transition-transform hover:scale-[1.03] active:scale-[0.98] ${
+      className={`watch-bubble-3d flex-shrink-0 flex items-center gap-2 rounded-full pl-1 pr-3 py-1.5 border transition-transform hover:scale-[1.03] active:scale-[0.98] ${
         isDark ? "bg-neutral-900 border-neutral-700" : "bg-white border-slate-200"
       }`}
     >
-      <CryptoLogo symbol={crypto.symbol} size={36} />
-      <p className={`text-xs font-bold ${isDark ? "text-white" : "text-black"}`}>{crypto.symbol}</p>
-      <p className={`text-[10px] font-semibold ${isDark ? "text-neutral-400" : "text-gray-500"}`}>{formatMarketPrice(crypto.price)}</p>
-      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isUp ? "bg-emerald-500/15 text-emerald-500" : "bg-red-500/15 text-red-500"}`}>
-        {isUp ? "+" : ""}
-        {change.toFixed(1)}%
-      </span>
+      <CryptoLogo symbol={crypto.symbol} size={28} />
+      <div className="min-w-0 text-left">
+        <p className={`text-xs font-bold ${isDark ? "text-white" : "text-black"}`}>{crypto.symbol}</p>
+        <ChangeBadge change={change} className="text-[10px]" />
+      </div>
+    </button>
+  );
+}
+
+function WatchlistRow({ crypto, onSelect }: { crypto: Crypto; onSelect: (crypto: Crypto) => void }) {
+  const { isDark } = useTheme();
+  const change = crypto.change ?? 0;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(crypto)}
+      className={`watch-bubble-3d flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-transform hover:scale-[1.01] active:scale-[0.99] ${
+        isDark ? "bg-neutral-900 border-neutral-700" : "bg-white border-slate-200"
+      }`}
+    >
+      <CryptoLogo symbol={crypto.symbol} size={40} />
+      <div className="flex-1 min-w-0">
+        <p className={`text-sm font-bold ${isDark ? "text-white" : "text-black"}`}>{crypto.name}</p>
+        <p className={`text-xs ${isDark ? "text-neutral-500" : "text-gray-500"}`}>{crypto.symbol}</p>
+      </div>
+      <div className="text-right shrink-0">
+        <p className={`text-sm font-semibold tabular-nums ${isDark ? "text-white" : "text-black"}`}>{formatMarketPrice(crypto.price)}</p>
+        <ChangeBadge change={change} className="justify-end mt-0.5 text-xs" />
+      </div>
     </button>
   );
 }
@@ -178,14 +174,14 @@ export function Markets({ cryptoData, activeTab, onTabChange }: MarketsProps) {
       <div className="overflow-hidden mb-3 rounded-xl">
         <div className="marquee-track gap-2 py-1">
           {marqueeCoins.map((crypto, i) => (
-            <WatchBubble key={`${crypto.id}-marquee-${i}`} crypto={crypto} variant="pill" onSelect={setSelectedCoin} />
+            <WatchMarqueePill key={`${crypto.id}-marquee-${i}`} crypto={crypto} onSelect={setSelectedCoin} />
           ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-2 mb-4">
+      <div className="flex flex-col gap-2 mb-4">
         {watchlistCoins.map((crypto) => (
-          <WatchBubble key={`${crypto.id}-card`} crypto={crypto} variant="card" onSelect={setSelectedCoin} />
+          <WatchlistRow key={`${crypto.id}-row`} crypto={crypto} onSelect={setSelectedCoin} />
         ))}
       </div>
 

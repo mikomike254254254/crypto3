@@ -121,7 +121,7 @@ export function DepositModal({ wallet, wallets, onClose, onDeposit: _onDeposit, 
             setTopUpAmount("");
             onClose();
           } catch (error) {
-            setTopUpError(error instanceof Error ? error.message : "Paystack payment could not be verified.");
+            setTopUpError(error instanceof Error ? error.message : "Top-up could not be verified. Try again.");
             setIsTopUpLoading(false);
           }
         },
@@ -134,7 +134,7 @@ export function DepositModal({ wallet, wallets, onClose, onDeposit: _onDeposit, 
         },
       });
     } catch (error) {
-      setTopUpError(error instanceof Error ? error.message : "Paystack checkout could not start.");
+      setTopUpError(error instanceof Error ? error.message : "Top-up checkout could not start.");
       setIsTopUpLoading(false);
     }
   };
@@ -260,7 +260,7 @@ export function DepositModal({ wallet, wallets, onClose, onDeposit: _onDeposit, 
                     <BadgeDollarSign className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-black">Top up with Paystack</p>
+                    <p className="text-sm font-semibold text-black">Top up with card or bank</p>
                     <p className="text-xs text-gray-600">Pay in USD — credited to your selected wallet in real time.</p>
                     <p className="text-xs font-semibold text-emerald-700 mt-1">No KYC required to deposit or receive.</p>
                   </div>
@@ -392,7 +392,7 @@ export function DepositModal({ wallet, wallets, onClose, onDeposit: _onDeposit, 
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-gray-500">Processing</span>
-                  <span className="text-sm font-medium text-black">Recorded in Supabase</span>
+                  <span className="text-sm font-medium text-black">Saved to your wallet</span>
                 </div>
               </div>
 

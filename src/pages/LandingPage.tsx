@@ -93,7 +93,7 @@ function AuthDialog({ mode, onModeChange, onClose }: { mode: AuthMode; onModeCha
         <div className="p-6 border-b border-slate-100 flex items-start justify-between gap-4">
           <div>
             <h2 className="text-2xl font-semibold text-slate-950">{title}</h2>
-            <p className="text-sm text-slate-500 mt-1">Secure sign-in powered by Supabase on wallex.online</p>
+            <p className="text-sm text-slate-500 mt-1">Secure sign-in on wallex.online</p>
           </div>
           <button type="button" onClick={onClose} className="rounded-full p-2 hover:bg-slate-100" aria-label="Close">
             <X className="w-5 h-5" />
@@ -250,7 +250,7 @@ export function LandingPage() {
 
               <div className="mt-10 flex flex-wrap gap-6 text-sm font-medium text-black/70">
                 <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-black" /> 12 assets</span>
-                <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-black" /> Paystack</span>
+                <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-black" /> Card top-up</span>
                 <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-black" /> Wallet transfers</span>
               </div>
             </div>
@@ -365,7 +365,7 @@ export function LandingPage() {
             {[
               { icon: ShieldCheck, title: "Sign-in", text: "Google or email on wallex.online." },
               { icon: LockKeyhole, title: "KYC", text: "Required to send or sell. Receive and buy work without it." },
-              { icon: Zap, title: "Deposits", text: "Paystack top-ups verified on our servers." },
+              { icon: Zap, title: "Deposits", text: "Card and bank top-ups verified instantly." },
               { icon: Shield, title: "Ledger", text: "Every transfer is recorded on your wallet." },
             ].map((item) => (
               <div key={item.title} className="rounded-2xl bg-white border border-slate-200 p-6 shadow-sm">

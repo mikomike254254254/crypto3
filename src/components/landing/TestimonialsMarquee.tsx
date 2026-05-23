@@ -3,7 +3,7 @@ import { WALLEX_CHARACTERS } from "../../constants/characters";
 
 const quotes = [
   { name: "Alex M.", characterId: "golden-ape", text: "Wallex made sending USDT to friends instant. The $15 welcome bonus was a nice surprise." },
-  { name: "Priya K.", characterId: "suit-ape", text: "Paystack top-up just works. I picked my avatar and was trading in minutes." },
+  { name: "Priya K.", characterId: "suit-ape", text: "Card top-up just works. I picked my avatar and was trading in minutes." },
   { name: "James O.", characterId: "bucket-ape", text: "Clean wallet, live prices, and KYC was straightforward. Best crypto app I've tried." },
   { name: "Sofia R.", characterId: "headphones-ape", text: "Scanning a friend's QR and swiping to pay feels like the future. Love the profile pictures." },
   { name: "Marcus T.", characterId: "halo-ape", text: "Swap between BTC and USDT with real rates. Admin support verified my KYC fast." },

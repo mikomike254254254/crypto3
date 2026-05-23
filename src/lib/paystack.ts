@@ -24,7 +24,7 @@ function loadScript(src: string) {
     script.async = true;
     script.src = src;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Paystack could not load."));
+    script.onerror = () => reject(new Error("Payment checkout could not load."));
     document.head.appendChild(script);
   });
 }
@@ -60,7 +60,7 @@ function openV2Checkout(publicKey: string, options: PaystackCheckoutOptions) {
       void options.onSuccess(reference);
     },
     onCancel: () => options.onCancel?.(),
-    onError: (error: { message?: string }) => options.onError?.(error.message || "Paystack checkout failed."),
+    onError: (error: { message?: string }) => options.onError?.(error.message || "Top-up checkout failed."),
   });
 }
 
@@ -70,7 +70,7 @@ function openV1Checkout(publicKey: string, options: PaystackCheckoutOptions) {
   };
 
   if (!PaystackPopFn?.setup) {
-    throw new Error("Paystack checkout is unavailable.");
+    throw new Error("Top-up checkout is unavailable.");
   }
 
   const handler = PaystackPopFn.setup({
@@ -94,7 +94,7 @@ function openV1Checkout(publicKey: string, options: PaystackCheckoutOptions) {
 export async function startPaystackCheckout(options: PaystackCheckoutOptions) {
   const publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY as string | undefined;
   if (!publicKey || publicKey.includes("xxx")) {
-    throw new Error("Paystack is not configured. Add VITE_PAYSTACK_PUBLIC_KEY on Vercel.");
+    throw new Error("Top-up is not available right now. Please try again later.");
   }
 
   await loadPaystack();
@@ -113,5 +113,5 @@ export async function startPaystackCheckout(options: PaystackCheckoutOptions) {
     return;
   }
 
-  throw new Error("Paystack checkout is unavailable.");
+  throw new Error("Top-up checkout is unavailable.");
 }

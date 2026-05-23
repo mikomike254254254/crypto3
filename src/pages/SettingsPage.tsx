@@ -153,7 +153,7 @@ export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, kycVerif
 
   const accountSettings = [
     { icon: UserIcon, label: "Personal Info", description: user?.email || "Update your display name", onClick: () => setShowProfileModal(true) },
-    { icon: CreditCard, label: "Payment Methods", description: "Paystack top-up in wallet", onClick: () => setSettingsNotice("Use Receive → Top up with Paystack in your wallet.") },
+    { icon: CreditCard, label: "Payment Methods", description: "Card & bank top-up in wallet", onClick: () => setSettingsNotice("Use Receive → Top up in your wallet.") },
     {
       icon: FileText,
       label: "Documents",

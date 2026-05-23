@@ -13,11 +13,11 @@ const faqs = [
   },
   {
     q: "Do I need KYC to buy or receive crypto?",
-    a: "No. Paystack top-ups and receiving transfers work without KYC. Verification is required before you send or withdraw to external addresses.",
+    a: "No. Card and bank top-ups and receiving transfers work without KYC. Verification is required before you send or withdraw to external addresses.",
   },
   {
-    q: "How do I top up with Paystack?",
-    a: "Open Receive, choose which wallet to credit (USDT, BTC, ETH, or XRP), enter a USD amount, and pay with card or bank via Paystack. We credit the live crypto equivalent after payment confirms.",
+    q: "How do I top up my wallet?",
+    a: "Open Receive, choose which wallet to credit (USDT, BTC, ETH, or XRP), enter a USD amount, and pay with card or bank. We credit the live crypto equivalent after payment confirms.",
   },
   {
     q: "Can I send crypto by scanning a QR code?",
@@ -25,7 +25,7 @@ const faqs = [
   },
   {
     q: "Is Wallex safe to use?",
-    a: "Sign-in is secured with Supabase. Balances and transfers are stored on our ledger. Never share your password or OTP codes with anyone.",
+    a: "Sign-in is secured with encrypted authentication. Balances and transfers are stored in our secure database. Never share your password or OTP codes with anyone.",
   },
 ];
 

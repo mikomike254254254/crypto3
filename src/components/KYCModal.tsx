@@ -78,7 +78,7 @@ export function KYCModal({ onClose, onComplete }: KycModalProps) {
             </div>
             <div>
               <h2 className="text-base font-bold text-black">Identity Verification</h2>
-              <p className="text-xs text-gray-500">Camera capture and Supabase review</p>
+              <p className="text-xs text-gray-500">Camera capture and secure review</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-neutral-100 rounded-full active:bg-neutral-200 transition-all active:scale-90">
@@ -183,7 +183,7 @@ export function KYCModal({ onClose, onComplete }: KycModalProps) {
                     <Check className="w-8 h-8 text-white" />
                   </div>
                   <h3 className="text-lg font-bold text-black">Verification Submitted</h3>
-                  <p className="text-sm text-neutral-600 mt-2 text-center">Your KYC photos are stored in Supabase and queued for review.</p>
+                  <p className="text-sm text-neutral-600 mt-2 text-center">Your documents are stored securely and queued for review.</p>
                 </div>
               ) : (
                 <div className="bg-neutral-50 rounded-xl p-4 border border-neutral-200">
@@ -200,7 +200,7 @@ export function KYCModal({ onClose, onComplete }: KycModalProps) {
               {error && <p className="text-xs text-red-600">{error}</p>}
 
               <button onClick={submitted ? finish : submitKyc} disabled={isSubmitting} className="w-full bg-black rounded-2xl py-4 text-white font-semibold text-sm hover:bg-neutral-800 transition-all active:scale-[0.98] disabled:bg-neutral-300">
-                {submitted ? "Done" : isSubmitting ? "Submitting..." : "Submit to Supabase"}
+                {submitted ? "Done" : isSubmitting ? "Submitting..." : "Submit for review"}
               </button>
             </div>
           )}
