@@ -52,7 +52,7 @@ export function ExplorePage({ cryptoData }: ExplorePageProps) {
   };
 
   return (
-    <div className="px-4 pt-2 pb-6">
+    <div className="px-4 pt-2 pb-6 max-w-lg mx-auto w-full">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className={`text-xl font-bold ${isDark ? "text-white" : "text-black"}`}>Explore</h1>
@@ -93,7 +93,8 @@ export function ExplorePage({ cryptoData }: ExplorePageProps) {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-5">
+      <div className="flex justify-center mb-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full max-w-md">
         {cryptoData.slice(0, 6).map((crypto) => (
           <button
             type="button"
@@ -112,6 +113,7 @@ export function ExplorePage({ cryptoData }: ExplorePageProps) {
             </p>
           </button>
         ))}
+        </div>
       </div>
 
       {filteredCrypto.length === 0 ? (

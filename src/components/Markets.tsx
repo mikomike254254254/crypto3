@@ -3,6 +3,7 @@ import { Star, TrendingDown, TrendingUp } from "lucide-react";
 import { Crypto } from "../types/crypto";
 import { useTheme } from "../context/ThemeContext";
 import { CryptoLogo } from "./CryptoLogo";
+import { CoinProfileModal } from "./CoinProfileModal";
 
 interface MarketsProps {
   cryptoData: Crypto[];
@@ -20,7 +21,7 @@ function ChangeBadge({ change, className = "" }: { change: number; className?: s
   const isUp = change >= 0;
   return (
     <div className={`flex items-center gap-0.5 font-bold ${isUp ? "text-emerald-500" : "text-red-500"} ${className}`}>
-      {isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+      {isUp ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
       <span>
         {isUp ? "+" : ""}
         {change.toFixed(2)}%
@@ -29,22 +30,39 @@ function ChangeBadge({ change, className = "" }: { change: number; className?: s
   );
 }
 
-function CryptoRow({ crypto }: { crypto: Crypto }) {
+function CryptoRow({ crypto, onSelect }: { crypto: Crypto; onSelect?: (crypto: Crypto) => void }) {
   const [isStarred, setIsStarred] = useState(false);
   const { isDark } = useTheme();
   const change = crypto.change ?? crypto.change24h ?? 0;
 
   return (
-    <div className={`flex items-center gap-2 py-2.5 border-b last:border-0 ${isDark ? "border-neutral-800" : "border-neutral-100"}`}>
-      <button
-        type="button"
-        onClick={() => setIsStarred(!isStarred)}
+    <button
+      type="button"
+      onClick={() => onSelect?.(crypto)}
+      className={`w-full flex items-center gap-2 py-2.5 border-b last:border-0 text-left transition-colors ${
+        isDark ? "border-neutral-800 hover:bg-neutral-900/50" : "border-neutral-100 hover:bg-neutral-50"
+      }`}
+    >
+      <span
+        role="button"
+        tabIndex={0}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsStarred(!isStarred);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsStarred(!isStarred);
+          }
+        }}
         className={`p-0.5 rounded-full flex-shrink-0 ${isDark ? "hover:bg-neutral-800" : "hover:bg-neutral-100"}`}
       >
         <Star
           className={`w-3.5 h-3.5 ${isStarred ? "fill-yellow-400 text-yellow-400" : isDark ? "text-neutral-600" : "text-gray-300"}`}
         />
-      </button>
+      </span>
       <CryptoLogo symbol={crypto.symbol} size={32} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
@@ -58,35 +76,63 @@ function CryptoRow({ crypto }: { crypto: Crypto }) {
         <p className={`font-semibold text-xs ${isDark ? "text-white" : "text-black"}`}>{formatMarketPrice(crypto.price)}</p>
         <ChangeBadge change={change} className="justify-end mt-0.5 text-[10px]" />
       </div>
-    </div>
+    </button>
   );
 }
 
-function WatchlistRow({ crypto }: { crypto: Crypto }) {
+function WatchBubble({
+  crypto,
+  variant,
+  onSelect,
+}: {
+  crypto: Crypto;
+  variant: "pill" | "card";
+  onSelect: (crypto: Crypto) => void;
+}) {
   const { isDark } = useTheme();
   const change = crypto.change ?? 0;
+  const isUp = change >= 0;
+
+  if (variant === "pill") {
+    return (
+      <button
+        type="button"
+        onClick={() => onSelect(crypto)}
+        className={`watch-bubble-3d flex-shrink-0 flex items-center gap-2 rounded-full pl-1 pr-3 py-1.5 border transition-transform hover:scale-[1.03] active:scale-[0.98] ${
+          isDark ? "bg-neutral-900 border-neutral-700" : "bg-white border-slate-200"
+        }`}
+      >
+        <CryptoLogo symbol={crypto.symbol} size={28} />
+        <div className="min-w-0 text-left">
+          <p className={`text-xs font-bold ${isDark ? "text-white" : "text-black"}`}>{crypto.symbol}</p>
+          <ChangeBadge change={change} className="text-[10px]" />
+        </div>
+      </button>
+    );
+  }
 
   return (
-    <div
-      className={`watch-bubble-3d flex items-center gap-3 w-full rounded-xl border px-3 py-3 ${
+    <button
+      type="button"
+      onClick={() => onSelect(crypto)}
+      className={`watch-bubble-3d flex flex-col items-center justify-center gap-1.5 rounded-2xl p-3 min-w-[88px] border transition-transform hover:scale-[1.03] active:scale-[0.98] ${
         isDark ? "bg-neutral-900 border-neutral-700" : "bg-white border-slate-200"
       }`}
     >
-      <CryptoLogo symbol={crypto.symbol} size={40} />
-      <div className="flex-1 min-w-0 text-left">
-        <p className={`text-sm font-bold ${isDark ? "text-white" : "text-black"}`}>{crypto.name}</p>
-        <p className={`text-xs ${isDark ? "text-neutral-500" : "text-gray-500"}`}>{crypto.symbol}</p>
-      </div>
-      <div className="text-right shrink-0">
-        <p className={`text-sm font-semibold tabular-nums ${isDark ? "text-white" : "text-black"}`}>{formatMarketPrice(crypto.price)}</p>
-        <ChangeBadge change={change} className="justify-end mt-1 text-xs" />
-      </div>
-    </div>
+      <CryptoLogo symbol={crypto.symbol} size={36} />
+      <p className={`text-xs font-bold ${isDark ? "text-white" : "text-black"}`}>{crypto.symbol}</p>
+      <p className={`text-[10px] font-semibold ${isDark ? "text-neutral-400" : "text-gray-500"}`}>{formatMarketPrice(crypto.price)}</p>
+      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isUp ? "bg-emerald-500/15 text-emerald-500" : "bg-red-500/15 text-red-500"}`}>
+        {isUp ? "+" : ""}
+        {change.toFixed(1)}%
+      </span>
+    </button>
   );
 }
 
 export function Markets({ cryptoData, activeTab, onTabChange }: MarketsProps) {
   const { isDark } = useTheme();
+  const [selectedCoin, setSelectedCoin] = useState<Crypto | null>(null);
   const tabs = [
     { id: "watchlist", label: "Watchlist", hasStar: true },
     { id: "turnover", label: "Turnover" },
@@ -95,6 +141,7 @@ export function Markets({ cryptoData, activeTab, onTabChange }: MarketsProps) {
   ];
 
   const watchlistCoins = cryptoData.slice(0, 8);
+  const marqueeCoins = [...watchlistCoins, ...watchlistCoins];
 
   return (
     <div>
@@ -125,20 +172,30 @@ export function Markets({ cryptoData, activeTab, onTabChange }: MarketsProps) {
       </div>
 
       <p className={`text-[10px] font-semibold uppercase tracking-wide mb-2 ${isDark ? "text-neutral-500" : "text-gray-500"}`}>
-        Watchlist
+        Watchlist · live
       </p>
 
-      <div className="flex flex-col gap-2 mb-4">
+      <div className="overflow-hidden mb-3 rounded-xl">
+        <div className="marquee-track gap-2 py-1">
+          {marqueeCoins.map((crypto, i) => (
+            <WatchBubble key={`${crypto.id}-marquee-${i}`} crypto={crypto} variant="pill" onSelect={setSelectedCoin} />
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-4 gap-2 mb-4">
         {watchlistCoins.map((crypto) => (
-          <WatchlistRow key={crypto.id} crypto={crypto} />
+          <WatchBubble key={`${crypto.id}-card`} crypto={crypto} variant="card" onSelect={setSelectedCoin} />
         ))}
       </div>
 
       <div className={`rounded-xl px-3 border max-h-72 overflow-y-auto scroll-smooth-y ${isDark ? "bg-black border-neutral-700" : "bg-white shadow-sm border-neutral-100"}`}>
         {cryptoData.map((crypto) => (
-          <CryptoRow key={crypto.id} crypto={crypto} />
+          <CryptoRow key={crypto.id} crypto={crypto} onSelect={setSelectedCoin} />
         ))}
       </div>
+
+      {selectedCoin ? <CoinProfileModal crypto={selectedCoin} onClose={() => setSelectedCoin(null)} /> : null}
     </div>
   );
 }

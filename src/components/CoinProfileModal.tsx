@@ -58,12 +58,19 @@ export function CoinProfileModal({ crypto, onClose }: CoinProfileModalProps) {
   }, [coinId, crypto.sparkline]);
 
   const chartPath = useMemo(() => buildChartPath(series, 320, 120), [series]);
+  const fillId = `chartFill-${coinId}`;
   const panel = isDark ? "bg-neutral-950 border-neutral-800 text-white" : "bg-white border-neutral-200 text-black";
 
   return (
-    <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${crypto.name} price chart`}
+    >
       <div
-        className={`w-full max-w-md rounded-2xl border shadow-2xl overflow-hidden ${panel}`}
+        className={`w-full max-w-sm mx-auto rounded-2xl border shadow-2xl overflow-hidden ${panel}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className={`p-4 border-b flex items-start justify-between gap-3 ${isDark ? "border-neutral-800" : "border-neutral-100"}`}>
@@ -97,14 +104,14 @@ export function CoinProfileModal({ crypto, onClose }: CoinProfileModalProps) {
           <div className={`rounded-xl p-3 mb-4 ${isDark ? "bg-neutral-900" : "bg-neutral-50"}`}>
             <svg viewBox="0 0 320 120" className="w-full h-28" preserveAspectRatio="none">
               <defs>
-                <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
+                <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={isUp ? "#10b981" : "#ef4444"} stopOpacity="0.35" />
                   <stop offset="100%" stopColor={isUp ? "#10b981" : "#ef4444"} stopOpacity="0" />
                 </linearGradient>
               </defs>
               {chartPath ? (
                 <>
-                  <path d={`${chartPath} L320,120 L0,120 Z`} fill="url(#chartFill)" />
+                  <path d={`${chartPath} L320,120 L0,120 Z`} fill={`url(#${fillId})`} />
                   <path d={chartPath} fill="none" stroke={isUp ? "#10b981" : "#ef4444"} strokeWidth="2.5" />
                 </>
               ) : null}
