@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, Eye, EyeOff, ArrowUpRight, ArrowDownLeft, MoreHorizontal, TrendingUp, TrendingDown, QrCode, Share2, Clock, Star, AlertCircle, X } from "lucide-react";
+import { ChevronDown, Eye, EyeOff, ArrowUpRight, ArrowDownLeft, Send, TrendingUp, TrendingDown } from "lucide-react";
 import { Wallet } from "../types/crypto";
 import { useTheme } from "../context/ThemeContext";
 import { AnimatedNumber } from "./AnimatedNumber";
@@ -40,24 +40,14 @@ export function BalanceCard({
 }: BalanceCardProps) {
   const [showBalance, setShowBalance] = useState(true);
   const [showWalletSelect, setShowWalletSelect] = useState(false);
-  const [showMoreMenu, setShowMoreMenu] = useState(false);
   const { isDark } = useTheme();
   const { percent: dayChangePct } = computePortfolioDayChange(wallets, priceAssets);
   const isUp = dayChangePct >= 0;
   const displayAmount = walletFiatValue ?? totalValue;
   const allWalletsTotal = portfolioTotal ?? totalValue;
 
-  const moreOptions = [
-    { id: "qr", label: "Show QR Code", icon: QrCode, description: "Scan to receive" },
-    { id: "share", label: "Share Address", icon: Share2, description: "Copy or share" },
-    { id: "history", label: "Transaction History", icon: Clock, description: "View all transactions" },
-    { id: "watchlist", label: "Add to Watchlist", icon: Star, description: "Track this wallet" },
-    { id: "alert", label: "Price Alert", icon: AlertCircle, description: "Set price notifications" },
-  ];
-
   return (
     <div className="relative" style={{ zIndex: 0 }}>
-      {/* Wallet select dropdown — rendered outside card to avoid overflow:hidden clipping */}
       {showWalletSelect && (
         <>
           <button type="button" className="fixed inset-0 z-[45]" aria-label="Close wallet list" onClick={() => setShowWalletSelect(false)} />
@@ -180,56 +170,14 @@ export function BalanceCard({
           </button>
           <button
             type="button"
-            onClick={() => setShowMoreMenu(!showMoreMenu)}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all border-2 shrink-0 ${
-              isDark ? "bg-neutral-800 border-neutral-700" : "bg-white border-neutral-200"
-            }`}
+            onClick={onSend}
+            className="flex-1 rounded-full py-2.5 flex items-center justify-center gap-1.5 transition-all duration-200 ease-out hover:scale-[1.02] active:scale-[0.97] border-2 bg-transparent border-emerald-400/60 text-emerald-300 hover:bg-emerald-500/10 shadow-sm"
           >
-            <MoreHorizontal className={isDark ? "text-white" : "text-black"} />
+            <Send className="w-4 h-4" />
+            <span className="text-xs font-semibold">Quick Send</span>
           </button>
         </div>
       </div>
-
-      {showMoreMenu && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setShowMoreMenu(false)} />
-          <div
-            className={`absolute bottom-full left-0 right-0 mb-2 rounded-2xl shadow-2xl border overflow-hidden z-50 ${
-              isDark ? "bg-neutral-800 border-neutral-700" : "bg-white border-neutral-200"
-            }`}
-          >
-            <div className={`p-3 border-b ${isDark ? "border-neutral-700" : "border-neutral-100"}`}>
-              <div className="flex items-center justify-between">
-                <h3 className={`text-sm font-bold ${isDark ? "text-white" : "text-black"}`}>More Options</h3>
-                <button type="button" onClick={() => setShowMoreMenu(false)} className="p-1 rounded-full">
-                  <X className="w-4 h-4 text-gray-400" />
-                </button>
-              </div>
-            </div>
-            <div className="p-2">
-              {moreOptions.map((option) => {
-                const Icon = option.icon;
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    onClick={() => setShowMoreMenu(false)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-xl ${isDark ? "hover:bg-neutral-700" : "hover:bg-neutral-50"}`}
-                  >
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center ${isDark ? "bg-neutral-700" : "bg-neutral-100"}`}>
-                      <Icon className={`w-4 h-4 ${isDark ? "text-white" : "text-black"}`} />
-                    </div>
-                    <div className="flex-1 text-left">
-                      <p className={`text-sm font-medium ${isDark ? "text-white" : "text-black"}`}>{option.label}</p>
-                      <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}>{option.description}</p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 }

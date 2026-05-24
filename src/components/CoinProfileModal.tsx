@@ -63,7 +63,7 @@ export function CoinProfileModal({ crypto, onClose }: CoinProfileModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-start justify-center pt-[20vh] p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"

@@ -60,7 +60,7 @@ body {
   }
 }
 
-/* Glare sweep — once every 5 seconds */
+/* Glare sweep — slow smooth motion every 5 seconds */
 .balance-card::after {
   content: "";
   position: absolute;
@@ -82,7 +82,7 @@ body {
   0% {
     transform: translateX(-150%);
   }
-  5% {
+  20% {
     transform: translateX(150%);
   }
   100% {
