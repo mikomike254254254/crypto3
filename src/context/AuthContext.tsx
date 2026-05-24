@@ -44,13 +44,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log("[AUTH] OAuth callback detected, waiting for Supabase to process URL hash...");
           
           // Wait for Supabase to process the OAuth hash
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 1500));
         }
 
         // Try to get the session
         const { data, error } = await supabase.auth.getSession();
         sessionData = data;
         sessionError = error;
+
+        // If no session but we just came from OAuth, wait a bit more and retry
+        if (!sessionData.session && hasOAuthCallback) {
+          console.log("[AUTH] No session yet after OAuth, waiting and retrying...");
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          const retry = await supabase.auth.getSession();
+          if (retry.data?.session) {
+            console.log("[AUTH] Session found on retry");
+            sessionData = retry.data;
+            sessionError = null;
+          }
+        }
 
         if (sessionError) {
           console.error("[AUTH SESSION ERROR]", sessionError);

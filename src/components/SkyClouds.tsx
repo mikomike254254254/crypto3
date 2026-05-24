@@ -6,6 +6,9 @@ export function SkyClouds() {
       <div className="cloud cloud-3" />
       <div className="cloud cloud-4" />
       <div className="cloud cloud-5" />
+      <div className="cloud cloud-6" />
+      <div className="cloud cloud-7" />
+      <div className="cloud cloud-8" />
     </div>
   );
 }

@@ -6,10 +6,26 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
   "orientation": "portrait",
   "theme_color": "#0ea5e9",
   "background_color": "#0a0a0a",
   "categories": ["finance", "utilities"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Wallet",
+      "short_name": "Wallet",
+      "description": "View your wallets",
+      "url": "/"
+    },
+    {
+      "name": "Deposit",
+      "short_name": "Deposit",
+      "description": "Deposit crypto",
+      "url": "/?deposit=1"
+    }
+  ],
   "icons": [
     {
       "src": "/logo.png",
@@ -21,7 +37,7 @@
       "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }

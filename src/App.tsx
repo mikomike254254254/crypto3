@@ -55,7 +55,20 @@ function AppContent() {
   const [p2pTrader, setP2pTrader] = useState<P2pTrader>(DEFAULT_P2P_TRADER);
   const [walletsReady, setWalletsReady] = useState(false);
   const [kycStatus, setKycStatus] = useState<"not_started" | "pending" | "verified" | "rejected">("not_started");
-  const [onboardingComplete, setOnboardingComplete] = useState(false);
+  // Check localStorage immediately to prevent onboarding flash on refresh
+  const [onboardingComplete, setOnboardingComplete] = useState(() => {
+    const stored = typeof window !== "undefined" ? localStorage.getItem("wallex.onboarding") : null;
+    if (stored === "true") return true;
+    // Check for any user-specific onboarding flag
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith("wallex.onboarding:")) {
+        const val = localStorage.getItem(key);
+        if (val === "true") return true;
+      }
+    }
+    return false;
+  });
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileCharacter, setProfileCharacter] = useState<string | null>(null);
   const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);

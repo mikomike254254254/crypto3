@@ -6,7 +6,6 @@ import {
   ensureUserAccount,
   readTokenBalances,
   requireUser,
-  upsertBalance,
   walletAssets,
 } from "./_supabase.js";
 
@@ -94,20 +93,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       note,
     });
 
-    // Update balances in the balances table directly for immediate effect
-    const currentBalances = await readTokenBalances(userRow.wallet);
-    const currentFrom = currentBalances.get(fromToken) || 0;
-    const currentTo = currentBalances.get(toToken) || 0;
+    // Create a notification for the swap
     try {
-      await upsertBalance(userRow.wallet, currentFrom - parsedAmount);
-    } catch (e) {
-      // If balances table doesn't have this wallet yet, create it
-      const supabase = adminClient();
-      await supabase.from("balances").insert({
-        wallet: userRow.wallet,
-        amount: currentFrom - parsedAmount,
-        updated_at: new Date().toISOString(),
+      const { createNotification } = await import("./_supabase.js");
+      await createNotification(user.id, {
+        type: "swap",
+        title: "Swap completed",
+        body: `Swapped ${parsedAmount} ${fromToken} → ${receiveAmount} ${toToken}`,
+        amount: parsedAmount,
+        token: fromToken,
       });
+    } catch {
+      // notification is best-effort
     }
 
     return res.status(200).json({

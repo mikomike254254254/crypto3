@@ -179,25 +179,29 @@ export function DepositModal({ wallet, wallets, onClose, onDeposit: _onDeposit, 
 
         <div className="flex-1 overflow-y-auto">
           {activeTab === "deposit" ? (
-            <div className="p-4">
-              <div className="mb-5">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">Select Network</label>
+            <div className="p-4 space-y-5">
+              {/* Network selector - redesigned with card look */}
+              <div className="bg-gradient-to-br from-white to-neutral-50 rounded-2xl border border-neutral-200 p-4 shadow-sm">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 block flex items-center gap-2">
+                  <ArrowDownToLine className="w-3.5 h-3.5" />
+                  Select Network
+                </label>
                 <div className="relative">
-                  <button onClick={() => setShowNetworkDropdown(!showNetworkDropdown)} className="w-full bg-neutral-50 rounded-xl p-3.5 flex items-center justify-between border border-neutral-200">
+                  <button onClick={() => setShowNetworkDropdown(!showNetworkDropdown)} className="w-full bg-white rounded-xl p-3.5 flex items-center justify-between border border-neutral-200 hover:border-neutral-400 transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">{selectedNetworkData.id.charAt(0)}</span>
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-sm ${wallet.color === "green" ? "bg-emerald-500" : wallet.color === "orange" ? "bg-orange-500" : "bg-blue-500"}`}>
+                        <span className="text-white text-sm font-bold">{selectedNetworkData.id.charAt(0)}</span>
                       </div>
                       <div className="text-left">
-                        <p className="text-sm font-medium text-black">{selectedNetworkData.name}</p>
-                        <p className="text-xs text-gray-500">Fee: {selectedNetworkData.fee}</p>
+                        <p className="text-sm font-semibold text-black">{selectedNetworkData.name}</p>
+                        <p className="text-xs text-gray-500">Fee: {selectedNetworkData.fee} · {selectedNetworkData.time}</p>
                       </div>
                     </div>
                     <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showNetworkDropdown ? "rotate-180" : ""}`} />
                   </button>
 
                   {showNetworkDropdown && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-neutral-200 rounded-xl shadow-lg overflow-hidden z-10">
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-neutral-200 rounded-xl shadow-lg overflow-hidden z-10 animate-fade-up">
                       {networks.map((network) => (
                         <button
                           key={network.id}
@@ -205,13 +209,17 @@ export function DepositModal({ wallet, wallets, onClose, onDeposit: _onDeposit, 
                             setSelectedNetwork(network.id);
                             setShowNetworkDropdown(false);
                           }}
-                          className={`w-full p-3 flex items-center justify-between hover:bg-neutral-50 border-b border-neutral-100 last:border-0 ${selectedNetwork === network.id ? "bg-neutral-50" : ""}`}
+                          className={`w-full p-3.5 flex items-center justify-between hover:bg-neutral-50 border-b border-neutral-100 last:border-0 transition-colors ${selectedNetwork === network.id ? "bg-emerald-50/50" : ""}`}
                         >
                           <div className="text-left">
-                            <p className="text-sm font-medium text-black">{network.name}</p>
-                            <p className="text-xs text-gray-500">Fee: {network.fee} | {network.time}</p>
+                            <p className="text-sm font-semibold text-black">{network.name}</p>
+                            <p className="text-xs text-gray-500">Fee: {network.fee} · {network.time} · {network.confirmations} confirmations</p>
                           </div>
-                          {selectedNetwork === network.id && <Check className="w-5 h-5 text-green-500" />}
+                          {selectedNetwork === network.id && (
+                            <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center">
+                              <Check className="w-3.5 h-3.5 text-white" />
+                            </div>
+                          )}
                         </button>
                       ))}
                     </div>
@@ -219,60 +227,76 @@ export function DepositModal({ wallet, wallets, onClose, onDeposit: _onDeposit, 
                 </div>
               </div>
 
-              <div className="mb-5">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">{wallet.symbol} Receive QR</label>
-                <div className="bg-neutral-50 rounded-2xl p-4 border border-neutral-200">
-                  {showQR ? (
-                    <div className="flex flex-col items-center">
-                      <div className="w-56 h-56 bg-white border-2 border-neutral-200 rounded-xl flex items-center justify-center mb-3 p-4">
-                        <QRCodeSVG value={receiveLink} size={188} level="H" includeMargin />
-                      </div>
-                      <p className="text-xs text-gray-500 text-center break-all px-2">{receiveLink}</p>
-                      <button onClick={() => setShowQR(false)} className="text-xs text-gray-500 underline mt-3">Hide QR Code</button>
+              {/* QR Code with better styling */}
+              <div className="bg-gradient-to-br from-white to-neutral-50 rounded-2xl border border-neutral-200 p-4 shadow-sm">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 block flex items-center gap-2">
+                  <QrCode className="w-3.5 h-3.5" />
+                  {wallet.symbol} Receive QR
+                </label>
+                {showQR ? (
+                  <div className="flex flex-col items-center">
+                    <div className="w-56 h-56 bg-white border-2 border-neutral-100 rounded-2xl flex items-center justify-center mb-3 p-4 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)]">
+                      <QRCodeSVG value={receiveLink} size={190} level="H" includeMargin />
                     </div>
-                  ) : (
-                    <button onClick={() => setShowQR(true)} className="w-full flex items-center justify-center gap-2 py-4 text-sm text-gray-600">
-                      <QrCode className="w-5 h-5" />
-                      Show QR Code
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 mb-5">
-                {[
-                  { label: "Wallex account number", value: accountNumber, key: "account" },
-                  { label: "Wallet address", value: walletAddress, key: "address" },
-                  { label: "Payment link", value: receiveLink, key: "link" },
-                ].map((item) => (
-                  <div key={item.key}>
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">{item.label}</label>
-                    <div className="bg-neutral-50 rounded-xl p-3 flex items-center gap-2 border border-neutral-200">
-                      <p className="flex-1 text-xs text-black font-mono break-all leading-relaxed">{item.value}</p>
-                      <button onClick={() => copyToClipboard(item.value, item.key)} className="p-2.5 bg-black rounded-lg hover:bg-neutral-800 transition-colors flex-shrink-0">
-                        {copied === item.key ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4 text-white" />}
+                    <p className="text-xs text-gray-500 text-center break-all px-2 font-mono bg-neutral-50 rounded-lg p-2 w-full">{receiveLink}</p>
+                    <div className="flex gap-2 mt-3">
+                      <button onClick={() => copyToClipboard(receiveLink, "qrlink")} className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg bg-black text-white hover:bg-neutral-800 transition-colors">
+                        {copied === "qrlink" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        {copied === "qrlink" ? "Copied" : "Copy Link"}
                       </button>
+                      <button onClick={() => setShowQR(false)} className="text-xs text-gray-500 px-3 py-2 rounded-lg border border-neutral-200 hover:bg-neutral-50 transition-colors">Hide QR</button>
                     </div>
                   </div>
-                ))}
+                ) : (
+                  <button onClick={() => setShowQR(true)} className="w-full flex items-center justify-center gap-2 py-6 text-sm text-gray-600 border-2 border-dashed border-neutral-200 rounded-xl hover:bg-neutral-50 transition-colors">
+                    <QrCode className="w-5 h-5" />
+                    Show QR Code
+                  </button>
+                )}
               </div>
 
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 mb-5">
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center">
-                    <BadgeDollarSign className="w-5 h-5 text-white" />
+              {/* Address cards - redesigned */}
+              <div className="space-y-3">
+                {[
+                  { label: "Wallex account number", value: accountNumber, key: "account", icon: Wallet },
+                  { label: "Wallet address", value: walletAddress, key: "address", icon: Link2 },
+                  { label: "Payment link", value: receiveLink, key: "link", icon: BadgeDollarSign },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={item.key} className="bg-gradient-to-br from-white to-neutral-50 rounded-2xl border border-neutral-200 p-4 shadow-sm">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                        <Icon className="w-3 h-3" />
+                        {item.label}
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <p className="flex-1 text-xs text-black font-mono break-all leading-relaxed bg-white rounded-lg p-2.5 border border-neutral-100">{item.value}</p>
+                        <button onClick={() => copyToClipboard(item.value, item.key)} className={`p-3 rounded-xl transition-all flex-shrink-0 ${copied === item.key ? "bg-emerald-500 text-white" : "bg-black text-white hover:bg-neutral-800"}`}>
+                          {copied === item.key ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Top-up card - redesigned */}
+              <div className="bg-gradient-to-br from-emerald-50 to-white border border-emerald-200 rounded-2xl p-5 shadow-sm">
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-sm">
+                    <BadgeDollarSign className="w-6 h-6 text-white" />
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-black">Top up with card or bank</p>
-                    <p className="text-xs text-gray-600">Pay in KES (Kenyan shillings) — credited to your wallet in real time.</p>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-black">Top up with card or bank</p>
+                    <p className="text-xs text-gray-600 mt-0.5">Pay in KES (Kenyan shillings) — credited immediately.</p>
                     <p className="text-xs font-semibold text-emerald-700 mt-1">No KYC required to deposit or receive.</p>
                   </div>
                 </div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Wallet to credit</label>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Wallet to credit</label>
                 <select
                   value={topUpWalletId}
                   onChange={(e) => setTopUpWalletId(e.target.value)}
-                  className="w-full mb-3 bg-white rounded-xl border border-neutral-200 px-4 py-3 text-sm text-black"
+                  className="w-full mb-3 bg-white rounded-xl border border-neutral-200 px-4 py-3 text-sm text-black focus:outline-none focus:ring-2 focus:ring-emerald-300"
                 >
                   {wallets.map((w) => (
                     <option key={w.id} value={w.id}>{w.name} ({w.symbol})</option>
@@ -286,32 +310,36 @@ export function DepositModal({ wallet, wallets, onClose, onDeposit: _onDeposit, 
                     value={topUpAmount}
                     onChange={(event) => setTopUpAmount(event.target.value)}
                     placeholder="Amount in KES"
-                    className="flex-1 bg-white rounded-xl border border-neutral-200 px-4 py-3 text-sm text-black focus:outline-none focus:ring-2 focus:ring-black"
+                    className="flex-1 bg-white rounded-xl border border-neutral-200 px-4 py-3 text-sm text-black focus:outline-none focus:ring-2 focus:ring-emerald-300"
                   />
                   <button
                     onClick={handleTopUp}
                     disabled={isTopUpLoading}
-                    className="bg-black text-white rounded-xl px-4 py-3 text-sm font-semibold hover:bg-neutral-800 disabled:opacity-60"
+                    className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-xl px-5 py-3 text-sm font-semibold hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-60 shadow-sm transition-all"
                   >
                     {isTopUpLoading ? "Opening..." : "Top up"}
                   </button>
                 </div>
                 {Number.isFinite(topUpKes) && topUpKes > 0 ? (
-                  <p className="text-xs text-slate-600 mt-2">
+                  <p className="text-xs text-slate-600 mt-3 bg-white/70 rounded-lg p-3 border border-emerald-100">
                     Pay <span className="font-semibold text-black">KES {topUpKes.toLocaleString("en-KE")}</span>
-                    {" "}· displays ≈{" "}
+                    {" "}· ≈{" "}
                     <span className="font-semibold text-black">${topUpUsd.toFixed(2)} USD</span>
                     {" "}· receive ≈{" "}
                     <span className="font-semibold text-black">{topUpCryptoPreview.toLocaleString()}</span> {topUpWallet.symbol}
                   </p>
                 ) : null}
-                {topUpError ? <p className="text-xs text-rose-600 mt-2">{topUpError}</p> : null}
+                {topUpError ? <p className="text-xs text-rose-600 mt-3 bg-rose-50 rounded-lg p-2.5">{topUpError}</p> : null}
               </div>
 
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
+              {/* Warning - redesigned */}
+              <div className="bg-gradient-to-br from-amber-50 to-white border border-amber-200 rounded-2xl p-4 shadow-sm">
                 <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-                  <p className="text-xs text-amber-700 leading-relaxed">Only send {wallet.symbol} through {selectedNetworkData.name}. The QR includes wallex.online, account number, wallet, network, and receive address.</p>
+                  <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-semibold text-amber-800">Network warning</p>
+                    <p className="text-xs text-amber-700 mt-1 leading-relaxed">Only send {wallet.symbol} through {selectedNetworkData.name}. The QR includes wallex.online, account number, wallet, network, and receive address.</p>
+                  </div>
                 </div>
               </div>
             </div>
