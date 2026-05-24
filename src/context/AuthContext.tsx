@@ -4,25 +4,27 @@ import { supabase } from "../lib/supabase";
 import { buildWallexRedirectUrl, getWallexOrigin } from "../utils/canonicalOrigin";
 
 interface AuthContextValue {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  signUpWithEmail: (email: string, password: string, name: string) => Promise<{ requiresEmailConfirmation: boolean }>;
-  sendSignUpOtp: (email: string) => Promise<void>;
-  verifySignUpOtp: (email: string, token: string) => Promise<void>;
-  completeSignUpProfile: (password: string, name: string) => Promise<void>;
-  signInWithEmail: (email: string, password: string) => Promise<void>;
-  signInWithGoogle: (redirectPath?: string) => Promise<void>;
-  signOut: () => Promise<void>;
-}
+   user: User | null;
+   session: Session | null;
+   loading: boolean;
+   authReady: boolean;
+   signUpWithEmail: (email: string, password: string, name: string) => Promise<{ requiresEmailConfirmation: boolean }>;
+   sendSignUpOtp: (email: string) => Promise<void>;
+   verifySignUpOtp: (email: string, token: string) => Promise<void>;
+   completeSignUpProfile: (password: string, name: string) => Promise<void>;
+   signInWithEmail: (email: string, password: string) => Promise<void>;
+   signInWithGoogle: (redirectPath?: string) => Promise<void>;
+   signOut: () => Promise<void>;
+ }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+   const [session, setSession] = useState<Session | null>(null);
+   const [loading, setLoading] = useState(true);
+   const [authReady, setAuthReady] = useState(false);
 
-  useEffect(() => {
+   useEffect(() => {
     let isMounted = true;
     
     // First, try to get the current session
@@ -33,7 +35,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (error) {
             console.warn("Session initialization error:", error.message);
           } else if (data.session) {
-            console.log("[Auth] Session found:", data.session.user?.email);
+            console.log("[Auth] Session restored:", data.session.user?.email);
+          } else {
+            console.log("[Auth] No session found");
           }
           setSession(data.session);
           // Clean hash from URL if session exists
@@ -42,10 +46,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             window.history.replaceState(null, "", window.location.pathname + window.location.search);
           }
           setLoading(false);
+          setAuthReady(true);
         }
       } catch (e) {
         console.warn("Auth initialization error:", e);
-        if (isMounted) setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+          setAuthReady(true);
+        }
       }
     };
     
@@ -53,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
       if (isMounted) {
-        console.log("[Auth] State change:", event, nextSession?.user?.email);
+        console.log("[Auth] State change:", event, nextSession?.user?.email || "no user");
         setSession(nextSession);
         setLoading(false);
         
@@ -67,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         
         if (event === "TOKEN_REFRESHED") {
-          console.log("Token refreshed successfully");
+          console.log("[Auth] Token refreshed successfully");
         }
       }
     });
@@ -82,6 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user: session?.user ?? null,
     session,
     loading,
+    authReady,
     signUpWithEmail: async (email, password, name) => {
       const { data, error } = await supabase.auth.signUp({
         email,

@@ -41,8 +41,8 @@ import { P2pModal } from "./components/P2pModal";
 import { DEFAULT_P2P_TRADER, getKenyaP2pTraders, type P2pTrader } from "./lib/p2pTrader";
 
 function AppContent() {
-  const { isDark } = useTheme();
-  const { user, session, loading: authLoading, signOut } = useAuth();
+   const { isDark } = useTheme();
+   const { user, session, loading: authLoading, authReady, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
   const [activeMarketTab, setActiveMarketTab] = useState("watchlist");
   const [showDeposit, setShowDeposit] = useState(false);
@@ -408,6 +408,10 @@ function AppContent() {
   };
 
   if (authLoading && !user) {
+    return <AppLoadingSkeleton />;
+  }
+
+  if (!authReady) {
     return <AppLoadingSkeleton />;
   }
 

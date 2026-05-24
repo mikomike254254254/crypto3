@@ -28,14 +28,6 @@ export const SWAP_RATES_USD: Record<string, number> = {
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl) {
-  console.warn("SUPABASE_URL is not configured");
-}
-
-if (!serviceRoleKey) {
-  console.warn("SUPABASE_SERVICE_ROLE_KEY is not configured - API routes will fail");
-}
-
 export function adminClient() {
   if (!supabaseUrl || !serviceRoleKey) {
     throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.");
@@ -60,15 +52,7 @@ export async function requireUser(req: VercelRequest) {
   const supabase = adminClient();
   const { data, error } = await supabase.auth.getUser(token);
 
-  if (error) {
-    console.warn("Token validation error:", error.message);
-    if (error.message?.includes("issued in the future") || error.message?.includes("clock")) {
-      throw new Error("Clock skew detected - please sync your device time and try again.");
-    }
-    throw new Error("Invalid session.");
-  }
-
-  if (!data.user) {
+  if (error || !data.user) {
     throw new Error("Invalid session.");
   }
 

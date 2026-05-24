@@ -56,19 +56,19 @@ export type AdminDashboardData = {
 };
 
 export async function loginAdminPanel(email: string, password: string) {
-  const response = await fetch("/api/admin/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
+   const response = await fetch("/api/admin", {
+     method: "POST",
+     headers: { "Content-Type": "application/json" },
+     body: JSON.stringify({ email, password, action: "login" }),
+   });
 
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new Error(body.error || "Admin login failed");
-  }
+   if (!response.ok) {
+     const body = await response.json().catch(() => ({}));
+     throw new Error(body.error || "Admin login failed");
+   }
 
-  return response.json() as Promise<{ token: string; email: string; expiresAt: number }>;
-}
+   return response.json() as Promise<{ token: string; email: string; expiresAt: number }>;
+ }
 
 async function adminRequest(init: RequestInit = {}) {
   const session = readAdminSession();

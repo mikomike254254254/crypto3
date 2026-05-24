@@ -536,6 +536,27 @@ async function writeAdminAction(action: AdminAction, body: any, adminEmail: stri
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
+    // Handle admin login at /api/admin (POST with email/password)
+    if (req.method === "POST" && req.body?.action === "login") {
+      const { email, password } = req.body ?? {};
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required." });
+      }
+      
+      const { verifyAdminCredentials, issueAdminPanelToken } = await import("./adminAuth.js");
+      if (!verifyAdminCredentials(String(email), String(password))) {
+        return res.status(401).json({ error: "Invalid admin credentials." });
+      }
+      
+      const session = issueAdminPanelToken(String(email));
+      return res.status(200).json({
+        ok: true,
+        email: String(email).trim().toLowerCase(),
+        token: session.token,
+        expiresAt: session.expiresAt,
+      });
+    }
+    
     const adminSession = requireAdminPanel(req);
 
     if (req.method === "GET") {
