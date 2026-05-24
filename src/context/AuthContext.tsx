@@ -25,25 +25,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isMounted = true;
     
-    const initializeAuth = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        if (isMounted) {
-          if (error) {
-            console.warn("Session initialization error:", error.message);
-          }
-          setSession(data.session);
-          if (data.session && typeof window !== "undefined" && window.location.hash) {
-            window.history.replaceState(null, "", window.location.pathname + window.location.search);
-          }
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (isMounted) {
+        if (error) {
+          console.warn("Session initialization error:", error.message);
         }
-      } catch (e) {
-        console.warn("Auth initialization error:", e);
-      } finally {
-        if (isMounted) setLoading(false);
+        setSession(data.session);
+        if (data.session && typeof window !== "undefined" && window.location.hash) {
+          window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        }
+        setLoading(false);
       }
-    };
-    initializeAuth();
+    }).catch((e) => {
+      console.warn("Auth initialization error:", e);
+      if (isMounted) setLoading(false);
+    });
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
       if (isMounted) {
@@ -64,16 +60,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     });
-
-    if (typeof window !== "undefined") {
-      const hash = window.location.hash;
-      if (hash && hash.includes("access_token")) {
-        const params = new URLSearchParams(hash.substring(1));
-        if (params.get("access_token")) {
-          window.history.replaceState(null, "", window.location.pathname + window.location.search);
-        }
-      }
-    }
 
     return () => {
       isMounted = false;
@@ -146,8 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     },
     signInWithGoogle: async (redirectPath = "/") => {
-      const baseUrl = typeof window !== "undefined" ? window.location.origin.replace(/\/$/, "") : "https://wallex.online";
-      const redirectUrl = `${baseUrl}${redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`}`;
+      const redirectUrl = buildWallexRedirectUrl(redirectPath);
       console.log("Google OAuth redirect URL:", redirectUrl);
       
       try {
@@ -155,7 +140,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           provider: "google",
           options: {
             redirectTo: redirectUrl,
-            skipBrowserRedirect: false,
           },
         });
 
@@ -164,13 +148,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           throw new Error(error.message || "Google sign in failed");
         }
         
-        // If we get a URL in the response but didn't redirect, do it manually
         if (data?.url) {
-          console.log("Redirecting to:", data.url);
+          console.log("Redirecting to Google OAuth:", data.url);
           window.location.href = data.url;
         }
-        
-        console.log("Google OAuth initiated successfully");
       } catch (err) {
         console.error("Google OAuth exception:", err);
         throw err instanceof Error ? err : new Error("Google sign in failed");

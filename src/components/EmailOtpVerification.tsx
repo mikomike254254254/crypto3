@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Loader2, Mail } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { supabase } from "../lib/supabase";
 
 interface EmailOtpVerificationProps {
   email: string;
@@ -27,10 +26,8 @@ export function EmailOtpVerification({ email, name, password, onVerified, onBack
     setLoading(true);
     setError("");
     try {
-      // Verify OTP - this signs the user in
       await verifySignUpOtp(email, code.trim());
       
-      // After OTP verification, user is signed in. Update their password/profile if provided
       if (password && password.length >= 6) {
         try {
           await completeSignUpProfile(password, name);
@@ -39,8 +36,6 @@ export function EmailOtpVerification({ email, name, password, onVerified, onBack
         }
       }
       
-      // Force refresh session to ensure state is updated
-      await supabase.auth.refreshSession();
       onVerified();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Invalid or expired code.");
