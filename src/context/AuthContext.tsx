@@ -23,28 +23,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const initializeAuth = async () => {
       try {
         const { data } = await supabase.auth.getSession();
-        setSession(data.session);
-        if (data.session) {
-          if (typeof window !== "undefined" && window.location.hash) {
+        if (isMounted) {
+          setSession(data.session);
+          if (data.session && typeof window !== "undefined" && window.location.hash) {
             window.history.replaceState(null, "", window.location.pathname + window.location.search);
           }
         }
       } catch (e) {
         console.warn("Auth initialization error:", e);
+      } finally {
+        if (isMounted) setLoading(false);
       }
-      setLoading(false);
     };
     initializeAuth();
 
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
-      setSession(nextSession);
-      setLoading(false);
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (isMounted) {
+        setSession(nextSession);
+        setLoading(false);
+      }
     });
 
-    return () => listener.subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   const value = useMemo<AuthContextValue>(() => ({
