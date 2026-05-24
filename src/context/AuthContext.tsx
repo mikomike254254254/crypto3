@@ -132,10 +132,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     },
     signInWithGoogle: async (redirectPath = "/") => {
-      const redirectUrl = buildWallexRedirectUrl(redirectPath);
-      console.log("Google OAuth redirect URL:", redirectUrl);
+      const origin = typeof window !== "undefined" ? window.location.origin : "https://wallex.online";
+      const redirectUrl = `${origin.replace(/\/$/, "")}${redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`}`;
+      console.log("Google OAuth - origin:", origin, "redirectUrl:", redirectUrl);
       
       try {
+        console.log("Calling signInWithOAuth...");
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: "google",
           options: {
@@ -144,17 +146,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
 
         if (error) {
-          console.error("Google OAuth error:", error.message);
-          throw new Error(error.message || "Google sign in failed");
+          console.error("Google OAuth error:", error);
+          throw error;
         }
         
+        console.log("OAuth response:", data);
+        
         if (data?.url) {
-          console.log("Redirecting to Google OAuth:", data.url);
+          console.log("Navigating to:", data.url);
           window.location.href = data.url;
+          return;
         }
+        
+        if (data?.provider) {
+          console.log("Provider data but no URL, checking...");
+        }
+        
+        throw new Error("OAuth provider did not return a redirect URL");
       } catch (err) {
         console.error("Google OAuth exception:", err);
-        throw err instanceof Error ? err : new Error("Google sign in failed");
+        throw err;
       }
     },
     signOut: async () => {

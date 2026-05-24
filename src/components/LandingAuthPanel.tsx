@@ -31,6 +31,8 @@ export function LandingAuthPanel() {
     try {
       console.log("Starting Google sign in...");
       await signInWithGoogle("/");
+      // Note: signInWithGoogle redirects via window.location.assign()
+      // If we reach here, something went wrong
     } catch (err) {
       console.error("Google sign in error:", err);
       setError(err instanceof Error ? err.message : "Google sign in failed");
