@@ -49,12 +49,13 @@ ALTER TABLE public.users ADD COLUMN IF NOT EXISTS avatar_gradient TEXT;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS onboarding_complete BOOLEAN DEFAULT false;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS signup_bonus_awarded BOOLEAN DEFAULT false;
 
--- 3. Add missing columns to transactions table
+-- 3. Add missing columns to transactions table (including note for swap)
 ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS from_wallet TEXT;
 ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS to_wallet TEXT;
 ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS token TEXT;
 ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'completed';
 ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS network TEXT;
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS note TEXT;
 
 -- 4. Create notifications table
 CREATE TABLE IF NOT EXISTS public.notifications (
