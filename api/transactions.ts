@@ -128,6 +128,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (error) throw error;
       recipient = (data || []).find((row) => row.wallet !== userRow.wallet) || null;
 
+      // Prevent self-transfer: if the only match is the sender's own wallet
+      if (!recipient && (data || []).some((row) => row.wallet === userRow.wallet)) {
+        return res.status(400).json({ error: "Cannot send to your own wallet. Use a different recipient address." });
+      }
     }
 
     const toWallet = transactionType === "deposit"

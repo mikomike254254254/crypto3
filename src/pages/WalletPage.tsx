@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowDownToLine, ArrowUpFromLine, ArrowRightLeft, Clock, ChevronRight, Eye, EyeOff, TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, ArrowRightLeft, BadgeDollarSign, Clock, ChevronRight, Eye, EyeOff, TrendingDown, TrendingUp } from "lucide-react";
 import { Wallet, Transaction } from "../types/crypto";
 import { useTheme } from "../context/ThemeContext";
 import { CryptoLogo } from "../components/CryptoLogo";
@@ -16,6 +16,7 @@ interface WalletPageProps {
   transactions?: Transaction[];
   onDeposit: () => void;
   onSend: () => void;
+  onTopup?: () => void;
   onWithdraw?: () => void;
   kycVerified?: boolean;
 }
@@ -28,6 +29,7 @@ export function WalletPage({
   transactions = [],
   onDeposit,
   onSend,
+  onTopup,
 }: WalletPageProps) {
   const [selectedWallet, setSelectedWallet] = useState(0);
   const [isHidden, setIsHidden] = useState(false);
@@ -202,6 +204,21 @@ export function WalletPage({
           </button>
         ))}
       </div>
+
+      {/* Top-up card button */}
+      <button
+        onClick={onTopup}
+        className={`w-full mb-4 rounded-xl border p-4 flex items-center gap-3 transition-all hover:shadow-md ${isDark ? "bg-neutral-900 border-neutral-700 hover:border-emerald-600" : "bg-white border-neutral-200 hover:border-emerald-400"}`}
+      >
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shrink-0 shadow-sm">
+          <BadgeDollarSign className="w-5 h-5 text-white" />
+        </div>
+        <div className="text-left flex-1">
+          <p className={`text-sm font-semibold ${isDark ? "text-white" : "text-black"}`}>Top up with card or bank</p>
+          <p className={`text-xs ${isDark ? "text-neutral-400" : "text-gray-500"}`}>Pay in KES · credited instantly · no KYC required</p>
+        </div>
+        <ChevronRight className={`w-5 h-5 ${isDark ? "text-neutral-500" : "text-gray-400"}`} />
+      </button>
 
       <div className="flex items-center justify-between mb-3">
         <h3 className={`text-base font-semibold ${isDark ? "text-white" : "text-black"}`}>

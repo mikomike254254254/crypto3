@@ -75,6 +75,11 @@ export function DepositModal({ wallet, wallets, onClose, onDeposit: _onDeposit, 
   const walletAddress = getReceiveAddress(wallet, selectedNetwork);
   const receiveLink = buildReceiveLink(wallet, selectedNetwork);
 
+  // Wallet-based color scheme
+  const walletColor = wallet.color === "green" ? "emerald" : wallet.color === "orange" ? "orange" : "violet";
+  const walletColorHex = wallet.color === "green" ? "bg-emerald-500" : wallet.color === "orange" ? "bg-orange-500" : "bg-violet-500";
+  const walletColorRing = wallet.color === "green" ? "ring-emerald-300" : wallet.color === "orange" ? "ring-orange-300" : "ring-violet-300";
+
   const recentAddresses = [
     { address: receiveLink, label: "Wallex Pay Link", time: "Ready" },
     { address: walletAddress, label: `${wallet.symbol} Address`, time: selectedNetwork },

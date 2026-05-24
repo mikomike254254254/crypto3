@@ -3,6 +3,7 @@ import { fetchLiveUsdPrices } from "./_prices.js";
 import {
   adminClient,
   buildClientWallets,
+  createNotification,
   ensureUserAccount,
   readTokenBalances,
   requireUser,
@@ -73,6 +74,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const receiveAmount = Number((usdValue / prices[toToken]).toFixed(8));
     const note = `Swap ${parsedAmount} ${fromToken} → ${receiveAmount} ${toToken}`;
 
+    // Insert the outgoing (send) ledger entry
     await insertLedgerTx({
       from_wallet: userRow.wallet,
       to_wallet: "swap",
@@ -83,6 +85,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       note,
     });
 
+    // Insert the incoming (deposit) ledger entry
     await insertLedgerTx({
       from_wallet: "swap",
       to_wallet: userRow.wallet,
@@ -93,9 +96,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       note,
     });
 
-    // Create a notification for the swap
+    // Create a notification
     try {
-      const { createNotification } = await import("./_supabase.js");
       await createNotification(user.id, {
         type: "swap",
         title: "Swap completed",
@@ -107,8 +109,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // notification is best-effort
     }
 
+    // Build wallets from transactions ledger - this reads ALL tokens
+    const wallets = await buildClientWallets(userRow);
+
     return res.status(200).json({
-      wallets: await buildClientWallets(userRow),
+      wallets,
       received: receiveAmount,
       receivedToken: toToken,
     });

@@ -13,6 +13,7 @@ import { DepositModal } from "./components/DepositModal";
 import { WithdrawModal } from "./components/WithdrawModal";
 import { KYCModal } from "./components/KYCModal";
 import { SwapModal } from "./components/SwapModal";
+import { TopupModal } from "./components/TopupModal";
 import { LandingPage } from "./pages/LandingPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import { PaySendPage } from "./pages/PaySendPage";
@@ -50,6 +51,7 @@ function AppContent() {
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [showKYC, setShowKYC] = useState(false);
   const [showSwap, setShowSwap] = useState(false);
+  const [showTopup, setShowTopup] = useState(false);
   const [showP2p, setShowP2p] = useState(false);
   const [showP2pPicker, setShowP2pPicker] = useState(false);
   const [p2pTrader, setP2pTrader] = useState<P2pTrader>(DEFAULT_P2P_TRADER);
@@ -304,6 +306,13 @@ function AppContent() {
     ]);
   };
 
+  const handleTopupSuccess = (nextWallets: Wallet[]) => {
+    setWallets(nextWallets);
+    fetchTransactionsFromBackend()
+      .then(({ transactions: t }) => setTransactions(t))
+      .catch(() => undefined);
+  };
+
   const handleSend = async (amount: number, walletId: string, address: string, network: string) => {
     if (!requireKycForSend()) {
       setShowDeposit(false);
@@ -381,6 +390,7 @@ function AppContent() {
             transactions={transactions}
             onDeposit={openReceive}
             onSend={openSend}
+            onTopup={() => setShowTopup(true)}
             kycVerified={kycStatus === "verified"}
           />
         );
@@ -601,6 +611,13 @@ function AppContent() {
                 .then(({ transactions: t }) => setTransactions(t))
                 .catch(() => undefined);
             }}
+          />
+        )}
+        {showTopup && (
+          <TopupModal
+            wallets={wallets}
+            onClose={() => setShowTopup(false)}
+            onSuccess={handleTopupSuccess}
           />
         )}
       </div>
