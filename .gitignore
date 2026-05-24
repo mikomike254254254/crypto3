@@ -9,4 +9,5 @@ dist
 !public/logo.png
 !public/og-image.png
 prod-*.html
-ADMIN_ACCESS.md
+.env.vercel.check
+supabase/.temp/

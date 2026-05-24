@@ -42,7 +42,7 @@ create index if not exists transactions_to_wallet_idx on public.transactions(to_
 create index if not exists transactions_created_at_idx on public.transactions(created_at desc);
 
 insert into public.admins (email)
-values ('mikomike420@gmail.com')
+values ('wallexsupport@proton.me')
 on conflict (email) do nothing;
 
 alter table public.users enable row level security;

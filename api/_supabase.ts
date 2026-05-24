@@ -115,6 +115,14 @@ export async function createNotification(
 
   const attempts: Record<string, unknown>[] = [
     {
+      user_id: authUserId,
+      ...minimal,
+      amount: payload.amount ?? null,
+      token: payload.token ?? null,
+      from_wallet: payload.fromWallet ?? null,
+    },
+    { user_id: authUserId, ...minimal },
+    {
       auth_user_id: authUserId,
       ...minimal,
       amount: payload.amount ?? null,
@@ -122,8 +130,6 @@ export async function createNotification(
       from_wallet: payload.fromWallet ?? null,
     },
     { auth_user_id: authUserId, ...minimal },
-    { user_id: authUserId, ...minimal },
-    { ...minimal },
   ];
 
   for (const row of attempts) {

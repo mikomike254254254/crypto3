@@ -35,7 +35,7 @@ async function listNotifications(authUserId: string) {
   ];
 
   for (const columns of attempts) {
-    for (const userColumn of ["auth_user_id", "user_id"] as const) {
+    for (const userColumn of ["user_id", "auth_user_id"] as const) {
       const { data, error } = await supabase
         .from("notifications")
         .select(columns)
@@ -71,7 +71,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (markAllRead) {
         let updated = false;
-        for (const userColumn of ["auth_user_id", "user_id"] as const) {
+        for (const userColumn of ["user_id", "auth_user_id"] as const) {
           const { error } = await supabase
             .from("notifications")
             .update({ read_at: new Date().toISOString() })
@@ -91,7 +91,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       let markError: { message?: string } | null = null;
-      for (const userColumn of ["auth_user_id", "user_id"] as const) {
+      for (const userColumn of ["user_id", "auth_user_id"] as const) {
         const { error } = await supabase
           .from("notifications")
           .update({ read_at: new Date().toISOString() })
