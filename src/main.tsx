@@ -13,7 +13,6 @@ registerServiceWorker();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <LegacyDomainRedirect />
     <App />
   </React.StrictMode>
 );
