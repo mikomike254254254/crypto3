@@ -1,125 +1,124 @@
--- Wallex full database setup — run once in Supabase SQL Editor
--- Project: nzzstvvbrcdhuiqppdpv
+-- ============================================================
+-- Run this entire file in Supabase Dashboard → SQL Editor
+-- ============================================================
 
-create extension if not exists "pgcrypto";
-
--- Core ledger
-create table if not exists public.users (
-  id uuid primary key default gen_random_uuid(),
-  auth_user_id uuid unique references auth.users(id) on delete cascade,
-  wallet text not null unique,
-  email text,
-  full_name text,
-  avatar_url text,
-  avatar_character text,
-  avatar_gradient text,
-  onboarding_complete boolean not null default false,
-  kyc_status text not null default 'unverified',
-  signup_bonus_awarded boolean not null default false,
-  created_at timestamptz not null default now()
+-- 1. Create kyc_submissions table
+CREATE TABLE IF NOT EXISTS public.kyc_submissions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  auth_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  wallet TEXT NOT NULL,
+  document_type TEXT NOT NULL,
+  legal_name TEXT NOT NULL,
+  date_of_birth TEXT,
+  country TEXT,
+  address TEXT,
+  front_path TEXT,
+  back_path TEXT,
+  selfie_path TEXT,
+  status TEXT NOT NULL DEFAULT 'pending',
+  admin_notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-create table if not exists public.balances (
-  wallet text primary key,
-  amount numeric not null default 0,
-  updated_at timestamptz not null default now()
+ALTER TABLE public.kyc_submissions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admins can read all KYC submissions"
+  ON public.kyc_submissions
+  FOR SELECT
+  TO authenticated
+  USING (auth.jwt() ->> 'email' IN (SELECT unnest(string_to_array(current_setting('app.admin_emails', true), ','))));
+
+CREATE POLICY "Users can read their own KYC submissions"
+  ON public.kyc_submissions
+  FOR SELECT
+  TO authenticated
+  USING (auth_user_id = auth.uid());
+
+CREATE POLICY "Users can insert their own KYC submissions"
+  ON public.kyc_submissions
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (auth_user_id = auth.uid());
+
+-- 2. Add missing columns to users table
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS kyc_status TEXT DEFAULT 'not_started';
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS avatar_character TEXT;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS avatar_gradient TEXT;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS onboarding_complete BOOLEAN DEFAULT false;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS signup_bonus_awarded BOOLEAN DEFAULT false;
+
+-- 3. Add missing columns to transactions table
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS from_wallet TEXT;
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS to_wallet TEXT;
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS token TEXT;
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'completed';
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS network TEXT;
+
+-- 4. Create notifications table
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  auth_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  title TEXT,
+  body TEXT,
+  message TEXT,
+  amount NUMERIC,
+  token TEXT,
+  from_wallet TEXT,
+  read_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-create table if not exists public.transactions (
-  id uuid primary key default gen_random_uuid(),
-  from_wallet text not null,
-  to_wallet text not null,
-  amount numeric not null check (amount > 0),
-  token text not null,
-  type text not null,
-  status text not null default 'completed',
-  note text,
-  created_at timestamptz not null default now()
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can read their own notifications"
+  ON public.notifications
+  FOR SELECT
+  TO authenticated
+  USING (auth_user_id = auth.uid());
+
+CREATE POLICY "Users can update their own notifications"
+  ON public.notifications
+  FOR UPDATE
+  TO authenticated
+  USING (auth_user_id = auth.uid());
+
+-- 5. Create kv_store table for admin settings
+CREATE TABLE IF NOT EXISTS public.kv_store (
+  key TEXT PRIMARY KEY,
+  value JSONB,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-create table if not exists public.admins (
-  email text primary key,
-  created_at timestamptz not null default now()
+-- 6. Create admin_actions log table
+CREATE TABLE IF NOT EXISTS public.admin_actions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_email TEXT NOT NULL,
+  action TEXT NOT NULL,
+  target_user_id UUID,
+  details JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-alter table public.users add column if not exists avatar_character text;
-alter table public.users add column if not exists avatar_gradient text;
-alter table public.users add column if not exists onboarding_complete boolean not null default false;
-
--- Notifications (fix auth_user_id)
-do $$
-begin
-  if exists (
-    select 1 from information_schema.columns
-    where table_schema = 'public' and table_name = 'notifications' and column_name = 'user_id'
-  ) and not exists (
-    select 1 from information_schema.columns
-    where table_schema = 'public' and table_name = 'notifications' and column_name = 'auth_user_id'
-  ) then
-    alter table public.notifications rename column user_id to auth_user_id;
-  end if;
-end $$;
-
-create table if not exists public.notifications (
-  id uuid primary key default gen_random_uuid(),
-  auth_user_id uuid not null references auth.users(id) on delete cascade,
-  type text not null default 'receive',
-  title text not null,
-  body text not null,
-  amount numeric,
-  token text,
-  from_wallet text,
-  read_at timestamptz,
-  created_at timestamptz not null default now()
+-- 7. Create balances table
+CREATE TABLE IF NOT EXISTS public.balances (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  wallet TEXT NOT NULL UNIQUE,
+  amount NUMERIC NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-alter table public.notifications add column if not exists auth_user_id uuid references auth.users(id) on delete cascade;
-alter table public.notifications add column if not exists type text not null default 'receive';
-alter table public.notifications add column if not exists title text not null default 'Wallex';
-alter table public.notifications add column if not exists body text not null default '';
-alter table public.notifications add column if not exists amount numeric;
-alter table public.notifications add column if not exists token text;
-alter table public.notifications add column if not exists from_wallet text;
-alter table public.notifications add column if not exists read_at timestamptz;
-alter table public.notifications add column if not exists created_at timestamptz not null default now();
-
--- KYC
-create table if not exists public.kyc_submissions (
-  id uuid primary key default gen_random_uuid(),
-  auth_user_id uuid references auth.users(id) on delete cascade,
-  wallet text,
-  document_type text,
-  legal_name text,
-  date_of_birth text,
-  country text,
-  address text,
-  front_path text,
-  back_path text,
-  selfie_path text,
-  status text not null default 'pending',
-  created_at timestamptz not null default now()
+-- 8. Create user_gradients table for avatar storage
+CREATE TABLE IF NOT EXISTS public.user_gradients (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  auth_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  gradient_data TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(auth_user_id)
 );
 
--- Indexes
-create index if not exists users_auth_user_id_idx on public.users(auth_user_id);
-create index if not exists users_wallet_idx on public.users(wallet);
-create index if not exists transactions_from_wallet_idx on public.transactions(from_wallet);
-create index if not exists transactions_to_wallet_idx on public.transactions(to_wallet);
-create index if not exists transactions_created_at_idx on public.transactions(created_at desc);
-create index if not exists notifications_auth_user_id_idx on public.notifications(auth_user_id);
-create index if not exists notifications_created_at_idx on public.notifications(created_at desc);
-create index if not exists kyc_submissions_auth_user_id_idx on public.kyc_submissions(auth_user_id);
-create index if not exists kyc_submissions_status_idx on public.kyc_submissions(status);
-
--- Admin + storage
-insert into public.admins (email) values ('wallexsupport@proton.me') on conflict (email) do nothing;
-
-insert into storage.buckets (id, name, public)
-values ('kyc-documents', 'kyc-documents', false)
-on conflict (id) do nothing;
-
-alter table public.users enable row level security;
-alter table public.balances enable row level security;
-alter table public.transactions enable row level security;
-alter table public.admins enable row level security;
-alter table public.notifications enable row level security;
+-- 9. Enable pgcrypto extension if not already enabled
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
