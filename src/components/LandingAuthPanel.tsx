@@ -25,6 +25,20 @@ export function LandingAuthPanel() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      console.log("Starting Google sign in...");
+      await signInWithGoogle("/");
+      console.log("Google sign in initiated, redirecting...");
+    } catch (err) {
+      console.error("Google sign in error:", err);
+      setError(err instanceof Error ? err.message : "Google sign in failed");
+      setLoading(false);
+    }
+  };
+
   const submit = async () => {
     setError("");
     if (!email.includes("@") || password.length < 6 || (mode === "signup" && !name.trim())) {
@@ -73,14 +87,7 @@ export function LandingAuthPanel() {
         <>
           <button
             type="button"
-            onClick={() => {
-              setLoading(true);
-              setError("");
-              signInWithGoogle("/").catch((err) => {
-                setLoading(false);
-                setError(err instanceof Error ? err.message : "Google sign in failed");
-              });
-            }}
+            onClick={handleGoogleSignIn}
             disabled={loading}
             className="w-full rounded-[1.25rem] border-2 border-slate-200 bg-white py-3.5 text-sm font-semibold text-slate-950 hover:bg-slate-50 flex items-center justify-center gap-3 disabled:opacity-60"
           >
