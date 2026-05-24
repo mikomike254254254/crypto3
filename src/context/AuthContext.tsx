@@ -27,8 +27,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     const initializeAuth = async () => {
       try {
-        const { data } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
         if (isMounted) {
+          if (error) {
+            console.warn("Session initialization error:", error.message);
+          }
           setSession(data.session);
           if (data.session && typeof window !== "undefined" && window.location.hash) {
             window.history.replaceState(null, "", window.location.pathname + window.location.search);
@@ -48,23 +51,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(nextSession);
         setLoading(false);
         
-        // Handle session expiration
         if (event === "SIGNED_OUT") {
           setSession(null);
         }
         
-        // Clear hash after successful sign in
         if (event === "SIGNED_IN" && typeof window !== "undefined" && window.location.hash) {
           window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        }
+        
+        if (event === "TOKEN_REFRESHED") {
+          console.log("Token refreshed successfully");
         }
       }
     });
 
-    // Handle OAuth callback hash - extract and process tokens
     if (typeof window !== "undefined") {
       const hash = window.location.hash;
       if (hash && hash.includes("access_token")) {
-        // Supabase will automatically process this, but we can help by cleaning it up
         const params = new URLSearchParams(hash.substring(1));
         if (params.get("access_token")) {
           window.history.replaceState(null, "", window.location.pathname + window.location.search);
@@ -110,13 +113,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
     },
     verifySignUpOtp: async (email, token) => {
-      const { error } = await supabase.auth.verifyOtp({
+      const { data, error } = await supabase.auth.verifyOtp({
         email: email.trim(),
         token: token.trim(),
-        type: "signup",
+        type: "email",
       });
 
       if (error) throw error;
+      
+      if (data.session) {
+        console.log("OTP verified and user signed in:", data.session.user?.email);
+      } else {
+        console.log("OTP verified, but no session established");
+      }
     },
     completeSignUpProfile: async (password, name) => {
       const { error } = await supabase.auth.updateUser({

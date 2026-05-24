@@ -6,12 +6,16 @@ import { Transaction, Wallet } from "../types/crypto";
 async function authHeaders(forceRefresh = false): Promise<Record<string, string>> {
   if (forceRefresh) {
     try {
-      const { data } = await supabase.auth.refreshSession();
-      if (data.session?.access_token) {
+      const { data, error } = await supabase.auth.refreshSession();
+      if (!error && data.session?.access_token) {
+        console.log("Token refreshed successfully");
         return { Authorization: `Bearer ${data.session.access_token}` };
       }
+      if (error) {
+        console.warn("Token refresh failed, attempting to get existing session:", error.message);
+      }
     } catch (e) {
-      console.warn("Session refresh failed:", e);
+      console.warn("Session refresh exception:", e);
     }
   }
   const { data } = await supabase.auth.getSession();
@@ -33,8 +37,17 @@ async function apiRequest<T>(path: string, init: RequestInit = {}, allowEmptyOn4
   };
 
   let response = await run(false);
+  
   if (response.status === 401) {
+    console.warn("Got 401, attempting token refresh for:", path);
     response = await run(true);
+    
+    if (response.status === 401 && !allowEmptyOn401) {
+      const body = await response.json().catch(() => ({}));
+      if (body.error?.includes("Invalid session") || body.error?.includes("JWT")) {
+        console.warn("Session invalid after refresh, redirecting to signin recommended");
+      }
+    }
   }
 
   if (response.status === 401 && allowEmptyOn401) {

@@ -12,6 +12,7 @@ export const supabase = createClient(supabaseUrl ?? "", supabaseAnonKey ?? "", {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    flowType: "pkce",
   },
 });
 
@@ -25,5 +26,10 @@ supabase.auth.onAuthStateChange((event, session) => {
     if (typeof window !== "undefined" && window.location.hash) {
       window.history.replaceState(null, "", window.location.pathname + window.location.search);
     }
+  }
+  if (event === "TOKEN_REFRESHED" && session) {
+    console.log("Token refreshed for user:", session.user?.email);
+  } else if (event === "SIGNED_OUT") {
+    console.log("User signed out");
   }
 });
