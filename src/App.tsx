@@ -407,11 +407,11 @@ function AppContent() {
     }
   };
 
-  if (authLoading && !user) {
+  if (!authReady) {
     return <AppLoadingSkeleton />;
   }
 
-  if (!authReady) {
+  if (authLoading && !user) {
     return <AppLoadingSkeleton />;
   }
 
@@ -442,7 +442,16 @@ function AppContent() {
         skipAuth
         characterOnly
         initialEmail={user.email || ""}
-        onComplete={() => {
+        onComplete={async () => {
+          // Ensure the profile is saved before marking onboarding complete
+          try {
+            await updateProfileInBackend({
+              onboardingComplete: true,
+            });
+          } catch (err) {
+            console.warn("Profile save failed, marking complete locally", err);
+          }
+
           if (user?.id) {
             localStorage.setItem(`wallex.onboarding:${user.id}`, "true");
           }
@@ -459,6 +468,10 @@ function AppContent() {
             applyReferralCode(pendingRef)
               .then(() => localStorage.removeItem("wallex.pendingReferral"))
               .catch(() => undefined);
+          }
+          // Ensure we navigate to wallet after onboarding (the main app view)
+          if (window.location.pathname !== "/") {
+            window.history.replaceState(null, "", "/");
           }
         }}
       />

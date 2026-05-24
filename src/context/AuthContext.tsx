@@ -32,28 +32,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         console.log("[AUTH] Initializing session");
 
+        // First, let Supabase process the URL hash if present (OAuth callback)
+        // This ensures the session is properly extracted from the hash fragment
+        if (typeof window !== "undefined" && window.location.hash && window.location.hash.includes("access_token")) {
+          console.log("[AUTH] OAuth hash detected, waiting for Supabase to process...");
+          try {
+            // Give Supabase time to process the OAuth callback
+            await new Promise((resolve) => setTimeout(resolve, 100));
+          } catch {
+            // ignore
+          }
+        }
+
         const { data, error } = await supabase.auth.getSession();
 
         if (error) {
           console.error("[AUTH SESSION ERROR]", error);
-          
+
           // Handle clock skew error specifically
           if (error.message?.includes("issued in the future") || error.message?.includes("clock")) {
             console.warn("[AUTH] Clock skew detected - attempting to recover");
             // Try to refresh the session
-            await supabase.auth.refreshSession();
+            const refreshResult = await supabase.auth.refreshSession();
+            if (refreshResult.data.session && mounted) {
+              console.log("[AUTH] Session recovered via refresh");
+              setSession(refreshResult.data.session);
+              setUser(refreshResult.data.session.user);
+              // Clean OAuth hash after successful recovery
+              if (typeof window !== "undefined" && window.location.hash) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+              }
+              return;
+            }
           }
-          
+
           // Clear invalid session
           await supabase.auth.signOut();
-          
+
           if (typeof window !== "undefined") {
             // Clear all auth-related storage
-            Object.keys(localStorage).forEach((key) => {
-              if (key.includes("supabase") || key.includes("wallex")) {
-                localStorage.removeItem(key);
-              }
-            });
+            localStorage.clear();
             sessionStorage.clear();
           }
 
@@ -79,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (err) {
         console.error("[AUTH INIT FAILED]", err);
-        
+
         if (mounted) {
           setSession(null);
           setUser(null);
@@ -104,6 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Clean OAuth hash after successful auth
       if (session && typeof window !== "undefined" && window.location.hash) {
+        console.log("[Auth] SIGNED_IN - cleaning URL hash");
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     });
