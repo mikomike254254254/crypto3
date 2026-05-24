@@ -60,33 +60,35 @@ body {
   }
 }
 
-/* Glare sweep — slow smooth motion every 5 seconds */
+/* Glare sweep — smooth 2s travel, 5s total cycle, wider beam */
 .balance-card::after {
   content: "";
   position: absolute;
   inset: 0;
   background: linear-gradient(
     105deg,
-    transparent 30%,
-    rgba(255, 255, 255, 0.35) 48%,
-    rgba(255, 255, 255, 0.42) 50%,
-    rgba(255, 255, 255, 0.35) 52%,
-    transparent 70%
+    transparent 20%,
+    rgba(255, 255, 255, 0.28) 38%,
+    rgba(255, 255, 255, 0.45) 45%,
+    rgba(255, 255, 255, 0.50) 50%,
+    rgba(255, 255, 255, 0.45) 55%,
+    rgba(255, 255, 255, 0.28) 62%,
+    transparent 80%
   );
-  animation: balance-glare 5s ease-in-out infinite;
+  animation: balance-glare 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   pointer-events: none;
   z-index: 1;
 }
 
 @keyframes balance-glare {
   0% {
-    transform: translateX(-150%);
+    transform: translateX(-180%);
   }
-  20% {
-    transform: translateX(150%);
+  40% {
+    transform: translateX(180%);
   }
   100% {
-    transform: translateX(150%);
+    transform: translateX(180%);
   }
 }
 
