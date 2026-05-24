@@ -30,74 +30,67 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     async function initializeAuth() {
       try {
-        console.log("[AUTH] Initializing session");
+        console.log("[AUTH] Starting initialization");
 
-        // First, let Supabase process the URL hash if present (OAuth callback)
-        // This ensures the session is properly extracted from the hash fragment
-        if (typeof window !== "undefined" && window.location.hash && window.location.hash.includes("access_token")) {
-          console.log("[AUTH] OAuth hash detected, waiting for Supabase to process...");
-          try {
-            // Give Supabase time to process the OAuth callback
-            await new Promise((resolve) => setTimeout(resolve, 100));
-          } catch {
-            // ignore
-          }
+        // Check if we have an OAuth callback in the URL
+        const hasOAuthCallback = typeof window !== "undefined" && 
+          window.location.hash && 
+          window.location.hash.includes("access_token");
+
+        let sessionData = null;
+        let sessionError = null;
+
+        if (hasOAuthCallback) {
+          console.log("[AUTH] OAuth callback detected, waiting for Supabase to process URL hash...");
+          
+          // Wait for Supabase to process the OAuth hash
+          // The detectSessionInUrl option processes this automatically
+          // but we need to wait for it to complete
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
 
+        // Try to get the session
         const { data, error } = await supabase.auth.getSession();
+        sessionData = data;
+        sessionError = error;
 
-        if (error) {
-          console.error("[AUTH SESSION ERROR]", error);
-
-          // Handle clock skew error specifically
-          if (error.message?.includes("issued in the future") || error.message?.includes("clock")) {
-            console.warn("[AUTH] Clock skew detected - attempting to recover");
-            // Try to refresh the session
-            const refreshResult = await supabase.auth.refreshSession();
-            if (refreshResult.data.session && mounted) {
-              console.log("[AUTH] Session recovered via refresh");
-              setSession(refreshResult.data.session);
-              setUser(refreshResult.data.session.user);
-              // Clean OAuth hash after successful recovery
-              if (typeof window !== "undefined" && window.location.hash) {
-                window.history.replaceState({}, document.title, window.location.pathname);
-              }
-              return;
+        if (sessionError) {
+          console.error("[AUTH SESSION ERROR]", sessionError);
+          
+          // Try getUser as fallback
+          const { data: userData, error: userError } = await supabase.auth.getUser();
+          if (userData?.user && mounted) {
+            console.log("[AUTH] User recovered via getUser:", userData.user.email);
+            // Create a minimal session from user data if needed
+            setUser(userData.user);
+          } else {
+            await supabase.auth.signOut();
+            if (typeof window !== "undefined") {
+              localStorage.clear();
+              sessionStorage.clear();
+            }
+            if (mounted) {
+              setSession(null);
+              setUser(null);
             }
           }
-
-          // Clear invalid session
-          await supabase.auth.signOut();
-
-          if (typeof window !== "undefined") {
-            // Clear all auth-related storage
-            localStorage.clear();
-            sessionStorage.clear();
-          }
-
-          if (mounted) {
-            setSession(null);
-            setUser(null);
-          }
-
           return;
         }
 
-        console.log("[AUTH] Session loaded", !!data.session);
+        console.log("[AUTH] Session loaded", !!sessionData.session, sessionData.session?.user?.email);
 
         if (!mounted) return;
 
-        setSession(data.session ?? null);
-        setUser(data.session?.user ?? null);
+        setSession(sessionData.session ?? null);
+        setUser(sessionData.session?.user ?? null);
 
         // Clean OAuth hash after successful session restore
-        if (data.session && typeof window !== "undefined" && window.location.hash) {
+        if (sessionData.session && typeof window !== "undefined" && window.location.hash) {
           console.log("[AUTH] Cleaning OAuth hash from URL");
           window.history.replaceState({}, document.title, window.location.pathname);
         }
       } catch (err) {
         console.error("[AUTH INIT FAILED]", err);
-
         if (mounted) {
           setSession(null);
           setUser(null);
@@ -112,17 +105,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initializeAuth();
 
+    // Listen for auth state changes - this fires when OAuth callback is processed
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("[AUTH EVENT]", event, !!session);
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
+      console.log("[AUTH EVENT]", event, newSession?.user?.email || "no user");
 
-      setSession(session ?? null);
-      setUser(session?.user ?? null);
+      if (!mounted) return;
+
+      setSession(newSession ?? null);
+      setUser(newSession?.user ?? null);
 
       // Clean OAuth hash after successful auth
-      if (session && typeof window !== "undefined" && window.location.hash) {
-        console.log("[Auth] SIGNED_IN - cleaning URL hash");
+      if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && typeof window !== "undefined" && window.location.hash) {
+        console.log("[AUTH] " + event + " - cleaning URL hash");
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     });
