@@ -26,8 +26,10 @@ export function getTransactionDisplay(tx: Transaction): TxDisplay {
   }
   if (note.includes("P2P")) {
     const isBuy = /\bdeposit\b/i.test(note) || /\bbuy\b/i.test(note);
+    const traderMatch = note.match(/Trader\s+([^—]+)/i);
+    const traderName = traderMatch?.[1]?.trim() || "P2P merchant";
     return {
-      title: isBuy ? "P2P buy (Jeff)" : "P2P sell (Jeff)",
+      title: isBuy ? `P2P buy (${traderName})` : `P2P sell (${traderName})`,
       subtitle: note.replace(/^P2P\s+/i, ""),
       sign: isBuy ? "+" : "-",
       isCredit: isBuy,

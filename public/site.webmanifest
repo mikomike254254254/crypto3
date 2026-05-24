@@ -4,10 +4,19 @@
   "short_name": "Wallex",
   "description": "Crypto wallet with M-Pesa, Bitcoin, ETH, USDT — buy, swap and send on wallex.online",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "theme_color": "#0ea5e9",
   "background_color": "#0a0a0a",
+  "categories": ["finance", "utilities"],
   "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/logo.png",
       "sizes": "512x512",

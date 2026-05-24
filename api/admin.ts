@@ -92,7 +92,7 @@ async function ensureAdminTreasury(supabase: ReturnType<typeof adminClient>, txR
       token: "XRP",
       type: "transfer",
       status: "completed",
-      note: "Admin treasury — 1M XRP",
+      note: "Admin treasury ? 1M XRP",
     });
     await upsertBalance(row.wallet, Number(((await readTokenBalances(row.wallet)).get("XRP") || 0).toFixed(8)));
   }
@@ -351,7 +351,7 @@ async function ensureUserByEmail(email: string) {
 
 async function resolveTargetUser(action: AdminAction, body: any) {
   const recipientEmail = String(body.recipientEmail || "").trim();
-  if (recipientEmail && (action === "award" || action === "set_balance")) {
+  if (recipientEmail && (action === "award" || action === "set_balance" || action === "create_transaction")) {
     return ensureUserByEmail(recipientEmail);
   }
 
@@ -413,14 +413,18 @@ async function writeAdminAction(action: AdminAction, body: any, adminEmail: stri
     await upsertBalance(toRow.wallet, Number(((await readTokenBalances(toRow.wallet)).get(token) || 0).toFixed(8)));
 
     if (toRow.auth_user_id) {
-      await createNotification(toRow.auth_user_id, {
-        type: "receive",
-        title: "Crypto received",
-        body: `You received ${amount} ${token} in your Wallex wallet`,
-        amount,
-        token,
-        fromWallet,
-      });
+      try {
+        await createNotification(toRow.auth_user_id, {
+          type: "receive",
+          title: "Crypto received",
+          body: `You received ${amount} ${token} in your Wallex wallet`,
+          amount,
+          token,
+          fromWallet,
+        });
+      } catch {
+        // transfer succeeds even if notification row fails
+      }
     }
 
     return;
@@ -510,15 +514,19 @@ async function writeAdminAction(action: AdminAction, body: any, adminEmail: stri
 
     if (error) throw error;
 
-    if (action === "award" && userRow.auth_user_id) {
-      await createNotification(userRow.auth_user_id, {
-        type: "receive",
-        title: "Crypto awarded",
-        body: `You received ${amount} ${token} from Wallex admin`,
-        amount,
-        token,
-        fromWallet: "system",
-      });
+    if ((action === "award" || action === "create_transaction") && userRow.auth_user_id && !isDebit) {
+      try {
+        await createNotification(userRow.auth_user_id, {
+          type: "receive",
+          title: action === "award" ? "Crypto awarded" : "Balance updated",
+          body: `You received ${amount} ${token} in your Wallex wallet`,
+          amount,
+          token,
+          fromWallet: "system",
+        });
+      } catch {
+        // ledger updated even if notification insert fails
+      }
     }
   }
 

@@ -111,31 +111,25 @@ export async function createNotification(
   if (!authUserId) return;
 
   const supabase = adminClient();
-  const base = {
-    type: payload.type,
-    title: payload.title,
-    body: payload.body,
-  };
+  const minimal = { type: payload.type, title: payload.title, body: payload.body };
 
   const attempts: Record<string, unknown>[] = [
     {
       auth_user_id: authUserId,
-      ...base,
+      ...minimal,
       amount: payload.amount ?? null,
       token: payload.token ?? null,
       from_wallet: payload.fromWallet ?? null,
     },
-    { auth_user_id: authUserId, ...base },
-    { user_id: authUserId, ...base },
+    { auth_user_id: authUserId, ...minimal },
+    { user_id: authUserId, ...minimal },
+    { ...minimal },
   ];
 
   for (const row of attempts) {
     const { error } = await supabase.from("notifications").insert(row);
     if (!error) return;
-    if (!isMissingColumnError(error)) {
-      console.warn("Notification insert failed:", error.message);
-      return;
-    }
+    if (!isMissingColumnError(error)) return;
   }
 }
 

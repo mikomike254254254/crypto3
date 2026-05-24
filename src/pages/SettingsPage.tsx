@@ -502,8 +502,8 @@ export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, kycVerif
       </div>
 
       {showCurrencyModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
-          <div className={`w-full rounded-t-3xl max-h-[80%] overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-300 ${isDark ? "bg-neutral-950" : "bg-white"}`}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 pb-24">
+          <div className={`w-full max-w-md rounded-t-3xl sm:rounded-3xl max-h-[80%] overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-300 ${isDark ? "bg-neutral-950" : "bg-white"}`}>
             <div className={`p-4 flex items-center justify-between ${isDark ? "border-b border-neutral-800" : "border-b border-neutral-100"}`}>
               <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-black"}`}>Select Currency</h2>
               <button onClick={() => setShowCurrencyModal(false)} className={`p-2 rounded-full ${isDark ? "hover:bg-neutral-800" : "hover:bg-neutral-100"}`}>
@@ -559,7 +559,7 @@ export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, kycVerif
       )}
 
       {showProfileModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 pb-24">
           <div className={`w-full rounded-t-3xl p-5 ${isDark ? "bg-neutral-950" : "bg-white"}`}>
             <div className="flex items-center justify-between mb-4">
               <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-black"}`}>Personal info</h2>
@@ -573,12 +573,17 @@ export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, kycVerif
       )}
 
       {showPasswordModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
-          <div className={`w-full rounded-t-3xl p-5 ${isDark ? "bg-neutral-950" : "bg-white"}`}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 pb-24">
+          <div className={`w-full max-w-md rounded-3xl p-5 shadow-2xl ${isDark ? "bg-neutral-950" : "bg-white"}`}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-black"}`}>Change password</h2>
+              <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-black"}`}>Set password</h2>
               <button type="button" onClick={() => setShowPasswordModal(false)} className="p-2 rounded-full hover:bg-neutral-100"><X className="w-5 h-5" /></button>
             </div>
+            <p className={`text-xs mb-3 ${isDark ? "text-neutral-400" : "text-gray-500"}`}>
+              {user?.app_metadata?.provider === "google"
+                ? "Signed in with Google? Set a password here to also log in with email."
+                : "Update your Wallex login password."}
+            </p>
             <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password (6+ chars)" className={`w-full rounded-xl border px-4 py-3 text-sm mb-4 ${isDark ? "bg-neutral-900 border-neutral-700 text-white" : "border-neutral-200"}`} />
             <button type="button" onClick={savePassword} className="w-full rounded-xl bg-black text-white py-3 text-sm font-semibold">Update password</button>
           </div>
@@ -586,7 +591,7 @@ export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, kycVerif
       )}
 
       {showAbout && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 pb-24">
           <div className={`w-full rounded-t-3xl p-5 ${isDark ? "bg-neutral-950" : "bg-white"}`}>
             <div className="flex items-center justify-between mb-3">
               <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-black"}`}>About Wallex</h2>

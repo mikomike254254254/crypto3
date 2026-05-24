@@ -93,14 +93,14 @@ export function ExplorePage({ cryptoData }: ExplorePageProps) {
         ))}
       </div>
 
-      <div className="flex justify-center mb-5">
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full max-w-md">
+      <div className="flex justify-center mb-4 pt-1">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full max-w-md px-1">
         {cryptoData.slice(0, 6).map((crypto) => (
           <button
             type="button"
             key={crypto.id}
             onClick={() => setSelectedCoin(crypto)}
-            className={`rounded-2xl p-3 border text-left transition-transform hover:scale-[1.02] active:scale-[0.98] ${isDark ? "bg-neutral-900 border-neutral-800" : "bg-white border-slate-100 shadow-sm"}`}
+            className={`rounded-2xl p-4 border text-left transition-transform hover:scale-[1.02] active:scale-[0.98] ${isDark ? "bg-neutral-900 border-neutral-800" : "bg-white border-slate-100 shadow-sm"}`}
           >
             <div className="flex items-center gap-2 mb-2">
               <CryptoLogo symbol={crypto.symbol} size={36} />

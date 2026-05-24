@@ -33,15 +33,15 @@ body {
   animation: marquee-scroll 55s linear infinite;
 }
 
-/* Wakanda-inspired silver tribal pattern — visible and always moving */
+/* Geometric mesh pattern on balance card */
 .balance-card-silver::before {
   content: "";
   position: absolute;
   inset: -20%;
-  opacity: 0.28;
-  background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23d4d4d8' stroke-width='0.65'%3E%3Cpath d='M60 6l10 16-10 16-10-16z'/%3E%3Cpath d='M6 60l16 10 16-10-16-10z'/%3E%3Cpath d='M114 60l-16 10-16-10 16-10z'/%3E%3Cpath d='M60 114l-10-16 10-16 10 16z'/%3E%3Ccircle cx='60' cy='60' r='18'/%3E%3Cpath d='M30 30h60M30 90h60M30 30v60M90 30v60'/%3E%3Cpath d='M42 42l36 36M78 42L42 78'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: 120px 120px;
-  animation: wakanda-pattern-drift 20s linear infinite;
+  opacity: 0.22;
+  background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23a1a1aa' stroke-width='0.5'%3E%3Cpath d='M0 40h80M40 0v80M0 0l80 80M80 0L0 80'/%3E%3Ccircle cx='40' cy='40' r='12'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 80px 80px;
+  animation: wakanda-pattern-drift 24s linear infinite;
   pointer-events: none;
   z-index: 0;
 }
@@ -51,7 +51,7 @@ body {
     background-position: 0 0;
   }
   100% {
-    background-position: 120px 120px;
+    background-position: 80px 80px;
   }
 }
 
@@ -65,7 +65,7 @@ body {
     rgba(255, 255, 255, 0.38) 50%,
     transparent 68%
   );
-  animation: balance-glare 1.5s ease-in-out infinite;
+  animation: balance-glare 0.2s ease-in-out infinite;
   pointer-events: none;
   z-index: 1;
 }

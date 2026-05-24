@@ -46,13 +46,25 @@ export function WalletPage({
     { id: "pending", label: "Pending" },
   ];
 
+  const activeWallet = wallets[selectedWallet] || wallets[0];
+  const priceBySymbol = Object.fromEntries(priceAssets.map((a) => [a.symbol, a.price]));
+  const walletFiatValue = activeWallet
+    ? activeWallet.balance * (priceBySymbol[activeWallet.symbol] || 1)
+    : totalBalance;
+
+  const walletSymbol = activeWallet?.symbol?.toUpperCase() || "";
+
   const filteredTransactions = (() => {
-    if (activeFilter === "all") return transactions;
-    if (activeFilter === "pending") return transactions.filter((t) => t.status === "pending");
+    let list = transactions.filter((t) => {
+      const txCurrency = (t.currency || t.symbol || "").toUpperCase();
+      return !walletSymbol || txCurrency === walletSymbol || t.label?.includes(walletSymbol);
+    });
+    if (activeFilter === "all") return list;
+    if (activeFilter === "pending") return list.filter((t) => t.status === "pending");
     if (activeFilter === "swap") {
-      return transactions.filter((t) => t.type === "swap" || t.label?.startsWith("Swap "));
+      return list.filter((t) => t.type === "swap" || t.label?.startsWith("Swap "));
     }
-    return transactions.filter((t) => t.type === activeFilter || (activeFilter === "receive" && (t.type === "deposit" || t.type === "receive")));
+    return list.filter((t) => t.type === activeFilter || (activeFilter === "receive" && (t.type === "deposit" || t.type === "receive")));
   })();
 
   const getTransactionIcon = (type: string) => {
@@ -114,15 +126,21 @@ export function WalletPage({
       <div className="balance-card-silver relative overflow-hidden rounded-2xl p-5 mb-4 border shadow-xl bg-black border-neutral-800">
         <div className="relative z-[2]">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Total Balance</p>
+            <p className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">{activeWallet?.symbol} Balance</p>
             <button type="button" onClick={() => setIsHidden(!isHidden)} className="p-1 rounded-md hover:bg-white/10" aria-label="Toggle balance">
               {isHidden ? <EyeOff className="w-4 h-4 text-neutral-400" /> : <Eye className="w-4 h-4 text-neutral-400" />}
             </button>
           </div>
 
-          <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">
-            {isHidden ? "••••••" : formatFiat(totalBalance, displayCurrency)}
+          <h2 className="text-3xl font-bold text-white mb-1 tracking-tight">
+            {isHidden ? "••••••" : formatFiat(walletFiatValue, displayCurrency)}
           </h2>
+          {!isHidden && activeWallet ? (
+            <p className="text-sm text-neutral-400 mb-2">
+              {activeWallet.balance.toLocaleString(undefined, { maximumFractionDigits: 8 })} {activeWallet.symbol}
+              <span className="text-neutral-500"> · Portfolio {formatFiat(totalBalance, displayCurrency)}</span>
+            </p>
+          ) : null}
 
           <div className="flex items-center gap-2 mb-4">
             <div
@@ -186,7 +204,9 @@ export function WalletPage({
       </div>
 
       <div className="flex items-center justify-between mb-3">
-        <h3 className={`text-base font-semibold ${isDark ? "text-white" : "text-black"}`}>Transactions</h3>
+        <h3 className={`text-base font-semibold ${isDark ? "text-white" : "text-black"}`}>
+          {activeWallet?.symbol} transactions
+        </h3>
         <span className={`text-xs ${isDark ? "text-neutral-500" : "text-gray-500"}`}>{filteredTransactions.length} shown</span>
       </div>
 

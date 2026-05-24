@@ -67,9 +67,13 @@ export function P2pModal({ trader, wallets, onClose, onOrdered }: P2pModalProps)
         <div className={`p-4 border-b flex items-start justify-between gap-3 ${isDark ? "border-neutral-800" : "border-neutral-100"}`}>
           <div className="flex gap-3 min-w-0">
             <div className="relative shrink-0">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-sky-500 to-emerald-600 flex items-center justify-center text-lg font-bold text-white">
-                {trader.name.charAt(0)}
-              </div>
+              {trader.avatarUrl ? (
+                <img src={trader.avatarUrl} alt="" className="w-12 h-12 rounded-full object-cover ring-2 ring-white/20" />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-sky-500 to-emerald-600 flex items-center justify-center text-lg font-bold text-white">
+                  {trader.name.charAt(0)}
+                </div>
+              )}
               {trader.online ? (
                 <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full" title="Online" />
               ) : null}

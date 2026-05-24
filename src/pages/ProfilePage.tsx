@@ -18,7 +18,10 @@ import { useTheme } from "../context/ThemeContext";
 import { ProfileAvatar } from "../components/ProfileAvatar";
 import { ProfileAvatarPicker } from "../components/ProfileAvatarPicker";
 import { CUSTOM_AVATAR_ID, getCharacter, WALLEX_CHARACTERS } from "../constants/characters";
-import { updateProfileInBackend } from "../services/walletBackend";
+import { updateProfileInBackend, fetchReferralInfo } from "../services/walletBackend";
+import { CryptoLogo } from "../components/CryptoLogo";
+import { formatFiat } from "../lib/currency";
+import type { MarketAsset } from "../hooks/useLiveMarketPrices";
 
 interface ProfilePageProps {
   onKYC?: () => void;
@@ -30,6 +33,7 @@ interface ProfilePageProps {
   avatarCharacterId?: string | null;
   avatarUrl?: string | null;
   onAvatarSaved?: (characterId: string, avatarUrl: string | null) => void;
+  priceAssets?: MarketAsset[];
 }
 
 export function ProfilePage({
@@ -42,8 +46,13 @@ export function ProfilePage({
   avatarCharacterId,
   avatarUrl,
   onAvatarSaved,
+  priceAssets = [],
 }: ProfilePageProps) {
   const [copied, setCopied] = useState(false);
+  const [referralCopied, setReferralCopied] = useState(false);
+  const [referralCode, setReferralCode] = useState("");
+  const [referralLink, setReferralLink] = useState("");
+  const [selectedWalletIdx, setSelectedWalletIdx] = useState(0);
   const [selectedCharacter, setSelectedCharacter] = useState(avatarCharacterId || WALLEX_CHARACTERS[0].id);
   const [customAvatarUrl, setCustomAvatarUrl] = useState(avatarUrl || "");
   const [avatarSaving, setAvatarSaving] = useState(false);
@@ -51,14 +60,29 @@ export function ProfilePage({
   const { isDark } = useTheme();
 
   useEffect(() => {
+    fetchReferralInfo()
+      .then(({ code, link }) => {
+        setReferralCode(code);
+        setReferralLink(link);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
     setSelectedCharacter(avatarCharacterId || WALLEX_CHARACTERS[0].id);
     setCustomAvatarUrl(avatarUrl || "");
   }, [avatarCharacterId, avatarUrl]);
   const fullName = authUser?.user_metadata?.full_name || authUser?.email?.split("@")[0] || "Wallet User";
   const email = authUser?.email || "signed-in user";
-  const primaryWallet = wallets[0]?.address || "No wallet yet";
-  const totalTransactions = transactions.length;
-  const totalVolume = transactions.reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+  const primaryWallet = wallets[selectedWalletIdx]?.address || wallets[0]?.address || "No wallet yet";
+  const activeWallet = wallets[selectedWalletIdx] || wallets[0];
+  const priceBySymbol = Object.fromEntries(priceAssets.map((a) => [a.symbol, a.price]));
+  const walletFiat = activeWallet ? activeWallet.balance * (priceBySymbol[activeWallet.symbol] || 1) : totalValue;
+  const walletTransactions = activeWallet
+    ? transactions.filter((tx) => (tx.currency || tx.symbol || "").toUpperCase() === activeWallet.symbol.toUpperCase())
+    : transactions;
+  const totalTransactions = walletTransactions.length;
+  const totalVolume = walletTransactions.reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
   const joinDate = authUser?.created_at ? new Date(authUser.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "Recently";
   const kycVerified = kycStatus === "verified";
   const kycPending = kycStatus === "pending";
@@ -74,6 +98,12 @@ export function ProfilePage({
     await navigator.clipboard.writeText(primaryWallet);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1800);
+  };
+
+  const copyReferral = async () => {
+    await navigator.clipboard.writeText(referralCode || referralLink);
+    setReferralCopied(true);
+    window.setTimeout(() => setReferralCopied(false), 1800);
   };
 
   const saveAvatar = async () => {
@@ -113,6 +143,28 @@ export function ProfilePage({
           </div>
         </div>
 
+        {wallets.length > 0 ? (
+          <div className="flex gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide">
+            {wallets.map((w, index) => (
+              <button
+                key={w.id}
+                type="button"
+                onClick={() => setSelectedWalletIdx(index)}
+                className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold border transition-all ${
+                  selectedWalletIdx === index
+                    ? "bg-black text-white border-black"
+                    : isDark
+                      ? "bg-neutral-800 text-neutral-300 border-neutral-700"
+                      : "bg-neutral-100 text-gray-600 border-neutral-200"
+                }`}
+              >
+                <CryptoLogo symbol={w.symbol} size={18} className="!border-0" />
+                {w.symbol}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
         <div className={`rounded-xl p-3 mb-4 flex items-center gap-3 ${isDark ? "bg-neutral-800" : "bg-neutral-50"}`}>
           <div className="flex-1 min-w-0">
             <p className={`text-xs mb-1 ${isDark ? "text-neutral-400" : "text-gray-500"}`}>Primary wallet</p>
@@ -128,7 +180,7 @@ export function ProfilePage({
         <div className="grid grid-cols-3 gap-3">
           <div className={`rounded-xl p-3 ${isDark ? "bg-neutral-800" : "bg-neutral-50"}`}>
             <p className={`text-xs mb-1 ${isDark ? "text-neutral-400" : "text-gray-500"}`}>Wallet Value</p>
-            <p className={`text-lg font-bold ${isDark ? "text-white" : "text-black"}`}>${totalValue.toLocaleString("en-US", { maximumFractionDigits: 2, minimumFractionDigits: 2 })}</p>
+            <p className={`text-lg font-bold ${isDark ? "text-white" : "text-black"}`}>{formatFiat(walletFiat, "USD")}</p>
           </div>
           <div className={`rounded-xl p-3 ${isDark ? "bg-neutral-800" : "bg-neutral-50"}`}>
             <p className={`text-xs mb-1 ${isDark ? "text-neutral-400" : "text-gray-500"}`}>Transactions</p>
@@ -224,13 +276,15 @@ export function ProfilePage({
         <p className={`text-sm font-medium mb-2 ${isDark ? "text-white" : "text-black"}`}>Referral Code</p>
         <div className="flex items-center gap-2">
           <div className={`flex-1 rounded-xl py-2 px-3 ${isDark ? "bg-neutral-800" : "bg-white"}`}>
-            <p className={`text-sm font-mono ${isDark ? "text-white" : "text-black"}`}>{primaryWallet.slice(0, 12).toUpperCase()}</p>
+            <p className={`text-sm font-mono ${isDark ? "text-white" : "text-black"}`}>{referralCode || "Loading…"}</p>
           </div>
-          <button onClick={copyWallet} className="bg-black text-white text-xs font-medium px-4 py-2 rounded-xl">
-            {copied ? "Copied" : "Copy"}
+          <button type="button" onClick={copyReferral} className="bg-black text-white text-xs font-medium px-4 py-2 rounded-xl">
+            {referralCopied ? "Copied" : "Copy"}
           </button>
         </div>
-        <p className={`text-xs mt-2 ${isDark ? "text-neutral-400" : "text-gray-500"}`}>Share your Wallex wallet address to receive transfers faster.</p>
+        <p className={`text-xs mt-2 ${isDark ? "text-neutral-400" : "text-gray-500"}`}>
+          Share {referralLink || "your Wallex link"} — friends join with your code.
+        </p>
       </div>
     </div>
   );

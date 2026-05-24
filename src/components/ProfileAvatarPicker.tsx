@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link2 } from "lucide-react";
 import { CUSTOM_AVATAR_ID, WALLEX_CHARACTERS } from "../constants/characters";
 import { ProfileAvatar } from "./ProfileAvatar";
@@ -29,6 +29,10 @@ export function ProfileAvatarPicker({
 }: ProfileAvatarPickerProps) {
   const [urlDraft, setUrlDraft] = useState(customUrl);
   const customSelected = selectedId === CUSTOM_AVATAR_ID;
+
+  useEffect(() => {
+    setUrlDraft(customUrl);
+  }, [customUrl]);
 
   const applyCustom = () => {
     if (!isValidImageUrl(urlDraft)) return;

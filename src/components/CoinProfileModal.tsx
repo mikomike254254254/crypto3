@@ -25,7 +25,7 @@ function buildChartPath(points: number[], width: number, height: number) {
   return points
     .map((p, i) => {
       const x = i * step;
-      const y = height - ((p - min) / range) * (height - 8) - 4;
+      const y = height - ((p - min) / range) * (height - 24) - 12;
       return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
     })
     .join(" ");
@@ -101,8 +101,8 @@ export function CoinProfileModal({ crypto, onClose }: CoinProfileModalProps) {
             </div>
           </div>
 
-          <div className={`rounded-xl p-3 mb-4 ${isDark ? "bg-neutral-900" : "bg-neutral-50"}`}>
-            <svg viewBox="0 0 320 120" className="w-full h-28" preserveAspectRatio="none">
+          <div className={`rounded-xl p-4 mb-4 ${isDark ? "bg-neutral-900" : "bg-neutral-50"}`}>
+            <svg viewBox="0 0 320 120" className="w-full h-32" preserveAspectRatio="xMidYMid meet">
               <defs>
                 <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={isUp ? "#10b981" : "#ef4444"} stopOpacity="0.35" />

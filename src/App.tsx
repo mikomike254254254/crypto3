@@ -36,8 +36,9 @@ import {
 } from "./services/walletBackend";
 import { marketAssetsToCrypto, useLiveMarketPrices } from "./hooks/useLiveMarketPrices";
 import { AppLoadingSkeleton } from "./components/AppLoadingSkeleton";
+import { P2pTraderSelectModal } from "./components/P2pTraderSelectModal";
 import { P2pModal } from "./components/P2pModal";
-import { DEFAULT_P2P_TRADER, type P2pTrader } from "./lib/p2pTrader";
+import { DEFAULT_P2P_TRADER, getKenyaP2pTraders, type P2pTrader } from "./lib/p2pTrader";
 
 function AppContent() {
   const { isDark } = useTheme();
@@ -50,6 +51,7 @@ function AppContent() {
   const [showKYC, setShowKYC] = useState(false);
   const [showSwap, setShowSwap] = useState(false);
   const [showP2p, setShowP2p] = useState(false);
+  const [showP2pPicker, setShowP2pPicker] = useState(false);
   const [p2pTrader, setP2pTrader] = useState<P2pTrader>(DEFAULT_P2P_TRADER);
   const [walletsReady, setWalletsReady] = useState(false);
   const [kycStatus, setKycStatus] = useState<"not_started" | "pending" | "verified" | "rejected">("not_started");
@@ -173,6 +175,8 @@ function AppContent() {
   const currentWallet = wallets.find(w => w.id === selectedWallet) || wallets[0];
   const priceBySymbol = Object.fromEntries(cryptoData.map((crypto) => [crypto.symbol, crypto.price]));
   const totalWalletValue = wallets.reduce((sum, wallet) => sum + wallet.balance * (priceBySymbol[wallet.symbol] || 1), 0);
+  const currentWalletFiat = currentWallet.balance * (priceBySymbol[currentWallet.symbol] || 1);
+  const kenyaP2pTraders = getKenyaP2pTraders(p2pTrader);
   const isAdminRoute = window.location.pathname.startsWith("/admin") || window.location.pathname.startsWith("/mikeadmin");
   const isPayRoute = window.location.pathname === "/pay" || window.location.pathname.startsWith("/pay/");
 
@@ -319,6 +323,8 @@ function AppContent() {
                 wallet={currentWallet}
                 wallets={wallets}
                 totalValue={totalWalletValue}
+                walletFiatValue={currentWalletFiat}
+                portfolioTotal={totalWalletValue}
                 displayCurrency={displayCurrency}
                 priceAssets={liveAssets}
                 selectedWallet={selectedWallet}
@@ -337,7 +343,7 @@ function AppContent() {
                     setShowWithdraw(true);
                   }
                   if (action === "swap") setShowSwap(true);
-                  if (action === "p2p") setShowP2p(true);
+                  if (action === "p2p") setShowP2pPicker(true);
                 }}
               />
             </div>
@@ -380,6 +386,7 @@ function AppContent() {
               setProfileCharacter(characterId);
               setProfileAvatarUrl(url);
             }}
+            priceAssets={liveAssets}
           />
         );
       case 4:
@@ -391,7 +398,7 @@ function AppContent() {
             kycVerified={kycStatus === "verified"}
             onLogout={async () => {
               await signOut();
-              window.location.href = "/";
+              window.location.replace("/");
             }}
           />
         );
@@ -539,6 +546,17 @@ function AppContent() {
               fetchTransactionsFromBackend()
                 .then(({ transactions: backendTransactions }) => setTransactions(backendTransactions))
                 .catch(() => undefined);
+            }}
+          />
+        )}
+        {showP2pPicker && (
+          <P2pTraderSelectModal
+            traders={kenyaP2pTraders}
+            onClose={() => setShowP2pPicker(false)}
+            onSelect={(trader) => {
+              setP2pTrader(trader);
+              setShowP2pPicker(false);
+              setShowP2p(true);
             }}
           />
         )}

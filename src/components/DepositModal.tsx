@@ -298,7 +298,10 @@ export function DepositModal({ wallet, wallets, onClose, onDeposit: _onDeposit, 
                 </div>
                 {Number.isFinite(topUpKes) && topUpKes > 0 ? (
                   <p className="text-xs text-slate-600 mt-2">
-                    KES {topUpKes.toLocaleString("en-KE")} ≈{" "}
+                    Pay <span className="font-semibold text-black">KES {topUpKes.toLocaleString("en-KE")}</span>
+                    {" "}· displays ≈{" "}
+                    <span className="font-semibold text-black">${topUpUsd.toFixed(2)} USD</span>
+                    {" "}· receive ≈{" "}
                     <span className="font-semibold text-black">{topUpCryptoPreview.toLocaleString()}</span> {topUpWallet.symbol}
                   </p>
                 ) : null}
