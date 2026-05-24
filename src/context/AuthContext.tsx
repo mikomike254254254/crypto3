@@ -132,7 +132,6 @@ const value = useMemo<AuthContextValue>(() => ({
         await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
       }
       setSession(null);
-      setLoading(true);
       localStorage.removeItem("wallex.onboarding");
       Object.keys(localStorage).forEach((key) => {
         if (key.startsWith("wallex.") || key.startsWith("kycStatus:")) {
