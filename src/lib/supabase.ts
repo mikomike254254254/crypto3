@@ -1,7 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-// Use anon key as primary - it's more reliable for client-side auth
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
 if (!supabaseUrl || !supabaseKey) {
@@ -15,3 +14,8 @@ export const supabase = createClient(supabaseUrl ?? "", supabaseKey ?? "", {
     detectSessionInUrl: true,
   },
 });
+
+export async function getAccessToken() {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token;
+}

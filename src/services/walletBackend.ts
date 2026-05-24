@@ -9,6 +9,9 @@ async function authHeaders(forceRefresh = false): Promise<Record<string, string>
   }
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
+  if (!token) {
+    console.warn("No auth token available - user may not be logged in");
+  }
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
