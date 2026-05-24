@@ -2,16 +2,19 @@
 create extension if not exists "pgcrypto";
 
 create table if not exists public.users (
-  id uuid primary key default gen_random_uuid(),
-  auth_user_id uuid unique references auth.users(id) on delete cascade,
-  wallet text not null unique,
-  email text,
-  full_name text,
-  avatar_url text,
-  kyc_status text not null default 'unverified',
-  signup_bonus_awarded boolean not null default false,
-  created_at timestamptz not null default now()
-);
+   id uuid primary key default gen_random_uuid(),
+   auth_user_id uuid unique references auth.users(id) on delete cascade,
+   wallet text not null unique,
+   email text,
+   full_name text,
+   avatar_url text,
+   avatar_character text,
+   avatar_gradient text,
+   onboarding_complete boolean not null default false,
+   kyc_status text not null default 'unverified',
+   signup_bonus_awarded boolean not null default false,
+   created_at timestamptz not null default now()
+ );
 
 create table if not exists public.balances (
   wallet text primary key,
