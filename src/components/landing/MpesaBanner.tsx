@@ -6,10 +6,13 @@ export function MpesaBanner() {
         backgroundSize: "60px 60px"
       }} />
       <div className="max-w-7xl mx-auto px-4 md:px-6 flex flex-col md:flex-row items-center gap-10 md:gap-16 relative z-10">
-        <div className="shrink-0 flex items-center justify-center w-36 h-36 md:w-44 md:h-44 rounded-2xl bg-gradient-to-br from-emerald-600/20 to-emerald-800/10 border border-emerald-500/20 shadow-[0_0_40px_rgba(16,185,129,0.12)]">
-          <span className="text-5xl md:text-6xl font-bold text-emerald-400/90 tracking-tight" style={{ fontFamily: "system-ui, sans-serif" }}>
-            MPESA
-          </span>
+        <div className="shrink-0 flex items-center justify-center w-36 h-36 md:w-44 md:h-44 rounded-2xl bg-gradient-to-br from-emerald-600/20 to-emerald-800/10 border border-emerald-500/20 shadow-[0_0_40px_rgba(16,185,129,0.12)] p-4">
+          <img
+            src="https://i.postimg.cc/G3Bp6F8z/mpepe-removebg-preview.png"
+            alt="M-PESA"
+            className="w-full h-full object-contain drop-shadow-[0_0_12px_rgba(16,185,129,0.3)]"
+            loading="lazy"
+          />
         </div>
         <div className="text-center md:text-left max-w-xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3.5 py-1.5 mb-4">

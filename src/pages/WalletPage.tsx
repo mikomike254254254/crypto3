@@ -205,16 +205,20 @@ export function WalletPage({
         ))}
       </div>
 
-      {/* Top-up card button - fully black */}
-      <button
-        onClick={onTopup}
-        className="w-full mb-4 bg-black rounded-xl border border-neutral-800 p-4 flex items-center justify-center gap-3 transition-all hover:bg-neutral-900"
-      >
-        <div className="flex-1 text-center">
-          <p className="text-sm font-semibold text-white">Top up with card or bank</p>
-          <p className="text-xs text-neutral-400 mt-0.5">Pay in KES · credited instantly · no KYC required</p>
-        </div>
-      </button>
+      {/* Top-up button - small sleek with glare */}
+      <div className="flex justify-center mb-4">
+        <button
+          onClick={onTopup}
+          className="relative overflow-hidden group px-5 py-2.5 rounded-full bg-black border border-neutral-700 hover:border-neutral-500 transition-all duration-300 shadow-lg"
+        >
+          {/* Glare sweep */}
+          <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out" />
+          <span className="relative flex items-center gap-2 text-sm font-semibold text-white">
+            <span className="text-emerald-400 text-base">$</span>
+            Top up with card
+          </span>
+        </button>
+      </div>
 
       <div className="flex items-center justify-between mb-3">
         <h3 className={`text-base font-semibold ${isDark ? "text-white" : "text-black"}`}>
