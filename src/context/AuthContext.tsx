@@ -25,25 +25,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isMounted = true;
     
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (isMounted) {
-        if (error) {
-          console.warn("Session initialization error:", error.message);
+    // First, try to get the current session
+    const initializeAuth = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (isMounted) {
+          if (error) {
+            console.warn("Session initialization error:", error.message);
+          } else if (data.session) {
+            console.log("[Auth] Session found:", data.session.user?.email);
+          }
+          setSession(data.session);
+          // Clean hash from URL if session exists
+          if (data.session && typeof window !== "undefined" && window.location.hash && window.location.hash.includes("access_token")) {
+            console.log("[Auth] Cleaning OAuth hash from URL");
+            window.history.replaceState(null, "", window.location.pathname + window.location.search);
+          }
+          setLoading(false);
         }
-        setSession(data.session);
-        if (data.session && typeof window !== "undefined" && window.location.hash) {
-          window.history.replaceState(null, "", window.location.pathname + window.location.search);
-        }
-        setLoading(false);
+      } catch (e) {
+        console.warn("Auth initialization error:", e);
+        if (isMounted) setLoading(false);
       }
-    }).catch((e) => {
-      console.warn("Auth initialization error:", e);
-      if (isMounted) setLoading(false);
-    });
+    };
+    
+    initializeAuth();
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
       if (isMounted) {
-        console.log("Auth state change:", event, nextSession?.user?.email);
+        console.log("[Auth] State change:", event, nextSession?.user?.email);
         setSession(nextSession);
         setLoading(false);
         
@@ -52,6 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         
         if (event === "SIGNED_IN" && typeof window !== "undefined" && window.location.hash) {
+          console.log("[Auth] SIGNED_IN - cleaning hash");
           window.history.replaceState(null, "", window.location.pathname + window.location.search);
         }
         
@@ -142,10 +153,6 @@ signInWithGoogle: async (redirectPath = "/") => {
            provider: "google",
            options: {
              redirectTo: redirectUrl,
-             queryParams: {
-               access_type: "offline",
-               prompt: "consent",
-             },
            },
          });
 
