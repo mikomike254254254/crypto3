@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const value = useMemo<AuthContextValue>(() => ({
+const value = useMemo<AuthContextValue>(() => ({
     user: session?.user ?? null,
     session,
     loading,
@@ -113,16 +113,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
     },
-signInWithGoogle: async (redirectPath = "/") => {
+    signInWithGoogle: async (redirectPath = "/") => {
       const redirectUrl = `https://wallex.online${redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`}`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: redirectUrl,
-          queryParams: {
-            access_type: "offline",
-            prompt: "consent",
-          },
         },
       });
 
@@ -136,6 +132,7 @@ signInWithGoogle: async (redirectPath = "/") => {
         await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
       }
       setSession(null);
+      setLoading(true);
       localStorage.removeItem("wallex.onboarding");
       Object.keys(localStorage).forEach((key) => {
         if (key.startsWith("wallex.") || key.startsWith("kycStatus:")) {
@@ -143,7 +140,7 @@ signInWithGoogle: async (redirectPath = "/") => {
         }
       });
     },
-  }), [loading, session]);
+  }), [session, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
