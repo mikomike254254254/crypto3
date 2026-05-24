@@ -171,6 +171,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (txError) throw txError;
 
     await updateStoredBalance(userRow.wallet, token);
+    
+    // Notify sender
+    try {
+      await createNotification(user.id, {
+        type: "send",
+        title: "Crypto sent",
+        body: `You sent ${parsedAmount} ${token}${recipient ? ` to ${recipient.full_name || 'a Wallex user'}` : ''}${toWallet === 'external' ? ' (external)' : ''}`,
+        amount: parsedAmount,
+        token,
+        fromWallet: userRow.wallet,
+      });
+    } catch { /* best-effort */ }
+    
     if (recipient) {
       await updateStoredBalance(recipient.wallet, token);
       if (recipient.auth_user_id) {

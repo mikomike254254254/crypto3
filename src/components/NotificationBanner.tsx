@@ -1,3 +1,4 @@
+import { useState, useCallback } from "react";
 import { Bell, X } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import type { WalletNotification } from "../services/walletBackend";
@@ -9,7 +10,18 @@ interface NotificationBannerProps {
 
 export function NotificationBanner({ notifications, onDismiss }: NotificationBannerProps) {
   const { isDark } = useTheme();
-  const unread = notifications.filter((item) => !item.readAt).slice(0, 3);
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+
+  const handleDismiss = useCallback((id: string) => {
+    setDismissedIds(prev => new Set(prev).add(id));
+    onDismiss(id);
+  }, [onDismiss]);
+
+  // Only show unread notifications that haven't been locally dismissed
+  const unread = notifications
+    .filter((item) => !item.readAt && !dismissedIds.has(item.id))
+    .slice(0, 3);
+
   if (!unread.length) return null;
 
   return (
@@ -30,7 +42,7 @@ export function NotificationBanner({ notifications, onDismiss }: NotificationBan
           </div>
           <button
             type="button"
-            onClick={() => onDismiss(item.id)}
+            onClick={() => handleDismiss(item.id)}
             className={`p-1 rounded-md ${isDark ? "hover:bg-neutral-800" : "hover:bg-neutral-200"}`}
             aria-label="Dismiss notification"
           >
