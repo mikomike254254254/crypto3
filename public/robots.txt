@@ -1,4 +1,10 @@
 User-agent: *
 Allow: /
 
+User-agent: Googlebot
+Allow: /
+Allow: /logo.png
+Allow: /og-image.png
+
 Sitemap: https://wallex.online/sitemap.xml
+Host: wallex.online

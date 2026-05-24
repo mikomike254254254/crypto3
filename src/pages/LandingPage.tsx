@@ -26,6 +26,7 @@ import { FaqSection } from "../components/landing/FaqSection";
 import { MpesaBanner } from "../components/landing/MpesaBanner";
 import { useLiveMarketPrices } from "../hooks/useLiveMarketPrices";
 import { SUPPORT_EMAIL, supportMailto } from "../constants/support";
+import { SEO_DESCRIPTION, SEO_SUBTITLE, SEO_TAGLINE } from "../constants/seo";
 
 type AuthMode = "signup" | "signin";
 
@@ -236,15 +237,16 @@ export function LandingPage() {
           <div className="max-w-7xl mx-auto px-4 md:px-6 py-16 md:py-24 grid lg:grid-cols-[1.1fr_0.9fr] gap-12 items-center relative z-10">
             <div>
               <p className="inline-block rounded-full bg-white/90 border border-sky-200 px-4 py-2 text-sm font-semibold text-black shadow-sm">
-                Wallex · wallex.online
+                {SEO_TAGLINE}
               </p>
               <h1 className="mt-6 text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-black leading-[1.05]">
-                Log in or sign up.
-                <span className="block">Pick your crypto character.</span>
+                Crypto wallet with M-Pesa &amp; Bitcoin.
+                <span className="block text-3xl sm:text-4xl md:text-5xl mt-2 text-black/90">Log in, swap, send — pick your character.</span>
               </h1>
               <p className="mt-6 max-w-xl text-lg text-black/80 leading-relaxed">
-                Google or email sign-in. Choose a profile character. Buy, receive, swap, and send crypto.
+                {SEO_DESCRIPTION}
               </p>
+              <p className="mt-3 text-sm font-medium text-black/60">{SEO_SUBTITLE}</p>
               <LandingAuthPanel />
               <LandingCharacterShowcase />
 
@@ -391,7 +393,7 @@ export function LandingPage() {
                 <img src="/logo.png" alt="" className="w-8 h-8 rounded-lg" />
                 <span className="font-bold text-slate-950">Wallex</span>
               </div>
-              <p className="text-sm text-black/60 mt-2 max-w-xs">Crypto wallet · wallex.online</p>
+              <p className="text-sm text-black/60 mt-2 max-w-xs">{SEO_TAGLINE} · wallex.online</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-6 text-sm">
               <button type="button" onClick={() => setAuthMode("signup")} className="font-semibold text-slate-950 hover:text-cyan-700">

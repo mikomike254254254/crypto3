@@ -1,36 +1,18 @@
 {
   "id": "/",
-  "name": "Wallex Crypto Wallet",
+  "name": "Wallex — Crypto Wallet",
   "short_name": "Wallex",
-  "description": "Buy, receive, swap, and send crypto on wallex.online",
-  "start_url": "/?source=pwa",
-  "scope": "/",
+  "description": "Crypto wallet with M-Pesa, Bitcoin, ETH, USDT — buy, swap and send on wallex.online",
+  "start_url": "/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
-  "orientation": "portrait-primary",
+  "theme_color": "#0ea5e9",
   "background_color": "#0a0a0a",
-  "theme_color": "#0a0a0a",
-  "categories": ["finance", "utilities"],
   "icons": [
     {
       "src": "/logo.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
-  ],
-  "screenshots": [],
-  "prefer_related_applications": false
+  ]
 }

@@ -12,5 +12,5 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["vite.config.ts", "api/**/*.ts"]
+  "include": ["vite.config.ts", "api/**/*.ts", "src/constants/seo.ts"]
 }
