@@ -58,15 +58,18 @@ export function LandingAuthPanel() {
 
       {error ? <p className="text-sm text-rose-600 mb-3">{error}</p> : null}
 
-      {step === "otp" && mode === "signup" ? (
-        <EmailOtpVerification
-          email={email}
-          name={name}
-          password={password}
-          onVerified={() => undefined}
-          onBack={() => setStep("form")}
-        />
-      ) : (
+{step === "otp" && mode === "signup" ? (
+         <EmailOtpVerification
+           email={email}
+           name={name}
+           password={password}
+           onVerified={() => {
+             setStep("form");
+             setMode("signin");
+           }}
+           onBack={() => setStep("form")}
+         />
+       ) : (
         <>
           <button
             type="button"
