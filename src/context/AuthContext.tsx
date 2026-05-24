@@ -44,8 +44,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log("[AUTH] OAuth callback detected, waiting for Supabase to process URL hash...");
           
           // Wait for Supabase to process the OAuth hash
-          // The detectSessionInUrl option processes this automatically
-          // but we need to wait for it to complete
           await new Promise(resolve => setTimeout(resolve, 500));
         }
 
@@ -57,14 +55,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (sessionError) {
           console.error("[AUTH SESSION ERROR]", sessionError);
           
-          // Try getUser as fallback
+          // Check for clock skew error - this means device time is incorrect
+          // The session token timestamp doesn't match the server time
+          const isClockSkew = sessionError.message?.includes("issued in the future") || sessionError.message?.includes("clock");
+          if (isClockSkew) {
+            console.warn("[AUTH] Clock skew detected - device time may be incorrect. Clearing session to allow fresh auth.");
+            // Don't set user here - let SIGNED_IN event handle it
+          }
+          
+          // Try getUser as fallback - this may work even if session has clock skew
           const { data: userData, error: userError } = await supabase.auth.getUser();
           if (userData?.user && mounted) {
             console.log("[AUTH] User recovered via getUser:", userData.user.email);
-            // Create a minimal session from user data if needed
             setUser(userData.user);
+            // Keep loading state until SIGNED_IN event or timer
+            // getUser doesn't give us a session, just user info
           } else {
-            await supabase.auth.signOut();
+            if (userError) console.error("[AUTH] getUser also failed:", userError);
+            // Clear and reset - no valid session
+            await supabase.auth.signOut().catch(() => undefined);
             if (typeof window !== "undefined") {
               localStorage.clear();
               sessionStorage.clear();
@@ -73,8 +82,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setSession(null);
               setUser(null);
             }
+            return; // Exit early - let authReady become true
           }
-          return;
         }
 
         console.log("[AUTH] Session loaded", !!sessionData.session, sessionData.session?.user?.email);
