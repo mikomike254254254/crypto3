@@ -27,11 +27,19 @@ export function EmailOtpVerification({ email, name, password, onVerified, onBack
     setLoading(true);
     setError("");
     try {
+      // Verify OTP - this signs the user in
       await verifySignUpOtp(email, code.trim());
-      if (password.length >= 6) {
-        await completeSignUpProfile(password, name);
+      
+      // After OTP verification, user is signed in. Update their password/profile if provided
+      if (password && password.length >= 6) {
+        try {
+          await completeSignUpProfile(password, name);
+        } catch (profileError) {
+          console.warn("Could not update profile after verification:", profileError);
+        }
       }
-      // Refresh session to ensure auth state is updated
+      
+      // Force refresh session to ensure state is updated
       await supabase.auth.refreshSession();
       onVerified();
     } catch (err) {

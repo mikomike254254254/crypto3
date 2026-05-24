@@ -42,10 +42,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     initializeAuth();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
       if (isMounted) {
         setSession(nextSession);
         setLoading(false);
+        
+        // Handle session expiration
+        if (event === "SIGNED_OUT") {
+          setSession(null);
+        }
       }
     });
 
@@ -99,15 +104,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
     },
-verifySignUpOtp: async (email, token) => {
-       const { error } = await supabase.auth.verifyOtp({
-         email: email.trim(),
-         token: token.trim(),
-         type: "signup",
-       });
+    verifySignUpOtp: async (email, token) => {
+      const { error } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: token.trim(),
+        type: "signup",
+      });
 
-       if (error) throw error;
-     },
+      if (error) throw error;
+    },
     completeSignUpProfile: async (password, name) => {
       const { error } = await supabase.auth.updateUser({
         password,
@@ -126,25 +131,25 @@ verifySignUpOtp: async (email, token) => {
         throw error;
       }
     },
-signInWithGoogle: async (redirectPath = "/") => {
-       const baseUrl = typeof window !== "undefined" ? window.location.origin.replace(/\/$/, "") : "https://wallex.online";
-       const redirectUrl = `${baseUrl}${redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`}`;
-       try {
-         const { error } = await supabase.auth.signInWithOAuth({
-           provider: "google",
-           options: {
-             redirectTo: redirectUrl,
-           },
-         });
+    signInWithGoogle: async (redirectPath = "/") => {
+      const baseUrl = typeof window !== "undefined" ? window.location.origin.replace(/\/$/, "") : "https://wallex.online";
+      const redirectUrl = `${baseUrl}${redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`}`;
+      try {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: redirectUrl,
+          },
+        });
 
-         if (error) {
-           throw error;
-         }
-       } catch (err) {
-         console.error("Google OAuth error:", err);
-         throw err;
-       }
-     },
+        if (error) {
+          throw error;
+        }
+      } catch (err) {
+        console.error("Google OAuth error:", err);
+        throw err;
+      }
+    },
     signOut: async () => {
       const { error } = await supabase.auth.signOut({ scope: "global" });
       if (error) {

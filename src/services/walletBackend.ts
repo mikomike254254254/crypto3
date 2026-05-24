@@ -5,7 +5,14 @@ import { Transaction, Wallet } from "../types/crypto";
 
 async function authHeaders(forceRefresh = false): Promise<Record<string, string>> {
   if (forceRefresh) {
-    await supabase.auth.refreshSession().catch(() => undefined);
+    try {
+      const { data } = await supabase.auth.refreshSession();
+      if (data.session?.access_token) {
+        return { Authorization: `Bearer ${data.session.access_token}` };
+      }
+    } catch (e) {
+      console.warn("Session refresh failed:", e);
+    }
   }
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
@@ -19,7 +26,9 @@ async function apiRequest<T>(path: string, init: RequestInit = {}, allowEmptyOn4
   const run = async (refresh: boolean) => {
     const headers = new Headers(init.headers);
     headers.set("Content-Type", "application/json");
-    Object.entries(await authHeaders(refresh)).forEach(([key, value]) => headers.set(key, value));
+    Object.entries(await authHeaders(refresh)).forEach(([key, value]) => {
+      if (value) headers.set(key, value);
+    });
     return fetch(path, { ...init, headers });
   };
 
