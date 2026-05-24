@@ -137,35 +137,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log("Google OAuth - origin:", origin, "redirectUrl:", redirectUrl);
       
       try {
-        console.log("Calling signInWithOAuth...");
+        console.log("Calling signInWithOAuth with provider: google");
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: "google",
           options: {
             redirectTo: redirectUrl,
+            queryParams: {
+              access_type: "offline",
+              prompt: "consent",
+            },
           },
         });
 
+        console.log("OAuth response:", JSON.stringify({ data, error }));
+
         if (error) {
           console.error("Google OAuth error:", error);
-          throw error;
+          const msg = error.message || error.toString() || "Google OAuth failed";
+          throw new Error(msg);
         }
         
-        console.log("OAuth response:", data);
-        
-        if (data?.url) {
-          console.log("Navigating to:", data.url);
-          window.location.href = data.url;
-          return;
+        if (!data?.url) {
+          console.error("No URL in OAuth response");
+          throw new Error("OAuth provider did not return a redirect URL. Check Supabase Google provider configuration.");
         }
         
-        if (data?.provider) {
-          console.log("Provider data but no URL, checking...");
-        }
-        
-        throw new Error("OAuth provider did not return a redirect URL");
+        console.log("Navigating to Google OAuth:", data.url);
+        window.location.href = data.url;
       } catch (err) {
         console.error("Google OAuth exception:", err);
-        throw err;
+        throw err instanceof Error ? err : new Error(String(err));
       }
     },
     signOut: async () => {

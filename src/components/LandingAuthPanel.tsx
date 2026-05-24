@@ -29,13 +29,12 @@ export function LandingAuthPanel() {
     setLoading(true);
     setError("");
     try {
-      console.log("Starting Google sign in...");
+      console.log("Starting Google sign in from LandingAuthPanel...");
       await signInWithGoogle("/");
-      // Note: signInWithGoogle redirects via window.location.assign()
-      // If we reach here, something went wrong
     } catch (err) {
-      console.error("Google sign in error:", err);
-      setError(err instanceof Error ? err.message : "Google sign in failed");
+      console.error("Google sign in error in LandingAuthPanel:", err);
+      const msg = err instanceof Error ? err.message : "Google sign in failed";
+      setError(msg);
       setLoading(false);
     }
   };
