@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { readFileSync, existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
@@ -32,35 +32,59 @@ if (!url || !key) {
 
 const supabase = createClient(url, key, { auth: { persistSession: false } });
 
-const tables = ["users", "transactions", "notifications", "kyc_submissions", "admins"];
-
-async function checkTable(name) {
-  const { error } = await supabase.from(name).select("*").limit(1);
-  if (!error) return { name, ok: true };
-  const msg = error.message || String(error);
-  if (msg.includes("does not exist") || msg.includes("schema cache")) {
-    return { name, ok: false, error: "table missing" };
-  }
-  return { name, ok: true, note: msg };
+async function columnOk(table, col) {
+  const { error } = await supabase.from(table).select(`id,${col}`).limit(0);
+  return !error;
 }
 
 async function main() {
-  console.log("Supabase URL:", url);
-  const { data: authData, error: authError } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1 });
-  if (authError) {
-    console.error("Auth/service key check failed:", authError.message);
-    process.exit(1);
-  }
-  console.log("Service role key: OK (auth admin reachable)");
+  console.log("=== Wallex Supabase audit ===\n");
+  console.log("Project:", url);
 
-  for (const name of tables) {
-    const result = await checkTable(name);
-    console.log(`${result.name}: ${result.ok ? "OK" : "MISSING — run supabase/RUN_ALL_SETUP.sql"}`);
+  const { error: authError } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1 });
+  console.log("Service role:", authError ? `FAIL ${authError.message}` : "OK");
+
+  const tables = ["users", "transactions", "notifications", "kyc_submissions", "admins"];
+  for (const t of tables) {
+    const { error } = await supabase.from(t).select("*").limit(1);
+    console.log(`Table ${t}:`, error ? `MISSING (${error.message})` : "OK");
   }
 
-  console.log("\nIf any table is MISSING, open:");
-  console.log("https://supabase.com/dashboard/project/nzzstvvbrcdhuiqppdpv/sql/new");
-  console.log("Paste and run: supabase/RUN_ALL_SETUP.sql");
+  console.log("\n--- users columns ---");
+  for (const col of ["auth_user_id", "wallet", "avatar_url", "avatar_character", "onboarding_complete", "kyc_status", "referred_by"]) {
+    console.log(`  ${col}:`, (await columnOk("users", col)) ? "OK" : "missing (uses auth metadata fallback)");
+  }
+
+  console.log("\n--- notifications columns ---");
+  for (const col of ["user_id", "auth_user_id", "message", "title", "body", "type", "amount", "read_at"]) {
+    console.log(`  ${col}:`, (await columnOk("notifications", col)) ? "OK" : "missing");
+  }
+
+  const { data: admins } = await supabase.from("admins").select("email");
+  const hasSupport = admins?.some((a) => a.email === "wallexsupport@proton.me");
+  console.log("\nAdmin wallexsupport@proton.me:", hasSupport ? "OK" : "MISSING");
+
+  const { count: users } = await supabase.from("users").select("*", { count: "exact", head: true });
+  const { count: txs } = await supabase.from("transactions").select("*", { count: "exact", head: true });
+  console.log(`\nData: ${users ?? 0} users, ${txs ?? 0} transactions`);
+
+  // Test notification insert (legacy message schema)
+  const sampleUser = (await supabase.from("users").select("auth_user_id").limit(1)).data?.[0]?.auth_user_id;
+  if (sampleUser) {
+    const { data, error } = await supabase
+      .from("notifications")
+      .insert({ user_id: sampleUser, type: "test", message: "Wallex audit: notifications OK" })
+      .select("id")
+      .single();
+    if (error) {
+      console.log("\nNotification insert test: FAIL", error.message);
+    } else {
+      await supabase.from("notifications").delete().eq("id", data.id);
+      console.log("\nNotification insert test: OK");
+    }
+  }
+
+  console.log("\nOptional SQL upgrade: supabase/PATCH_MISSING_COLUMNS.sql");
 }
 
 main().catch((err) => {

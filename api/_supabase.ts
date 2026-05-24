@@ -111,25 +111,31 @@ export async function createNotification(
   if (!authUserId) return;
 
   const supabase = adminClient();
-  const minimal = { type: payload.type, title: payload.title, body: payload.body };
+  const message = [payload.title, payload.body].filter(Boolean).join(": ").trim() || payload.title || "Wallex";
+  const extras = {
+    amount: payload.amount ?? null,
+    token: payload.token ?? null,
+    from_wallet: payload.fromWallet ?? null,
+  };
 
   const attempts: Record<string, unknown>[] = [
+    { user_id: authUserId, type: payload.type, message, ...extras },
+    { user_id: authUserId, type: payload.type, message },
     {
       user_id: authUserId,
-      ...minimal,
-      amount: payload.amount ?? null,
-      token: payload.token ?? null,
-      from_wallet: payload.fromWallet ?? null,
+      type: payload.type,
+      title: payload.title,
+      body: payload.body,
+      ...extras,
     },
-    { user_id: authUserId, ...minimal },
     {
       auth_user_id: authUserId,
-      ...minimal,
-      amount: payload.amount ?? null,
-      token: payload.token ?? null,
-      from_wallet: payload.fromWallet ?? null,
+      type: payload.type,
+      title: payload.title,
+      body: payload.body,
+      ...extras,
     },
-    { auth_user_id: authUserId, ...minimal },
+    { auth_user_id: authUserId, type: payload.type, title: payload.title, body: payload.body },
   ];
 
   for (const row of attempts) {

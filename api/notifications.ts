@@ -12,11 +12,15 @@ function isMissingTableOrColumn(error: { message?: string }) {
 }
 
 function mapRow(row: Record<string, unknown>) {
+  const message = String(row.message || "");
+  const titleFromMessage = message.includes(":") ? message.split(":")[0].trim() : message;
+  const bodyFromMessage = message.includes(":") ? message.slice(message.indexOf(":") + 1).trim() : message;
+
   return {
     id: String(row.id),
     type: String(row.type || "receive"),
-    title: String(row.title || "Notification"),
-    body: String(row.body || ""),
+    title: String(row.title || titleFromMessage || "Notification"),
+    body: String(row.body || bodyFromMessage || ""),
     amount: row.amount != null ? Number(row.amount) : undefined,
     token: row.token ? String(row.token) : undefined,
     fromWallet: row.from_wallet ? String(row.from_wallet) : undefined,
@@ -28,13 +32,16 @@ function mapRow(row: Record<string, unknown>) {
 async function listNotifications(authUserId: string) {
   const supabase = adminClient();
 
-  const attempts = [
+  const columnSets = [
+    "id, type, message, amount, token, from_wallet, read_at, created_at",
+    "id, type, message, amount, token, from_wallet, created_at",
+    "id, type, message, created_at",
     "id, type, title, body, amount, token, from_wallet, read_at, created_at",
     "id, type, title, body, read_at, created_at",
     "id, type, title, body, created_at",
   ];
 
-  for (const columns of attempts) {
+  for (const columns of columnSets) {
     for (const userColumn of ["user_id", "auth_user_id"] as const) {
       const { data, error } = await supabase
         .from("notifications")
@@ -70,17 +77,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { id, markAllRead } = req.body ?? {};
 
       if (markAllRead) {
-        let updated = false;
         for (const userColumn of ["user_id", "auth_user_id"] as const) {
           const { error } = await supabase
             .from("notifications")
             .update({ read_at: new Date().toISOString() })
             .eq(userColumn, user.id)
             .is("read_at", null);
-          if (!error) {
-            updated = true;
-            break;
-          }
+          if (!error) break;
           if (!isMissingTableOrColumn(error)) throw error;
         }
         return res.status(200).json({ ok: true });
@@ -119,7 +122,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           : "Notification request failed";
 
     if (isMissingTableOrColumn({ message })) {
-      return res.status(200).json({ notifications: [] });
+      return req.method === "GET"
+        ? res.status(200).json({ notifications: [] })
+        : res.status(200).json({ ok: true });
     }
 
     const status = message.includes("session") || message.includes("token") ? 401 : 500;
