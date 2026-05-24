@@ -240,8 +240,8 @@ export function LandingPage() {
                 {SEO_TAGLINE}
               </p>
               <h1 className="mt-6 text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-black leading-[1.05]">
-                Crypto wallet with M-Pesa &amp; Bitcoin.
-                <span className="block text-3xl sm:text-4xl md:text-5xl mt-2 text-black/90">Log in, swap, send — pick your character.</span>
+                Secure crypto wallet & cross-border payments.
+                <span className="block text-3xl sm:text-4xl md:text-5xl mt-2 text-black/90">Sign in, swap, send — protected by Wallex.</span>
               </h1>
               <p className="mt-6 max-w-xl text-lg text-black/80 leading-relaxed">
                 {SEO_DESCRIPTION}
