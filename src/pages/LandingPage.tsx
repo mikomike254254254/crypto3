@@ -110,19 +110,20 @@ function AuthDialog({ mode, onModeChange, onClose }: { mode: AuthMode; onModeCha
 
           {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
 
-          <button
-            type="button"
-            onClick={() => {
-              setLoading(true);
-              setError("");
-              signInWithGoogle("/").catch((err) => {
-                setLoading(false);
-                setError(err instanceof Error ? err.message : "Google sign in failed");
-              });
-            }}
-            disabled={loading}
-            className="w-full rounded-2xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-950 hover:bg-slate-50 disabled:opacity-60 flex items-center justify-center gap-3"
-          >
+<button
+             type="button"
+             onClick={() => {
+               setLoading(true);
+               setError("");
+               signInWithGoogle("/").catch((err) => {
+                 setLoading(false);
+                 console.error("[AuthDialog] Google sign in error:", err);
+                 setError(err instanceof Error ? err.message : "Google sign in failed");
+               });
+             }}
+             disabled={loading}
+             className="w-full rounded-2xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-950 hover:bg-slate-50 disabled:opacity-60 flex items-center justify-center gap-3"
+           >
             <GoogleIcon />
             Continue with Google
           </button>

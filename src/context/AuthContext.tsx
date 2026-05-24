@@ -131,44 +131,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
     },
-    signInWithGoogle: async (redirectPath = "/") => {
-      const origin = typeof window !== "undefined" ? window.location.origin : "https://wallex.online";
-      const redirectUrl = `${origin.replace(/\/$/, "")}${redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`}`;
-      console.log("Google OAuth - origin:", origin, "redirectUrl:", redirectUrl);
-      
-      try {
-        console.log("Calling signInWithOAuth with provider: google");
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo: redirectUrl,
-            queryParams: {
-              access_type: "offline",
-              prompt: "consent",
-            },
-          },
-        });
+signInWithGoogle: async (redirectPath = "/") => {
+       const origin = typeof window !== "undefined" ? window.location.origin : "https://wallex.online";
+       const redirectUrl = `${origin.replace(/\/$/, "")}${redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`}`;
+       console.log("[Google OAuth] Starting - origin:", origin, "redirectUrl:", redirectUrl);
+       
+       try {
+         console.log("[Google OAuth] Calling signInWithOAuth with provider: google");
+         const { data, error } = await supabase.auth.signInWithOAuth({
+           provider: "google",
+           options: {
+             redirectTo: redirectUrl,
+             queryParams: {
+               access_type: "offline",
+               prompt: "consent",
+             },
+           },
+         });
 
-        console.log("OAuth response:", JSON.stringify({ data, error }));
+         console.log("[Google OAuth] Response - data:", data, "error:", error);
 
-        if (error) {
-          console.error("Google OAuth error:", error);
-          const msg = error.message || error.toString() || "Google OAuth failed";
-          throw new Error(msg);
-        }
-        
-        if (!data?.url) {
-          console.error("No URL in OAuth response");
-          throw new Error("OAuth provider did not return a redirect URL. Check Supabase Google provider configuration.");
-        }
-        
-        console.log("Navigating to Google OAuth:", data.url);
-        window.location.href = data.url;
-      } catch (err) {
-        console.error("Google OAuth exception:", err);
-        throw err instanceof Error ? err : new Error(String(err));
-      }
-    },
+         if (error) {
+           console.error("[Google OAuth] Error object:", error);
+           const msg = error.message || error.toString() || "Google OAuth failed";
+           throw new Error(`Google sign in failed: ${msg}`);
+         }
+         
+         if (!data?.url) {
+           console.error("[Google OAuth] No URL in response data:", data);
+           throw new Error("Google OAuth not configured. Please contact support or check Supabase Dashboard → Authentication → Providers → Google.");
+         }
+         
+         console.log("[Google OAuth] Redirecting to:", data.url);
+         window.location.href = data.url;
+       } catch (err) {
+         console.error("[Google OAuth] Exception caught:", err);
+         const msg = err instanceof Error ? err.message : String(err);
+         throw new Error(`Google sign in failed: ${msg}`);
+       }
+     },
     signOut: async () => {
       const { error } = await supabase.auth.signOut({ scope: "global" });
       if (error) {

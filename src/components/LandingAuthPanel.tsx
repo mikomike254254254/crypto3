@@ -25,19 +25,19 @@ export function LandingAuthPanel() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      console.log("Starting Google sign in from LandingAuthPanel...");
-      await signInWithGoogle("/");
-    } catch (err) {
-      console.error("Google sign in error in LandingAuthPanel:", err);
-      const msg = err instanceof Error ? err.message : "Google sign in failed";
-      setError(msg);
-      setLoading(false);
-    }
-  };
+const handleGoogleSignIn = async () => {
+     setLoading(true);
+     setError("");
+     try {
+       console.log("[LandingAuthPanel] Starting Google sign in...");
+       await signInWithGoogle("/");
+     } catch (err) {
+       console.error("[LandingAuthPanel] Google sign in caught error:", err);
+       const msg = err instanceof Error ? err.message : "Google sign in failed";
+       setError(msg);
+       setLoading(false);
+     }
+   };
 
   const submit = async () => {
     setError("");
@@ -70,7 +70,7 @@ export function LandingAuthPanel() {
           : "Welcome back — open your Wallex wallet."}
       </p>
 
-      {error ? <p className="text-sm text-rose-600 mb-3">{error}</p> : null}
+      {error ? <p className="text-sm text-rose-600 mb-3 bg-rose-50 p-2 rounded">{error}</p> : null}
 
 {step === "otp" && mode === "signup" ? (
          <EmailOtpVerification
