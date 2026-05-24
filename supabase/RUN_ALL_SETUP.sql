@@ -61,17 +61,17 @@ begin
 end $$;
 
 create table if not exists public.notifications (
-   id uuid primary key default gen_random_uuid(),
-   auth_user_id uuid not null references auth.users(id) on delete cascade,
-   type text not null default 'receive',
-   title text,
-   body text,
-   amount numeric,
-   token text,
-   from_wallet text,
-   read_at timestamptz,
-   created_at timestamptz not null default now()
- );
+  id uuid primary key default gen_random_uuid(),
+  auth_user_id uuid not null references auth.users(id) on delete cascade,
+  type text not null default 'receive',
+  title text not null,
+  body text not null,
+  amount numeric,
+  token text,
+  from_wallet text,
+  read_at timestamptz,
+  created_at timestamptz not null default now()
+);
 
 alter table public.notifications add column if not exists auth_user_id uuid references auth.users(id) on delete cascade;
 alter table public.notifications add column if not exists type text not null default 'receive';

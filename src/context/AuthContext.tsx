@@ -23,15 +23,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
+    // Check for session on mount - handles both normal and OAuth callback scenarios
+    const initializeAuth = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        setSession(data.session);
+      } catch (e) {
+        console.warn("Auth initialization error:", e);
+      }
       setLoading(false);
-    });
+    };
+    initializeAuth();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       setLoading(false);
     });
+
+    // Handle OAuth callback URL - detect session in hash
+    if (typeof window !== "undefined") {
+      const hash = window.location.hash;
+      if (hash && (hash.includes("access_token") || hash.includes("error"))) {
+        // Let Supabase process the OAuth callback
+        supabase.auth.getUser().catch(() => undefined);
+      }
+    }
 
     return () => listener.subscription.unsubscribe();
   }, []);
@@ -94,22 +110,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
     },
-    signInWithGoogle: async (redirectPath = "/") => {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: buildWallexRedirectUrl(redirectPath),
-          queryParams: {
-            access_type: "offline",
-            prompt: "consent",
-          },
-        },
-      });
+signInWithGoogle: async (redirectPath = "/") => {
+       // Let Supabase handle the callback at its domain, then redirect to app
+       const redirectUrl = `https://wallex.online${redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`}`;
+       const { error } = await supabase.auth.signInWithOAuth({
+         provider: "google",
+         options: {
+           redirectTo: redirectUrl,
+         },
+       });
 
-      if (error) {
-        throw error;
-      }
-    },
+       if (error) {
+         throw error;
+       }
+     },
     signOut: async () => {
       const { error } = await supabase.auth.signOut({ scope: "global" });
       if (error) {

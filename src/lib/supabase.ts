@@ -16,11 +16,4 @@ export const supabase = createClient(supabaseUrl ?? "", supabaseKey ?? "", {
     autoRefreshToken: true,
     detectSessionInUrl: true,
   },
-  global: {
-    fetch: (url, options = {}) =>
-      fetch(url, { ...options }).catch((err) => {
-        console.warn("Database network request failed (will retry on next action).", err);
-        throw err;
-      }),
-  },
 });
