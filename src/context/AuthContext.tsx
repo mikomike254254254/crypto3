@@ -44,6 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
       if (isMounted) {
+        console.log("Auth state change:", event, nextSession?.user?.email);
         setSession(nextSession);
         setLoading(false);
         
@@ -51,17 +52,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (event === "SIGNED_OUT") {
           setSession(null);
         }
+        
+        // Clear hash after successful sign in
+        if (event === "SIGNED_IN" && typeof window !== "undefined" && window.location.hash) {
+          window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        }
       }
     });
 
-    // Handle OAuth callback hash
+    // Handle OAuth callback hash - extract and process tokens
     if (typeof window !== "undefined") {
       const hash = window.location.hash;
-      if (hash && (hash.includes("access_token") || hash.includes("error"))) {
+      if (hash && hash.includes("access_token")) {
+        // Supabase will automatically process this, but we can help by cleaning it up
         const params = new URLSearchParams(hash.substring(1));
-        const accessToken = params.get("access_token");
-        if (accessToken) {
-          // Clear the hash after processing
+        if (params.get("access_token")) {
           window.history.replaceState(null, "", window.location.pathname + window.location.search);
         }
       }
@@ -135,22 +140,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const baseUrl = typeof window !== "undefined" ? window.location.origin.replace(/\/$/, "") : "https://wallex.online";
       const redirectUrl = `${baseUrl}${redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`}`;
       console.log("Google OAuth redirect URL:", redirectUrl);
+      
       try {
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: "google",
           options: {
             redirectTo: redirectUrl,
+            skipBrowserRedirect: false,
           },
         });
 
         if (error) {
-          console.error("Google OAuth error:", error);
-          throw error;
+          console.error("Google OAuth error:", error.message);
+          throw new Error(error.message || "Google sign in failed");
         }
-        console.log("Google OAuth response:", data);
+        
+        // If we get a URL in the response but didn't redirect, do it manually
+        if (data?.url) {
+          console.log("Redirecting to:", data.url);
+          window.location.href = data.url;
+        }
+        
+        console.log("Google OAuth initiated successfully");
       } catch (err) {
         console.error("Google OAuth exception:", err);
-        throw err;
+        throw err instanceof Error ? err : new Error("Google sign in failed");
       }
     },
     signOut: async () => {
