@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { fetchLiveUsdPrices } from "./_prices.js";
 import {
   adminClient,
   buildClientWallets,
@@ -9,8 +8,8 @@ import {
   walletAssets,
 } from "./_supabase.js";
 
-// Fallback rates in case CoinGecko is unavailable
-const FALLBACK_RATES: Record<string, number> = {
+// Hardcoded USD prices - no external API calls needed
+const PRICES: Record<string, number> = {
   USDT: 1,
   XRP: 0.52,
   BTC: 67432,
@@ -35,17 +34,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const toToken = walletKeyToSymbol(toWalletKey || "btc");
     const parsedAmount = Number(amount);
 
-    // Get prices with fallback to hardcoded rates
-    let prices: Record<string, number>;
-    try {
-      prices = await fetchLiveUsdPrices();
-    } catch {
-      prices = { ...FALLBACK_RATES };
-    }
-    
-    // Ensure both tokens have prices
-    const fromPrice = prices[fromToken];
-    const toPrice = prices[toToken];
+    // Validate tokens
+    const fromPrice = PRICES[fromToken];
+    const toPrice = PRICES[toToken];
     if (!fromPrice || !toPrice) {
       return res.status(400).json({ error: `Unsupported swap pair: ${fromToken}/${toToken}` });
     }
@@ -58,13 +49,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: "Enter a valid swap amount." });
     }
 
-    // Read balances from transaction ledger
+    // Check balance from transaction ledger
     const balances = await readTokenBalances(userRow.wallet);
     const currentFrom = balances.get(fromToken) || 0;
     if (currentFrom < parsedAmount) {
-      return res.status(400).json({ error: `Insufficient ${fromToken} balance. You have ${currentFrom.toFixed(8)} ${fromToken}.` });
+      return res.status(400).json({
+        error: `Insufficient ${fromToken} balance. You have ${currentFrom.toFixed(8)} ${fromToken}.`,
+      });
     }
 
+    // Calculate receive amount
     const usdValue = parsedAmount * fromPrice;
     const receiveAmount = Number((usdValue / toPrice).toFixed(8));
 
@@ -74,13 +68,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const supabase = adminClient();
 
-    // Helper to insert a transaction row with fallback for missing columns
+    // Insert a transaction row with fallback for missing columns
     const insertTx = async (row: Record<string, unknown>) => {
       const { error } = await supabase.from("transactions").insert(row);
       if (error) {
         // If note column is missing, retry without it
         if (String(error.message || "").toLowerCase().includes("note")) {
-          const { note, ...cleanRow } = row as any;
+          const { note: _, ...cleanRow } = row as any;
           const { error: e2 } = await supabase.from("transactions").insert(cleanRow);
           if (e2) throw e2;
           return;
@@ -89,7 +83,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     };
 
-    // 1. Deduct fromToken from user's wallet (send to swap)
+    const note = `Swap ${parsedAmount} ${fromToken} → ${receiveAmount} ${toToken}`;
+
+    // 1. Deduct fromToken from user's wallet
     await insertTx({
       from_wallet: userRow.wallet,
       to_wallet: "swap",
@@ -97,10 +93,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       token: fromToken,
       type: "send",
       status: "completed",
-      note: `Swap ${parsedAmount} ${fromToken} → ${receiveAmount} ${toToken}`,
+      note,
     });
 
-    // 2. Credit toToken to user's wallet (receive from swap)
+    // 2. Credit toToken to user's wallet
     await insertTx({
       from_wallet: "swap",
       to_wallet: userRow.wallet,
@@ -108,7 +104,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       token: toToken,
       type: "deposit",
       status: "completed",
-      note: `Swap ${parsedAmount} ${fromToken} → ${receiveAmount} ${toToken}`,
+      note,
     });
 
     // Build wallets from transaction ledger (reads ALL token balances)
@@ -122,7 +118,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "Swap failed";
     const status = message.includes("session") || message.includes("token") ? 401 : 500;
-    console.error("[SWAP ERROR]", message, error instanceof Error ? error.stack : "");
+    console.error("[SWAP ERROR]", message);
+    if (error instanceof Error && error.stack) {
+      console.error("[SWAP STACK]", error.stack);
+    }
     return res.status(status).json({ error: message });
   }
 }
