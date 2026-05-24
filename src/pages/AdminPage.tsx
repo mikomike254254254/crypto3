@@ -159,7 +159,7 @@ export function AdminPage() {
   };
 
   const submitAction = async () => {
-    const sendByEmail = awardEmail.trim().includes("@") && (actionMode === "award" || actionMode === "wallet_transfer");
+    const sendByEmail = awardEmail.trim().includes("@") && (actionMode === "award" || actionMode === "wallet_transfer" || actionMode === "set_balance" || actionMode === "create_transaction");
     if (!sendByEmail && !selectedUser) return;
     if (sendByEmail && actionMode === "wallet_transfer" && !selectedUser) return;
 
@@ -528,7 +528,7 @@ export function AdminPage() {
                       <option value="set_balance">Set balance</option>
                       <option value="create_transaction">Create transaction</option>
                     </select>
-                    {(actionMode === "award" || actionMode === "wallet_transfer") && (
+                    {(actionMode === "award" || actionMode === "wallet_transfer" || actionMode === "set_balance" || actionMode === "create_transaction") && (
                       <div className="rounded-2xl border border-cyan-200 bg-cyan-50/50 p-4 space-y-2">
                         <p className="text-xs font-semibold uppercase tracking-wide text-cyan-800">Send to email (XRP, USDT, BTC, ETH)</p>
                         <input
