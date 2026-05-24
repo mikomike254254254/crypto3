@@ -42,12 +42,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     initializeAuth();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (isMounted) {
         setSession(nextSession);
         setLoading(false);
       }
     });
+
+    // Handle OAuth callback hash
+    if (typeof window !== "undefined") {
+      const hash = window.location.hash;
+      if (hash && (hash.includes("access_token") || hash.includes("error"))) {
+        const params = new URLSearchParams(hash.substring(1));
+        const accessToken = params.get("access_token");
+        if (accessToken) {
+          // Clear the hash after processing
+          window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        }
+      }
+    }
 
     return () => {
       isMounted = false;
