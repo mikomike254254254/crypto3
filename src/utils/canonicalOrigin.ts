@@ -45,6 +45,7 @@ export function redirectLegacyHostIfNeeded() {
   if (hostname === "wallex.online" || isLocalOrigin(hostname)) return;
 
   if (hostname.endsWith(".vercel.app") || hostname.includes("wallex-online-new")) {
+    // Preserve hash for OAuth callback
     window.location.replace(`${WALLEX_CANONICAL_ORIGIN}${pathname}${search}${hash}`);
   }
 }

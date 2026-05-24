@@ -23,11 +23,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for session on mount - handles both normal and OAuth callback scenarios
     const initializeAuth = async () => {
       try {
         const { data } = await supabase.auth.getSession();
         setSession(data.session);
+        if (data.session) {
+          if (typeof window !== "undefined" && window.location.hash) {
+            window.history.replaceState(null, "", window.location.pathname + window.location.search);
+          }
+        }
       } catch (e) {
         console.warn("Auth initialization error:", e);
       }
@@ -35,19 +39,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     initializeAuth();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
       setSession(nextSession);
       setLoading(false);
     });
-
-    // Handle OAuth callback URL - detect session in hash
-    if (typeof window !== "undefined") {
-      const hash = window.location.hash;
-      if (hash && (hash.includes("access_token") || hash.includes("error"))) {
-        // Let Supabase process the OAuth callback
-        supabase.auth.getUser().catch(() => undefined);
-      }
-    }
 
     return () => listener.subscription.unsubscribe();
   }, []);
@@ -111,19 +106,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     },
 signInWithGoogle: async (redirectPath = "/") => {
-       // Let Supabase handle the callback at its domain, then redirect to app
-       const redirectUrl = `https://wallex.online${redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`}`;
-       const { error } = await supabase.auth.signInWithOAuth({
-         provider: "google",
-         options: {
-           redirectTo: redirectUrl,
-         },
-       });
+      const redirectUrl = `https://wallex.online${redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`}`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
+        },
+      });
 
-       if (error) {
-         throw error;
-       }
-     },
+      if (error) {
+        throw error;
+      }
+    },
     signOut: async () => {
       const { error } = await supabase.auth.signOut({ scope: "global" });
       if (error) {
