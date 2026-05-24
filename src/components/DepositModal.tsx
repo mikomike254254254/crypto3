@@ -143,34 +143,34 @@ export function DepositModal({ wallet, wallets, onClose, onDeposit: _onDeposit, 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end">
-      <div className="w-full bg-white rounded-t-3xl max-h-[92%] overflow-hidden flex flex-col">
-        <div className="sticky top-0 bg-white border-b border-neutral-100 px-4 py-4 flex items-center justify-between z-20">
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-end" style={{ backdropFilter: "blur(6px)" }}>
+      <div className="w-full bg-neutral-50 rounded-t-3xl max-h-[92%] overflow-hidden flex flex-col shadow-[0_-10px_50px_rgba(0,0,0,0.4)]">
+        <div className="sticky top-0 bg-neutral-50 border-b border-neutral-200 px-4 py-4 flex items-center justify-between z-20">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${wallet.color === "green" ? "bg-green-500" : wallet.color === "orange" ? "bg-orange-500" : "bg-blue-500"}`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.2)] ${wallet.color === "green" ? "bg-green-600" : wallet.color === "orange" ? "bg-orange-600" : "bg-blue-600"}`}>
               <span className="text-white text-sm font-bold">{wallet.symbol.charAt(0)}</span>
             </div>
             <div>
-              <h2 className="text-base font-bold text-black">{activeTab === "deposit" ? "Receive" : "Send"} {wallet.symbol}</h2>
-              <p className="text-xs text-gray-500">Account: {accountNumber}</p>
+              <h2 className="text-base font-bold text-neutral-900">{activeTab === "deposit" ? "Receive" : "Send"} {wallet.symbol}</h2>
+              <p className="text-xs text-neutral-500">Account: {accountNumber}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-neutral-100 rounded-full active:bg-neutral-200">
-            <X className="w-5 h-5 text-gray-600" />
+          <button onClick={onClose} className="p-2 hover:bg-neutral-200 rounded-full active:scale-90 transition-all">
+            <X className="w-5 h-5 text-neutral-600" />
           </button>
         </div>
 
-        <div className="flex border-b border-neutral-100 bg-neutral-50">
+        <div className="flex border-b border-neutral-200 bg-neutral-100">
           <button
             onClick={() => setActiveTab("deposit")}
-            className={`flex-1 py-3.5 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${activeTab === "deposit" ? "text-black bg-white border-b-2 border-black" : "text-gray-500"}`}
+            className={`flex-1 py-3.5 text-sm font-medium flex items-center justify-center gap-2 transition-all ${activeTab === "deposit" ? "text-neutral-900 bg-white border-b-2 border-black font-bold shadow-sm" : "text-neutral-500 hover:text-neutral-700"}`}
           >
             <ArrowDownToLine className="w-4 h-4" />
             Receive
           </button>
           <button
             onClick={() => setActiveTab("send")}
-            className={`flex-1 py-3.5 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${activeTab === "send" ? "text-black bg-white border-b-2 border-black" : "text-gray-500"}`}
+            className={`flex-1 py-3.5 text-sm font-medium flex items-center justify-center gap-2 transition-all ${activeTab === "send" ? "text-neutral-900 bg-white border-b-2 border-black font-bold shadow-sm" : "text-neutral-500 hover:text-neutral-700"}`}
           >
             <ArrowRightLeft className="w-4 h-4" />
             Send
