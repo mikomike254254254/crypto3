@@ -128,16 +128,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
     signInWithGoogle: async (redirectPath = "/") => {
       const redirectUrl = `https://wallex.online${redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`}`;
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: redirectUrl,
-          skipBrowserRedirect: false,
-        },
-      });
+      try {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: redirectUrl,
+          },
+        });
 
-      if (error) {
-        throw error;
+        if (error) {
+          throw error;
+        }
+      } catch (err) {
+        console.error("Google OAuth error:", err);
+        throw err;
       }
     },
     signOut: async () => {
