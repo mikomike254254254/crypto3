@@ -153,7 +153,7 @@ export function BalanceCard({
           <button
             type="button"
             onClick={onSend}
-            className={`flex-1 rounded-full py-2.5 flex items-center justify-center gap-1.5 transition-all duration-200 ease-out border-2 hover:scale-[1.02] active:scale-[0.97] shadow-sm ${
+            className={`flex-1 rounded-full py-2.5 flex items-center justify-center gap-1.5 transition-all duration-200 ease-out border-2 hover:scale-[1.02] active:scale-[0.97] shadow-[0_4px_12px_rgba(0,0,0,0.3)] ${
               isDark ? "bg-neutral-800 text-white border-neutral-700" : "bg-white text-black border-neutral-200"
             }`}
           >
@@ -163,7 +163,7 @@ export function BalanceCard({
           <button
             type="button"
             onClick={onDeposit}
-            className="flex-1 rounded-full py-2.5 flex items-center justify-center gap-1.5 transition-all duration-200 ease-out hover:scale-[1.02] active:scale-[0.97] border-2 bg-transparent text-white border-white hover:bg-white/10 shadow-sm"
+            className="flex-1 rounded-full py-2.5 flex items-center justify-center gap-1.5 transition-all duration-200 ease-out border-2 bg-white/10 text-white border-white/40 hover:bg-white/15 hover:border-white/60 active:scale-[0.97] shadow-[0_4px_12px_rgba(255,255,255,0.15)]"
           >
             <ArrowDownLeft className="w-4 h-4" />
             <span className="text-xs font-semibold">Receive</span>
@@ -171,10 +171,9 @@ export function BalanceCard({
           <button
             type="button"
             onClick={onSend}
-            className="flex-1 rounded-full py-2.5 flex items-center justify-center gap-1.5 transition-all duration-200 ease-out hover:scale-[1.02] active:scale-[0.97] border-2 bg-transparent border-emerald-400/60 text-emerald-300 hover:bg-emerald-500/10 shadow-sm"
+            className="w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 ease-out border-2 bg-white/20 text-white border-white/50 hover:bg-white/30 hover:border-white/70 active:scale-90 shadow-[0_4px_12px_rgba(255,255,255,0.2)] shrink-0"
           >
             <Send className="w-4 h-4" />
-            <span className="text-xs font-semibold">Quick Send</span>
           </button>
         </div>
       </div>
