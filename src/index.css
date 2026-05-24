@@ -33,12 +33,17 @@ body {
   animation: marquee-scroll 55s linear infinite;
 }
 
-/* Geometric mesh pattern on balance card */
-.balance-card-silver::before {
+/* Wakanda pattern on balance card — contained inside the card */
+.balance-card {
+  position: relative;
+  overflow: hidden !important;
+}
+
+.balance-card::before {
   content: "";
   position: absolute;
-  inset: -20%;
-  opacity: 0.22;
+  inset: 0;
+  opacity: 0.15;
   background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23a1a1aa' stroke-width='0.5'%3E%3Cpath d='M0 40h80M40 0v80M0 0l80 80M80 0L0 80'/%3E%3Ccircle cx='40' cy='40' r='12'/%3E%3C/g%3E%3C/svg%3E");
   background-size: 80px 80px;
   animation: wakanda-pattern-drift 24s linear infinite;
@@ -55,31 +60,37 @@ body {
   }
 }
 
-.balance-card-silver::after {
+/* Glare sweep — once every 5 seconds */
+.balance-card::after {
   content: "";
   position: absolute;
   inset: 0;
   background: linear-gradient(
     105deg,
-    transparent 32%,
-    rgba(255, 255, 255, 0.38) 50%,
-    transparent 68%
+    transparent 30%,
+    rgba(255, 255, 255, 0.35) 48%,
+    rgba(255, 255, 255, 0.42) 50%,
+    rgba(255, 255, 255, 0.35) 52%,
+    transparent 70%
   );
-  animation: balance-glare 0.2s ease-in-out infinite;
+  animation: balance-glare 5s ease-in-out infinite;
   pointer-events: none;
   z-index: 1;
 }
 
 @keyframes balance-glare {
   0% {
-    transform: translateX(-120%);
+    transform: translateX(-150%);
+  }
+  5% {
+    transform: translateX(150%);
   }
   100% {
-    transform: translateX(120%);
+    transform: translateX(150%);
   }
 }
 
-.balance-card-silver > * {
+.balance-card > * {
   position: relative;
   z-index: 2;
 }

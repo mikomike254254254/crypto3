@@ -56,13 +56,47 @@ export function BalanceCard({
   ];
 
   return (
-    <div className="relative">
+    <div className="relative" style={{ zIndex: 0 }}>
+      {/* Wallet select dropdown — rendered outside card to avoid overflow:hidden clipping */}
+      {showWalletSelect && (
+        <>
+          <button type="button" className="fixed inset-0 z-[45]" aria-label="Close wallet list" onClick={() => setShowWalletSelect(false)} />
+          <div
+            className={`absolute top-16 left-4 mt-2 rounded-xl shadow-xl z-[50] min-w-[200px] max-w-[min(100%,280px)] max-h-52 overflow-y-auto border ${
+              isDark ? "bg-neutral-800 border-neutral-700" : "bg-white border-neutral-200"
+            }`}
+          >
+            {wallets.map((w) => (
+              <button
+                key={w.id}
+                type="button"
+                onClick={() => {
+                  onWalletChange(w.id);
+                  setShowWalletSelect(false);
+                }}
+                className={`w-full px-3 py-2.5 flex items-center gap-2.5 border-b last:border-0 transition-colors ${
+                  isDark ? "border-neutral-700 hover:bg-neutral-700" : "border-neutral-100 hover:bg-neutral-50"
+                } ${w.id === wallet.id ? (isDark ? "bg-neutral-700/80" : "bg-neutral-50") : ""}`}
+              >
+                <CryptoLogo symbol={w.symbol} size={22} />
+                <div className="text-left flex-1 min-w-0">
+                  <p className={`text-xs font-semibold truncate ${isDark ? "text-white" : "text-black"}`}>{w.name}</p>
+                  <p className={`text-[10px] truncate ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                    {w.balance.toLocaleString(undefined, { maximumFractionDigits: 6 })} {w.symbol}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
       <div
-        className={`balance-card-silver rounded-2xl p-4 shadow-lg border transition-colors duration-300 relative overflow-visible ${
+        className={`balance-card rounded-2xl p-4 shadow-lg border transition-colors duration-300 ${
           isDark ? "bg-neutral-900 border-neutral-700" : "bg-black border-black text-white"
         }`}
       >
-        <div className="relative mb-2 z-50">
+        <div className="relative mb-2" style={{ zIndex: 3 }}>
           <button
             type="button"
             onClick={() => setShowWalletSelect(!showWalletSelect)}
@@ -74,39 +108,6 @@ export function BalanceCard({
             <span className="text-xs font-semibold truncate text-white">{wallet.name}</span>
             <ChevronDown className={`w-3 h-3 shrink-0 transition-transform duration-200 ${showWalletSelect ? "rotate-180" : ""} text-white/70`} />
           </button>
-
-          {showWalletSelect && (
-            <>
-              <button type="button" className="fixed inset-0 z-[45]" aria-label="Close wallet list" onClick={() => setShowWalletSelect(false)} />
-              <div
-                className={`absolute top-full left-0 mt-2 rounded-xl shadow-xl z-[50] min-w-[200px] max-w-[min(100%,280px)] max-h-52 overflow-y-auto border ${
-                  isDark ? "bg-neutral-800 border-neutral-700" : "bg-white border-neutral-200"
-                }`}
-              >
-                {wallets.map((w) => (
-                  <button
-                    key={w.id}
-                    type="button"
-                    onClick={() => {
-                      onWalletChange(w.id);
-                      setShowWalletSelect(false);
-                    }}
-                    className={`w-full px-3 py-2.5 flex items-center gap-2.5 border-b last:border-0 transition-colors ${
-                      isDark ? "border-neutral-700 hover:bg-neutral-700" : "border-neutral-100 hover:bg-neutral-50"
-                    } ${w.id === wallet.id ? (isDark ? "bg-neutral-700/80" : "bg-neutral-50") : ""}`}
-                  >
-                    <CryptoLogo symbol={w.symbol} size={22} />
-                    <div className="text-left flex-1 min-w-0">
-                      <p className={`text-xs font-semibold truncate ${isDark ? "text-white" : "text-black"}`}>{w.name}</p>
-                      <p className={`text-[10px] truncate ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-                        {w.balance.toLocaleString(undefined, { maximumFractionDigits: 6 })} {w.symbol}
-                      </p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
         </div>
 
         <div className="flex flex-nowrap gap-1.5 overflow-x-auto scrollbar-hide pb-2 mb-2 -mx-0.5 px-0.5">
