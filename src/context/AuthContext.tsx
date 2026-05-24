@@ -4,90 +4,118 @@ import { supabase } from "../lib/supabase";
 import { buildWallexRedirectUrl, getWallexOrigin } from "../utils/canonicalOrigin";
 
 interface AuthContextValue {
-   user: User | null;
-   session: Session | null;
-   loading: boolean;
-   authReady: boolean;
-   signUpWithEmail: (email: string, password: string, name: string) => Promise<{ requiresEmailConfirmation: boolean }>;
-   sendSignUpOtp: (email: string) => Promise<void>;
-   verifySignUpOtp: (email: string, token: string) => Promise<void>;
-   completeSignUpProfile: (password: string, name: string) => Promise<void>;
-   signInWithEmail: (email: string, password: string) => Promise<void>;
-   signInWithGoogle: (redirectPath?: string) => Promise<void>;
-   signOut: () => Promise<void>;
- }
+  user: User | null;
+  session: Session | null;
+  loading: boolean;
+  authReady: boolean;
+  signUpWithEmail: (email: string, password: string, name: string) => Promise<{ requiresEmailConfirmation: boolean }>;
+  sendSignUpOtp: (email: string) => Promise<void>;
+  verifySignUpOtp: (email: string, token: string) => Promise<void>;
+  completeSignUpProfile: (password: string, name: string) => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: (redirectPath?: string) => Promise<void>;
+  signOut: () => Promise<void>;
+}
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-   const [session, setSession] = useState<Session | null>(null);
-   const [loading, setLoading] = useState(true);
-   const [authReady, setAuthReady] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
 
-   useEffect(() => {
-    let isMounted = true;
-    
-    // First, try to get the current session
-    const initializeAuth = async () => {
+  useEffect(() => {
+    let mounted = true;
+
+    async function initializeAuth() {
       try {
+        console.log("[AUTH] Initializing session");
+
         const { data, error } = await supabase.auth.getSession();
-        if (isMounted) {
-          if (error) {
-            console.warn("Session initialization error:", error.message);
-          } else if (data.session) {
-            console.log("[Auth] Session restored:", data.session.user?.email);
-          } else {
-            console.log("[Auth] No session found");
+
+        if (error) {
+          console.error("[AUTH SESSION ERROR]", error);
+          
+          // Handle clock skew error specifically
+          if (error.message?.includes("issued in the future") || error.message?.includes("clock")) {
+            console.warn("[AUTH] Clock skew detected - attempting to recover");
+            // Try to refresh the session
+            await supabase.auth.refreshSession();
           }
-          setSession(data.session);
-          // Clean hash from URL if session exists
-          if (data.session && typeof window !== "undefined" && window.location.hash && window.location.hash.includes("access_token")) {
-            console.log("[Auth] Cleaning OAuth hash from URL");
-            window.history.replaceState(null, "", window.location.pathname + window.location.search);
+          
+          // Clear invalid session
+          await supabase.auth.signOut();
+          
+          if (typeof window !== "undefined") {
+            // Clear all auth-related storage
+            Object.keys(localStorage).forEach((key) => {
+              if (key.includes("supabase") || key.includes("wallex")) {
+                localStorage.removeItem(key);
+              }
+            });
+            sessionStorage.clear();
           }
-          setLoading(false);
-          setAuthReady(true);
+
+          if (mounted) {
+            setSession(null);
+            setUser(null);
+          }
+
+          return;
         }
-      } catch (e) {
-        console.warn("Auth initialization error:", e);
-        if (isMounted) {
+
+        console.log("[AUTH] Session loaded", !!data.session);
+
+        if (!mounted) return;
+
+        setSession(data.session ?? null);
+        setUser(data.session?.user ?? null);
+
+        // Clean OAuth hash after successful session restore
+        if (data.session && typeof window !== "undefined" && window.location.hash) {
+          console.log("[AUTH] Cleaning OAuth hash from URL");
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      } catch (err) {
+        console.error("[AUTH INIT FAILED]", err);
+        
+        if (mounted) {
+          setSession(null);
+          setUser(null);
+        }
+      } finally {
+        if (mounted) {
           setLoading(false);
           setAuthReady(true);
         }
       }
-    };
-    
+    }
+
     initializeAuth();
 
-    const { data: listener } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
-      if (isMounted) {
-        console.log("[Auth] State change:", event, nextSession?.user?.email || "no user");
-        setSession(nextSession);
-        setLoading(false);
-        
-        if (event === "SIGNED_OUT") {
-          setSession(null);
-        }
-        
-        if (event === "SIGNED_IN" && typeof window !== "undefined" && window.location.hash) {
-          console.log("[Auth] SIGNED_IN - cleaning hash");
-          window.history.replaceState(null, "", window.location.pathname + window.location.search);
-        }
-        
-        if (event === "TOKEN_REFRESHED") {
-          console.log("[Auth] Token refreshed successfully");
-        }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("[AUTH EVENT]", event, !!session);
+
+      setSession(session ?? null);
+      setUser(session?.user ?? null);
+
+      // Clean OAuth hash after successful auth
+      if (session && typeof window !== "undefined" && window.location.hash) {
+        window.history.replaceState({}, document.title, window.location.pathname);
       }
     });
 
     return () => {
-      isMounted = false;
-      listener.subscription.unsubscribe();
+      mounted = false;
+      subscription.unsubscribe();
     };
   }, []);
 
   const value = useMemo<AuthContextValue>(() => ({
-    user: session?.user ?? null,
+    user,
     session,
     loading,
     authReady,
@@ -126,7 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) throw error;
-      
+
       if (data.session) {
         console.log("OTP verified and user signed in:", data.session.user?.email);
       } else {
@@ -151,47 +179,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
     },
-signInWithGoogle: async (redirectPath = "/") => {
-       const origin = typeof window !== "undefined" ? window.location.origin : "https://wallex.online";
-       const redirectUrl = `${origin.replace(/\/$/, "")}${redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`}`;
-       console.log("[Google OAuth] Starting - origin:", origin, "redirectUrl:", redirectUrl);
-       
-       try {
-         console.log("[Google OAuth] Calling signInWithOAuth with provider: google");
-         const { data, error } = await supabase.auth.signInWithOAuth({
-           provider: "google",
-           options: {
-             redirectTo: redirectUrl,
-           },
-         });
+    signInWithGoogle: async (redirectPath = "/") => {
+      const origin = typeof window !== "undefined" ? window.location.origin : "https://wallex.online";
+      const redirectUrl = `${origin.replace(/\/$/, "")}${redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`}`;
+      console.log("[Google OAuth] Starting - origin:", origin, "redirectUrl:", redirectUrl);
 
-         console.log("[Google OAuth] Response - data:", data, "error:", error);
+      try {
+        console.log("[Google OAuth] Calling signInWithOAuth with provider: google");
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: redirectUrl,
+          },
+        });
 
-         if (error) {
-           console.error("[Google OAuth] Error object:", error);
-           const msg = error.message || error.toString() || "Google OAuth failed";
-           throw new Error(`Google sign in failed: ${msg}`);
-         }
-         
-         if (!data?.url) {
-           console.error("[Google OAuth] No URL in response data:", data);
-           throw new Error("Google OAuth not configured. Please contact support or check Supabase Dashboard → Authentication → Providers → Google.");
-         }
-         
-         console.log("[Google OAuth] Redirecting to:", data.url);
-         window.location.href = data.url;
-       } catch (err) {
-         console.error("[Google OAuth] Exception caught:", err);
-         const msg = err instanceof Error ? err.message : String(err);
-         throw new Error(`Google sign in failed: ${msg}`);
-       }
-     },
+        console.log("[Google OAuth] Response - data:", data, "error:", error);
+
+        if (error) {
+          console.error("[Google OAuth] Error object:", error);
+          const msg = error.message || error.toString() || "Google OAuth failed";
+          throw new Error(`Google sign in failed: ${msg}`);
+        }
+
+        if (!data?.url) {
+          console.error("[Google OAuth] No URL in response data:", data);
+          throw new Error("Google OAuth not configured. Please contact support or check Supabase Dashboard → Authentication → Providers → Google.");
+        }
+
+        console.log("[Google OAuth] Redirecting to:", data.url);
+        window.location.href = data.url;
+      } catch (err) {
+        console.error("[Google OAuth] Exception caught:", err);
+        const msg = err instanceof Error ? err.message : String(err);
+        throw new Error(`Google sign in failed: ${msg}`);
+      }
+    },
     signOut: async () => {
       const { error } = await supabase.auth.signOut({ scope: "global" });
       if (error) {
         await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
       }
       setSession(null);
+      setUser(null);
       localStorage.removeItem("wallex.onboarding");
       Object.keys(localStorage).forEach((key) => {
         if (key.startsWith("wallex.") || key.startsWith("kycStatus:")) {
@@ -199,7 +228,7 @@ signInWithGoogle: async (redirectPath = "/") => {
         }
       });
     },
-  }), [session, loading]);
+  }), [user, session, loading, authReady]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
