@@ -114,11 +114,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     },
     signInWithGoogle: async (redirectPath = "/") => {
-      const redirectUrl = `https://wallex.online${redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`}`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: redirectUrl,
+          redirectTo: `https://wallex.online${redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`}`,
         },
       });
 

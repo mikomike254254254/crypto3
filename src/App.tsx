@@ -407,7 +407,7 @@ function AppContent() {
     }
   };
 
-  if (authLoading || (user && (profileLoading || !walletsReady))) {
+  if (authLoading && !user) {
     return <AppLoadingSkeleton />;
   }
 
