@@ -205,19 +205,15 @@ export function WalletPage({
         ))}
       </div>
 
-      {/* Top-up card button */}
+      {/* Top-up card button - fully black */}
       <button
         onClick={onTopup}
-        className={`w-full mb-4 rounded-xl border p-4 flex items-center gap-3 transition-all hover:shadow-md ${isDark ? "bg-neutral-900 border-neutral-700 hover:border-emerald-600" : "bg-white border-neutral-200 hover:border-emerald-400"}`}
+        className="w-full mb-4 bg-black rounded-xl border border-neutral-800 p-4 flex items-center justify-center gap-3 transition-all hover:bg-neutral-900"
       >
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shrink-0 shadow-sm">
-          <BadgeDollarSign className="w-5 h-5 text-white" />
+        <div className="flex-1 text-center">
+          <p className="text-sm font-semibold text-white">Top up with card or bank</p>
+          <p className="text-xs text-neutral-400 mt-0.5">Pay in KES · credited instantly · no KYC required</p>
         </div>
-        <div className="text-left flex-1">
-          <p className={`text-sm font-semibold ${isDark ? "text-white" : "text-black"}`}>Top up with card or bank</p>
-          <p className={`text-xs ${isDark ? "text-neutral-400" : "text-gray-500"}`}>Pay in KES · credited instantly · no KYC required</p>
-        </div>
-        <ChevronRight className={`w-5 h-5 ${isDark ? "text-neutral-500" : "text-gray-400"}`} />
       </button>
 
       <div className="flex items-center justify-between mb-3">

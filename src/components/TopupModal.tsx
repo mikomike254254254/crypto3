@@ -43,11 +43,8 @@ export function TopupModal({ wallets, onClose, onSuccess }: TopupModalProps) {
     const reference = `WLX-PS-${Date.now()}`;
     try {
       await startPaystackCheckout({
-        amount,
-        currency: "KES",
-        email: user.email,
-        name: user.user_metadata?.full_name || user.email,
-        reference,
+        amount, currency: "KES", email: user.email,
+        name: user.user_metadata?.full_name || user.email, reference,
         onSuccess: async (confirmedReference) => {
           try {
             const { wallets: nextWallets } = await verifyPaystackDeposit(confirmedReference, walletId, amount);
@@ -68,93 +65,75 @@ export function TopupModal({ wallets, onClose, onSuccess }: TopupModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 z-[80] flex items-end sm:items-center justify-center" style={{ backdropFilter: "blur(6px)" }}>
-      <div className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl">
+    <div className="fixed inset-0 bg-black/80 z-[80] flex items-end sm:items-center justify-center" style={{ backdropFilter: "blur(8px)" }}>
+      <div className="w-full max-w-md bg-neutral-900 rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl border border-neutral-700">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-neutral-700 flex items-center justify-center">
               <BadgeDollarSign className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-black">Top up with card</h2>
-              <p className="text-xs text-gray-500">Pay in KES — credited instantly</p>
+              <h2 className="text-lg font-bold text-white">Top up with card</h2>
+              <p className="text-xs text-neutral-400">Pay in KES — credited instantly</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
-            <X className="w-5 h-5 text-gray-500" />
+          <button onClick={onClose} className="p-2 hover:bg-neutral-800 rounded-full transition-colors">
+            <X className="w-5 h-5 text-neutral-400" />
           </button>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Wallet to credit</label>
-            <select
-              value={walletId}
-              onChange={(e) => setWalletId(e.target.value)}
-              className="w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm text-black focus:outline-none focus:ring-2 focus:ring-emerald-300 bg-white"
-            >
-              {wallets.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.name} ({w.symbol})
-                </option>
-              ))}
+            <label className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-1.5 block">Wallet to credit</label>
+            <select value={walletId} onChange={(e) => setWalletId(e.target.value)}
+              className="w-full rounded-xl border border-neutral-700 px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white bg-neutral-800">
+              {wallets.map((w) => (<option key={w.id} value={w.id}>{w.name} ({w.symbol})</option>))}
             </select>
           </div>
 
           {selectedWallet && (
-            <div className="flex items-center gap-3 rounded-xl bg-neutral-50 p-3 border border-neutral-200">
+            <div className="flex items-center gap-3 rounded-xl bg-neutral-800 p-3 border border-neutral-700">
               <CryptoLogo symbol={selectedWallet.symbol} size={36} />
               <div>
-                <p className="text-sm font-semibold text-black">{selectedWallet.name}</p>
-                <p className="text-xs text-gray-500">Balance: {selectedWallet.balance.toLocaleString()} {selectedWallet.symbol}</p>
+                <p className="text-sm font-semibold text-white">{selectedWallet.name}</p>
+                <p className="text-xs text-neutral-400">Balance: {selectedWallet.balance.toLocaleString()} {selectedWallet.symbol}</p>
               </div>
             </div>
           )}
 
           <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Amount (KES)</label>
-            <input
-              type="number"
-              min="1"
-              step="0.01"
-              value={amountKes}
-              onChange={(e) => setAmountKes(e.target.value)}
+            <label className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-1.5 block">Amount (KES)</label>
+            <input type="number" min="1" step="0.01" value={amountKes} onChange={(e) => setAmountKes(e.target.value)}
               placeholder="e.g. 1000"
-              className="w-full rounded-xl border border-neutral-200 px-4 py-3 text-lg font-bold text-black focus:outline-none focus:ring-2 focus:ring-emerald-300 bg-white"
-            />
+              className="w-full rounded-xl border border-neutral-700 px-4 py-3 text-lg font-bold text-white focus:outline-none focus:ring-2 focus:ring-white bg-neutral-800 placeholder-neutral-500" />
           </div>
 
           {Number.isFinite(kesValue) && kesValue > 0 && (
-            <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 space-y-1.5">
+            <div className="rounded-xl bg-neutral-800 border border-neutral-700 p-4 space-y-1.5">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">You pay</span>
-                <span className="font-bold text-black">KES {kesValue.toLocaleString("en-KE")}</span>
+                <span className="text-neutral-400">You pay</span>
+                <span className="font-bold text-white">KES {kesValue.toLocaleString("en-KE")}</span>
               </div>
               {usdValue > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">≈ USD</span>
-                  <span className="font-semibold text-black">${usdValue.toFixed(2)}</span>
+                  <span className="text-neutral-400">≈ USD</span>
+                  <span className="font-semibold text-white">${usdValue.toFixed(2)}</span>
                 </div>
               )}
               {cryptoPreview > 0 && (
-                <div className="flex justify-between text-sm border-t border-emerald-200 pt-1.5 mt-1.5">
-                  <span className="text-gray-600">You receive ≈</span>
-                  <span className="font-bold text-emerald-700">{cryptoPreview.toLocaleString()} {selectedWallet?.symbol}</span>
+                <div className="flex justify-between text-sm border-t border-neutral-700 pt-1.5 mt-1.5">
+                  <span className="text-neutral-400">You receive ≈</span>
+                  <span className="font-bold text-emerald-400">{cryptoPreview.toLocaleString()} {selectedWallet?.symbol}</span>
                 </div>
               )}
-              <p className="text-[10px] text-emerald-600 mt-1 font-medium">No KYC required</p>
+              <p className="text-[10px] text-emerald-400 mt-1 font-medium">No KYC required</p>
             </div>
           )}
 
-          {error && (
-            <p className="text-xs text-rose-600 bg-rose-50 rounded-lg p-3 border border-rose-200">{error}</p>
-          )}
+          {error && <p className="text-xs text-red-400 bg-red-900/30 rounded-lg p-3 border border-red-800/50">{error}</p>}
 
-          <button
-            onClick={handleTopup}
-            disabled={loading || !amountKes || Number(amountKes) <= 0}
-            className="w-full bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-xl py-3.5 text-sm font-semibold hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-60 flex items-center justify-center gap-2 shadow-sm transition-all"
-          >
+          <button onClick={handleTopup} disabled={loading || !amountKes || Number(amountKes) <= 0}
+            className="w-full bg-white text-black rounded-xl py-3.5 text-sm font-semibold hover:bg-neutral-200 disabled:opacity-60 flex items-center justify-center gap-2 transition-all">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <BadgeDollarSign className="w-4 h-4" />}
             {loading ? "Opening Paystack..." : "Proceed to payment"}
           </button>
