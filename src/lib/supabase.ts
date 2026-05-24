@@ -21,24 +21,20 @@ export async function getAccessToken() {
   return data.session?.access_token;
 }
 
-// Handle OAuth callback from URL hash
-async function handleOAuthHash() {
-  if (typeof window === "undefined") return;
-  
+// Handle OAuth callback from URL hash - ensures session is detected
+if (typeof window !== "undefined") {
   const hash = window.location.hash;
-  if (hash && hash.includes("access_token")) {
-    console.log("[OAuth] Found access token in URL hash");
-    // Supabase should auto-detect the session from the hash
+  if (hash && hash.includes("access_token") && !hash.includes("error")) {
+    console.log("[OAuth] Access token detected in URL, session should auto-detect");
   }
 }
 
-// Run on module load
-handleOAuthHash();
-
 supabase.auth.onAuthStateChange(async (event, session) => {
+  console.log("[Auth] State change event:", event, session?.user?.email || "no session");
+  
   if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
     if (typeof window !== "undefined" && window.location.hash) {
-      console.log("[OAuth] Session established, cleaning URL hash");
+      console.log("[OAuth] SIGNED_IN - cleaning URL hash");
       window.history.replaceState(null, "", window.location.pathname + window.location.search);
     }
   }
@@ -46,8 +42,5 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     console.log("Token refreshed for user:", session.user?.email);
   } else if (event === "SIGNED_OUT") {
     console.log("User signed out");
-  }
-  if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
-    console.log("[OAuth] Auth event:", event, session?.user?.email);
   }
 });
