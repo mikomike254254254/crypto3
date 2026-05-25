@@ -23,5 +23,7 @@ export function formatFiat(usd: number, currencyCode: string) {
   const row = FIAT_RATES_FROM_USD[currencyCode] || FIAT_RATES_FROM_USD.USD;
   const value = convertFromUsd(usd, currencyCode);
   const digits = currencyCode === "JPY" || currencyCode === "KSH" ? 0 : 2;
-  return `${row.symbol}${value.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
+  const num = value.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  // Add 1 character space between symbol and number
+  return `${row.symbol} ${num}`;
 }
