@@ -386,6 +386,7 @@ function AppContent() {
                   if (action === "swap") setShowSwap(true);
                   if (action === "p2p") setShowP2pPicker(true);
                 }}
+                kycVerified={kycStatus === "verified"}
               />
             </div>
             <div className="px-4 pb-6">
