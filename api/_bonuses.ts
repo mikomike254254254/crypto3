@@ -65,8 +65,8 @@ export async function awardSignupBonuses(userRow: {
   if (userRow.auth_user_id) {
     await createNotification(userRow.auth_user_id, {
       type: "receive",
-      title: "Welcome bonus",
-      body: `$${BONUS_USD} ${BONUS_TOKEN} gas fee credit added. Complete KYC to unlock another $${BONUS_USD}.`,
+      title: "🎉 Welcome to Wallex!",
+      body: `As a welcome bonus, $${BONUS_USD} ${BONUS_TOKEN} has already been credited to your Wallex account. Complete your KYC verification to receive an additional $${BONUS_USD} reward.\n\nWith Wallex, you can easily receive crypto, store it securely, and withdraw directly to M-PESA for Kenyan users. Our platform is built to be simple, transparent, secure, and fast for everyday use.\n\nTo finish setting up your account and access all features, please continue to your wallet dashboard.\n\nIf you need any help, feel free to contact our support team anytime at: wallexsupport@proton.me\n\nThank you for choosing Wallex.`,
       amount: BONUS_USD,
       token: BONUS_TOKEN,
       fromWallet: "system",
