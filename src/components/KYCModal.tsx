@@ -178,12 +178,33 @@ export function KYCModal({ onClose, onComplete }: KycModalProps) {
           {step === 4 && (
             <div className="space-y-5">
               {submitted ? (
-                <div className="bg-neutral-100 border border-neutral-200 rounded-xl p-6 flex flex-col items-center">
-                  <div className="w-16 h-16 rounded-full bg-black flex items-center justify-center mb-4">
-                    <Check className="w-8 h-8 text-white" />
+                <div 
+                  className="rounded-xl p-6 flex flex-col items-center border"
+                  style={{
+                    background: "linear-gradient(145deg, #052e16 0%, #022c22 100%)",
+                    borderColor: "rgba(16, 185, 129, 0.3)",
+                    boxShadow: "0 8px 32px rgba(16, 185, 129, 0.1), inset 0 1px 0 rgba(16, 185, 129, 0.1)",
+                  }}
+                >
+                  <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mb-4 border border-emerald-500/30"
+                    style={{ boxShadow: "0 0 20px rgba(16, 185, 129, 0.2)" }}>
+                    <Check className="w-8 h-8 text-emerald-400" />
                   </div>
-                  <h3 className="text-lg font-bold text-black">Verification Submitted</h3>
-                  <p className="text-sm text-neutral-600 mt-2 text-center">Your documents are stored securely and queued for review.</p>
+                  <h3 className="text-lg font-bold text-white">KYC Submitted ✅</h3>
+                  <p className="text-sm text-emerald-200/80 mt-2 text-center leading-relaxed">
+                    Your identity documents have been received securely.
+                  </p>
+                  <div className="mt-4 w-full rounded-xl bg-emerald-950/50 border border-emerald-800/30 p-4 text-center">
+                    <p className="text-xs text-emerald-300/90 font-medium">
+                      For further assistance, contact us at:
+                    </p>
+                    <a 
+                      href="mailto:wallexsupport@proton.me" 
+                      className="text-sm text-emerald-400 font-bold mt-1 inline-block hover:text-emerald-300 transition-colors"
+                    >
+                      wallexsupport@proton.me
+                    </a>
+                  </div>
                 </div>
               ) : (
                 <div className="bg-neutral-50 rounded-xl p-4 border border-neutral-200">
