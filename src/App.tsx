@@ -174,8 +174,23 @@ function AppContent() {
 
     const refresh = () => {
       if (document.visibilityState !== "visible") return;
+      // Preserve readAt for notifications that were already dismissed
+      setNotifications((current) => {
+        const readIds = new Set(current.filter((n) => n.readAt).map((n) => n.id));
+        return current;
+      });
       fetchNotificationsFromBackend()
-        .then(({ notifications: items }) => setNotifications(items))
+        .then(({ notifications: items }) => {
+          setNotifications((current) => {
+            const readIds = new Set(current.filter((n) => n.readAt).map((n) => n.id));
+            return items.map((item) => {
+              if (readIds.has(item.id) && !item.readAt) {
+                return { ...item, readAt: current.find((n) => n.id === item.id)?.readAt || new Date().toISOString() };
+              }
+              return item;
+            });
+          });
+        })
         .catch(() => undefined);
       fetchTransactionsFromBackend()
         .then(({ transactions: backendTransactions }) => setTransactions(backendTransactions))
@@ -281,13 +296,17 @@ function AppContent() {
   };
 
   const handleDismissNotification = async (id: string) => {
+    // Immediately mark as read so it disappears from the banner
     setNotifications((current) => current.map((item) => (item.id === id ? { ...item, readAt: new Date().toISOString() } : item)));
     try {
       await dismissNotification(id);
     } catch {
-      // keep UI dismissed locally
+      // best-effort
     }
   };
+
+  // Filter out read notifications from the banner display
+  const unreadNotifications = notifications.filter((n) => !n.readAt);
 
   const handleMarkAllNotificationsRead = async () => {
     setNotifications((current) => current.map((item) => ({ ...item, readAt: item.readAt || new Date().toISOString() })));
