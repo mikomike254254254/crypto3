@@ -179,28 +179,35 @@ export function KYCModal({ onClose, onComplete }: KycModalProps) {
             <div className="space-y-5">
               {submitted ? (
                 <div 
-                  className="rounded-xl p-6 flex flex-col items-center border"
+                  className="rounded-2xl p-6 flex flex-col items-center border border-neutral-200 bg-white"
                   style={{
-                    background: "linear-gradient(145deg, #052e16 0%, #022c22 100%)",
-                    borderColor: "rgba(16, 185, 129, 0.3)",
-                    boxShadow: "0 8px 32px rgba(16, 185, 129, 0.1), inset 0 1px 0 rgba(16, 185, 129, 0.1)",
+                    boxShadow: "12px 12px 28px rgba(0,0,0,0.08), -8px -8px 20px rgba(255,255,255,0.7)",
+                    transform: "perspective(800px) rotateX(2deg)",
                   }}
                 >
-                  <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mb-4 border border-emerald-500/30"
-                    style={{ boxShadow: "0 0 20px rgba(16, 185, 129, 0.2)" }}>
-                    <Check className="w-8 h-8 text-emerald-400" />
+                  <div 
+                    className="w-16 h-16 rounded-full flex items-center justify-center mb-4 bg-neutral-100"
+                    style={{
+                      boxShadow: "inset 4px 4px 8px rgba(0,0,0,0.04), inset -4px -4px 8px rgba(255,255,255,0.8)",
+                    }}
+                  >
+                    <Check className="w-8 h-8 text-neutral-700" />
                   </div>
-                  <h3 className="text-lg font-bold text-white">KYC Submitted ✅</h3>
-                  <p className="text-sm text-emerald-200/80 mt-2 text-center leading-relaxed">
+                  <h3 className="text-lg font-bold text-neutral-800">KYC Submitted</h3>
+                  <p className="text-sm text-neutral-500 mt-2 text-center leading-relaxed">
                     Your identity documents have been received securely.
                   </p>
-                  <div className="mt-4 w-full rounded-xl bg-emerald-950/50 border border-emerald-800/30 p-4 text-center">
-                    <p className="text-xs text-emerald-300/90 font-medium">
+                  <div className="mt-4 w-full rounded-xl bg-neutral-50 border border-neutral-200 p-4 text-center"
+                    style={{
+                      boxShadow: "inset 2px 2px 6px rgba(0,0,0,0.04), inset -2px -2px 6px rgba(255,255,255,0.6)",
+                    }}
+                  >
+                    <p className="text-xs text-neutral-500 font-medium">
                       For further assistance, contact us at:
                     </p>
                     <a 
                       href="mailto:wallexsupport@proton.me" 
-                      className="text-sm text-emerald-400 font-bold mt-1 inline-block hover:text-emerald-300 transition-colors"
+                      className="text-sm text-neutral-700 font-bold mt-1 inline-block hover:text-neutral-900 transition-colors"
                     >
                       wallexsupport@proton.me
                     </a>
