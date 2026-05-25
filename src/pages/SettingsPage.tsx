@@ -365,11 +365,11 @@ export function SettingsPage({ user, onCurrencyChange, onLogout, onKYC, kycVerif
             <div>
               <p className={`text-[10px] uppercase font-semibold mb-1 ${isDark ? "text-neutral-500" : "text-gray-500"}`}>Link</p>
               <div className="flex gap-2">
-                <input
-                  readOnly
-                  value={referralLink}
-                  className={`flex-1 rounded-lg px-3 py-2 text-xs truncate ${isDark ? "bg-neutral-950 border border-neutral-700 text-neutral-300" : "bg-neutral-50 border border-neutral-200 text-gray-700"}`}
-                />
+              <input
+                readOnly
+                value={referralLink}
+                className={`flex-1 rounded-lg px-3 py-2 text-xs truncate font-mono ${isDark ? "bg-neutral-950 border border-neutral-700 text-neutral-300" : "bg-neutral-50 border border-neutral-200 text-gray-700"}`}
+              />
                 <button
                   type="button"
                   onClick={() => {
