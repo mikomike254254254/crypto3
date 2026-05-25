@@ -98,9 +98,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: "Amount too small." });
     }
 
-    // Insert BOTH tx rows using simple upsert approach
-    const now = new Date().toISOString();
-    const rows = [
+    // Insert two transaction rows (deduct fromToken, credit toToken)
+    // Minimal insert - no note, no created_at (Supabase defaults)
+    for (const row of [
       {
         from_wallet: userRow.wallet,
         to_wallet: "swap",
@@ -108,7 +108,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         token: fromToken,
         type: "send",
         status: "completed",
-        created_at: now,
       },
       {
         from_wallet: "swap",
@@ -117,36 +116,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         token: toToken,
         type: "deposit",
         status: "completed",
-        created_at: now,
       },
-    ];
-
-    // Try inserting with note column first, fallback without
-    for (const row of rows) {
-      let { error } = await supabase.from("transactions").insert({
-        from_wallet: row.from_wallet,
-        to_wallet: row.to_wallet,
-        amount: row.amount,
-        token: row.token,
-        type: row.type,
-        status: row.status,
-        note: `Swap ${parsedAmount} ${fromToken} → ${receiveAmount} ${toToken}`,
-      });
+    ]) {
+      const { error } = await supabase.from("transactions").insert(row);
       if (error) {
-        // Fallback: try without note
-        if (String(error.message || "").toLowerCase().includes("note")) {
-          ({ error } = await supabase.from("transactions").insert({
-            from_wallet: row.from_wallet,
-            to_wallet: row.to_wallet,
-            amount: row.amount,
-            token: row.token,
-            type: row.type,
-            status: row.status,
-          }));
-        }
-        if (error) {
-          return res.status(500).json({ error: "Failed to insert tx", detail: error.message });
-        }
+        console.error("[SWAP INSERT ERROR]", error.message, JSON.stringify(row));
+        return res.status(500).json({ error: "Failed to insert tx", detail: error.message, row });
       }
     }
 
