@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
-import { buildWallexRedirectUrl, getWallexOrigin } from "../utils/canonicalOrigin";
+import { getWallexOrigin } from "../utils/canonicalOrigin";
 
 interface AuthContextValue {
   user: User | null;
@@ -27,86 +27,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    const timeout = setTimeout(() => {
+      if (mounted) {
+        console.log("[AUTH] Safety timeout - forcing authReady");
+        setLoading(false);
+        setAuthReady(true);
+      }
+    }, 8000);
 
     async function initializeAuth() {
       try {
         console.log("[AUTH] Starting initialization");
 
-        // Check if we have an OAuth callback in the URL
-        const hasOAuthCallback = typeof window !== "undefined" && 
-          window.location.hash && 
-          window.location.hash.includes("access_token");
-
-        let sessionData = null;
-        let sessionError = null;
-
-        if (hasOAuthCallback) {
-          console.log("[AUTH] OAuth callback detected, waiting for Supabase to process URL hash...");
-          
-          // Wait for Supabase to process the OAuth hash
-          await new Promise(resolve => setTimeout(resolve, 1500));
-        }
-
-        // Try to get the session
+        // Get the session - detectSessionInUrl handles OAuth redirects automatically
         const { data, error } = await supabase.auth.getSession();
-        sessionData = data;
-        sessionError = error;
 
-        // If no session but we just came from OAuth, wait a bit more and retry
-        if (!sessionData.session && hasOAuthCallback) {
-          console.log("[AUTH] No session yet after OAuth, waiting and retrying...");
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          const retry = await supabase.auth.getSession();
-          if (retry.data?.session) {
-            console.log("[AUTH] Session found on retry");
-            sessionData = retry.data;
-            sessionError = null;
-          }
-        }
-
-        if (sessionError) {
-          console.error("[AUTH SESSION ERROR]", sessionError);
+        if (error) {
+          console.error("[AUTH SESSION ERROR]", error);
           
-          // Check for clock skew error - this means device time is incorrect
-          // The session token timestamp doesn't match the server time
-          const isClockSkew = sessionError.message?.includes("issued in the future") || sessionError.message?.includes("clock");
-          if (isClockSkew) {
-            console.warn("[AUTH] Clock skew detected - device time may be incorrect. Clearing session to allow fresh auth.");
-            // Don't set user here - let SIGNED_IN event handle it
-          }
-          
-          // Try getUser as fallback - this may work even if session has clock skew
-          const { data: userData, error: userError } = await supabase.auth.getUser();
+          // Try getUser as fallback
+          const { data: userData } = await supabase.auth.getUser();
           if (userData?.user && mounted) {
             console.log("[AUTH] User recovered via getUser:", userData.user.email);
             setUser(userData.user);
-            // Keep loading state until SIGNED_IN event or timer
-            // getUser doesn't give us a session, just user info
           } else {
-            if (userError) console.error("[AUTH] getUser also failed:", userError);
-            // Clear and reset - no valid session
-            await supabase.auth.signOut().catch(() => undefined);
-            if (typeof window !== "undefined") {
-              localStorage.clear();
-              sessionStorage.clear();
-            }
             if (mounted) {
               setSession(null);
               setUser(null);
             }
-            return; // Exit early - let authReady become true
+            return;
           }
         }
 
-        console.log("[AUTH] Session loaded", !!sessionData.session, sessionData.session?.user?.email);
+        const sessionData = data?.session || null;
+        console.log("[AUTH] Session loaded", !!sessionData, sessionData?.user?.email);
 
         if (!mounted) return;
 
-        setSession(sessionData.session ?? null);
-        setUser(sessionData.session?.user ?? null);
+        setSession(sessionData);
+        setUser(sessionData?.user ?? null);
 
         // Clean OAuth hash after successful session restore
-        if (sessionData.session && typeof window !== "undefined" && window.location.hash) {
+        if (sessionData && typeof window !== "undefined" && window.location.hash) {
           console.log("[AUTH] Cleaning OAuth hash from URL");
           window.history.replaceState({}, document.title, window.location.pathname);
         }
@@ -117,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
         }
       } finally {
+        clearTimeout(timeout);
         if (mounted) {
           setLoading(false);
           setAuthReady(true);
@@ -126,26 +89,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initializeAuth();
 
-    // Listen for auth state changes - this fires when OAuth callback is processed
+    // Listen for auth state changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, newSession) => {
       console.log("[AUTH EVENT]", event, newSession?.user?.email || "no user");
-
       if (!mounted) return;
-
       setSession(newSession ?? null);
       setUser(newSession?.user ?? null);
-
-      // Clean OAuth hash after successful auth
       if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && typeof window !== "undefined" && window.location.hash) {
-        console.log("[AUTH] " + event + " - cleaning URL hash");
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     });
 
     return () => {
       mounted = false;
+      clearTimeout(timeout);
       subscription.unsubscribe();
     };
   }, []);
@@ -157,111 +116,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     authReady,
     signUpWithEmail: async (email, password, name) => {
       const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { full_name: name },
-          emailRedirectTo: getWallexOrigin(),
-        },
+        email, password,
+        options: { data: { full_name: name }, emailRedirectTo: getWallexOrigin() },
       });
-
-      if (error) {
-        throw error;
-      }
-
+      if (error) throw error;
       return { requiresEmailConfirmation: !data.session };
     },
     sendSignUpOtp: async (email) => {
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim(),
-        options: {
-          shouldCreateUser: true,
-          emailRedirectTo: getWallexOrigin(),
-        },
+        options: { shouldCreateUser: true, emailRedirectTo: getWallexOrigin() },
       });
-
       if (error) throw error;
     },
     verifySignUpOtp: async (email, token) => {
-      const { data, error } = await supabase.auth.verifyOtp({
-        email: email.trim(),
-        token: token.trim(),
-        type: "email",
-      });
-
+      const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token: token.trim(), type: "email" });
       if (error) throw error;
-
-      if (data.session) {
-        console.log("OTP verified and user signed in:", data.session.user?.email);
-      } else {
-        console.log("OTP verified, but no session established");
-      }
     },
     completeSignUpProfile: async (password, name) => {
-      const { error } = await supabase.auth.updateUser({
-        password,
-        data: { full_name: name },
-      });
-
+      const { error } = await supabase.auth.updateUser({ password, data: { full_name: name } });
       if (error) throw error;
     },
     signInWithEmail: async (email, password) => {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        throw error;
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
     },
     signInWithGoogle: async (redirectPath = "/") => {
       const origin = typeof window !== "undefined" ? window.location.origin : "https://wallex.online";
       const redirectUrl = `${origin.replace(/\/$/, "")}${redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`}`;
-      console.log("[Google OAuth] Starting - origin:", origin, "redirectUrl:", redirectUrl);
-
-      try {
-        console.log("[Google OAuth] Calling signInWithOAuth with provider: google");
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo: redirectUrl,
-          },
-        });
-
-        console.log("[Google OAuth] Response - data:", data, "error:", error);
-
-        if (error) {
-          console.error("[Google OAuth] Error object:", error);
-          const msg = error.message || error.toString() || "Google OAuth failed";
-          throw new Error(`Google sign in failed: ${msg}`);
-        }
-
-        if (!data?.url) {
-          console.error("[Google OAuth] No URL in response data:", data);
-          throw new Error("Google OAuth not configured. Please contact support or check Supabase Dashboard → Authentication → Providers → Google.");
-        }
-
-        console.log("[Google OAuth] Redirecting to:", data.url);
-        window.location.href = data.url;
-      } catch (err) {
-        console.error("[Google OAuth] Exception caught:", err);
-        const msg = err instanceof Error ? err.message : String(err);
-        throw new Error(`Google sign in failed: ${msg}`);
-      }
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: redirectUrl },
+      });
+      if (error) throw new Error(`Google sign in failed: ${error.message}`);
+      if (!data?.url) throw new Error("Google OAuth not configured.");
+      window.location.href = data.url;
     },
     signOut: async () => {
-      const { error } = await supabase.auth.signOut({ scope: "global" });
-      if (error) {
-        await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
-      }
+      await supabase.auth.signOut({ scope: "global" }).catch(() => supabase.auth.signOut({ scope: "local" }));
       setSession(null);
       setUser(null);
-      localStorage.removeItem("wallex.onboarding");
       Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith("wallex.") || key.startsWith("kycStatus:")) {
-          localStorage.removeItem(key);
-        }
+        if (key.startsWith("wallex.") || key.startsWith("kycStatus:")) localStorage.removeItem(key);
       });
     },
   }), [user, session, loading, authReady]);
@@ -271,8 +167,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const value = useContext(AuthContext);
-  if (!value) {
-    throw new Error("useAuth must be used inside AuthProvider");
-  }
+  if (!value) throw new Error("useAuth must be used inside AuthProvider");
   return value;
 }
