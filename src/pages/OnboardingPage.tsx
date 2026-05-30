@@ -14,6 +14,7 @@ import { CUSTOM_AVATAR_ID, getCharacter, WALLEX_CHARACTERS } from "../constants/
 import { ProfileAvatarPicker } from "../components/ProfileAvatarPicker";
 import { updateProfileInBackend } from "../services/walletBackend";
 import { getGoogleAvatarUrl, getGoogleDisplayName } from "../utils/googleProfile";
+import { GoogleSignInButton } from "../components/GoogleSignInButton";
 
 interface OnboardingPageProps {
   onComplete: () => void;
@@ -154,15 +155,12 @@ export function OnboardingPage({ onComplete, initialEmail = "", skipAuth = false
 
           {error ? <div className="w-full mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div> : null}
 
-          <button
-            type="button"
+          <GoogleSignInButton
             onClick={handleGoogleSignup}
             disabled={isLoading}
-            className="w-full rounded-2xl border border-slate-200 bg-white py-4 text-sm font-semibold text-slate-950 hover:bg-slate-50 flex items-center justify-center gap-3 disabled:opacity-60"
-          >
-            <GoogleIcon />
-            Continue with Google
-          </button>
+            loading={isLoading}
+            className="rounded-2xl"
+          />
 
           <div className="flex items-center gap-3 my-5 w-full">
             <div className="h-px flex-1 bg-slate-200" />

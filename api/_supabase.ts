@@ -168,6 +168,31 @@ export async function ensureUserAccount(user: Awaited<ReturnType<typeof requireU
   if (readError) throw readError;
   if (existing) return existing;
 
+  // Legacy Wallex accounts: same email, existing wallet row (e.g. email signup before Google).
+  if (user.email) {
+    const normalizedEmail = user.email.trim().toLowerCase();
+    const { data: byEmail, error: emailError } = await supabase
+      .from("users")
+      .select("*")
+      .ilike("email", normalizedEmail)
+      .maybeSingle();
+
+    if (emailError) throw emailError;
+
+    if (byEmail) {
+      if (!byEmail.auth_user_id || byEmail.auth_user_id !== user.id) {
+        const { error: linkError } = await supabase
+          .from("users")
+          .update({ auth_user_id: user.id, email: user.email })
+          .eq("id", byEmail.id);
+
+        if (linkError) throw linkError;
+      }
+
+      return { ...byEmail, auth_user_id: user.id, email: user.email };
+    }
+  }
+
   const wallet = walletAddressForUserId(user.id);
   const { getGoogleAvatarUrl, getGoogleDisplayName } = await import("./_googleProfile.js");
   const fullName = getGoogleDisplayName(user);
