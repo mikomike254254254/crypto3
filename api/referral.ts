@@ -17,7 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === "GET") {
       return res.status(200).json({
         code: myCode,
-        link: `https://wallex.online/?ref=${myCode}`,
+        link: `https://wallex.qzz.io/?ref=${myCode}`,
         referredBy,
         wallet: userRow.wallet,
       });

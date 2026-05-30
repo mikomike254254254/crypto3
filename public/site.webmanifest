@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Wallex — Crypto Wallet",
   "short_name": "Wallex",
-  "description": "Crypto wallet with M-Pesa, Bitcoin, ETH, USDT — buy, swap and send on wallex.online",
+  "description": "Crypto wallet with M-Pesa, Bitcoin, ETH, USDT — buy, swap and send on wallex.qzz.io",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

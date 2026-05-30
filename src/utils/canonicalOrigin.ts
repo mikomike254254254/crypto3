@@ -1,6 +1,8 @@
-export const WALLEX_CANONICAL_ORIGIN = "https://wallex.online";
+export const WALLEX_CANONICAL_ORIGIN = "https://wallex.qzz.io";
 
 const LEGACY_ORIGIN_PATTERN = /\.vercel\.app$/i;
+
+const VALID_DOMAINS = ["wallex.qzz.io", "wallex.online"];
 
 function isLocalOrigin(origin: string) {
   return origin.includes("localhost") || origin.includes("127.0.0.1");
@@ -10,7 +12,7 @@ function isLegacyOrigin(origin: string) {
   return LEGACY_ORIGIN_PATTERN.test(origin) || origin.includes("wallex-online-new");
 }
 
-/** Production always uses wallex.online — never old Vercel preview URLs from env. */
+/** Production always uses wallex.qzz.io — never old Vercel preview URLs from env. */
 export function getWallexOrigin() {
   const configured = (import.meta.env.VITE_APP_URL as string | undefined)?.replace(/\/$/, "");
   const current =
@@ -20,8 +22,12 @@ export function getWallexOrigin() {
     return current;
   }
 
-  if (current && !isLegacyOrigin(current) && current.includes("wallex.online")) {
-    return current;
+  // Accept any valid domain
+  if (current && !isLegacyOrigin(current)) {
+    const hostname = current.replace(/https?:\/\//, "").split(":")[0];
+    if (VALID_DOMAINS.some((d) => hostname === d || hostname.endsWith(d))) {
+      return current;
+    }
   }
 
   if (configured && !isLegacyOrigin(configured)) {
@@ -37,12 +43,12 @@ export function buildWallexRedirectUrl(path = "/") {
   return `${base}${normalizedPath}`;
 }
 
-/** Send users on old Vercel hosts back to wallex.online after OAuth. */
+/** Send users on old Vercel hosts back to wallex.qzz.io after OAuth. */
 export function redirectLegacyHostIfNeeded() {
   if (typeof window === "undefined") return;
 
   const { hostname, pathname, search, hash } = window.location;
-  if (hostname === "wallex.online" || isLocalOrigin(hostname)) return;
+  if (VALID_DOMAINS.some((d) => hostname === d || hostname === `www.${d}`) || isLocalOrigin(hostname)) return;
 
   if (hostname.endsWith(".vercel.app") || hostname.includes("wallex-online-new")) {
     // Preserve hash for OAuth callback

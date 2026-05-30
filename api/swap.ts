@@ -153,7 +153,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       change: a.change,
       color: a.color,
       accountNumber: userRow.wallet,
-      address: `https://wallex.online/pay?account=${userRow.wallet}&wallet=${a.wallet_key}&symbol=${a.symbol}&network=TRC20`,
+      address: `https://wallex.qzz.io/pay?account=${userRow.wallet}&wallet=${a.wallet_key}&symbol=${a.symbol}&network=TRC20`,
     }));
 
     return res.status(200).json({ wallets, received: receiveAmount, receivedToken: toToken });

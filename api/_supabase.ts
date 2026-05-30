@@ -6,7 +6,7 @@ function resolveWallexOrigin() {
   if (configured && !/\.vercel\.app$/i.test(configured) && !configured.includes("wallex-online-new")) {
     return configured;
   }
-  return "https://wallex.online";
+  return "https://wallex.qzz.io";
 }
 
 export const WALLEX_ORIGIN = resolveWallexOrigin();

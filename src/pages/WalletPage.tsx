@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowDownToLine, ArrowUpFromLine, ArrowRightLeft, BadgeDollarSign, Clock, ChevronRight, Eye, EyeOff, TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Clock, Eye, EyeOff, TrendingDown, TrendingUp, ArrowDown, ArrowUp, Repeat } from "lucide-react";
 import { Wallet, Transaction } from "../types/crypto";
 import { useTheme } from "../context/ThemeContext";
 import { CryptoLogo } from "../components/CryptoLogo";
@@ -69,42 +69,48 @@ export function WalletPage({
     return list.filter((t) => t.type === activeFilter || (activeFilter === "receive" && (t.type === "deposit" || t.type === "receive")));
   })();
 
-  const getTransactionIcon = (type: string) => {
+  const getTxArrowIcon = (type: string) => {
     switch (type) {
       case "send":
       case "withdraw":
       case "sell":
-        return <ArrowUpFromLine className="w-4 h-4" />;
+        return <ArrowUp className="w-3.5 h-3.5" />;
       case "receive":
       case "deposit":
       case "buy":
       case "kyc_bonus":
       case "gas_fee":
-        return <ArrowDownToLine className="w-4 h-4" />;
+        return <ArrowDown className="w-3.5 h-3.5" />;
       case "swap":
-        return <ArrowRightLeft className="w-4 h-4" />;
+        return <Repeat className="w-3.5 h-3.5" />;
       default:
-        return <ArrowRightLeft className="w-4 h-4" />;
+        return <Repeat className="w-3.5 h-3.5" />;
     }
-  };
-
-  const getTransactionColor = (tx: Transaction, isCredit: boolean) => {
-    if (isDark) {
-      return isCredit ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800/50" : "bg-red-950/60 text-red-300 border border-red-900/40";
-    }
-    return isCredit ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-red-50 text-red-700 border border-red-100";
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed":
-        return isDark ? "text-emerald-400/90" : "text-emerald-700";
+        return isDark ? "text-emerald-400" : "text-emerald-600";
       case "pending":
-        return isDark ? "text-amber-400" : "text-amber-700";
+        return isDark ? "text-amber-400" : "text-amber-600";
       case "failed":
         return isDark ? "text-red-400" : "text-red-600";
       default:
         return isDark ? "text-neutral-500" : "text-gray-500";
+    }
+  };
+
+  const getStatusDot = (status: string) => {
+    switch (status) {
+      case "completed":
+        return "bg-emerald-500";
+      case "pending":
+        return "bg-amber-500";
+      case "failed":
+        return "bg-red-500";
+      default:
+        return "bg-neutral-400";
     }
   };
 
@@ -119,6 +125,10 @@ export function WalletPage({
     }
     if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  };
+
+  const getTxCoinSymbol = (tx: Transaction): string => {
+    return (tx.currency || tx.symbol || activeWallet?.symbol || "USDT").toUpperCase();
   };
 
   return (
@@ -162,7 +172,7 @@ export function WalletPage({
             ) : null}
           </div>
 
-          <p className="text-[10px] text-emerald-400/90 font-medium mb-2">Receive &amp; top up — no KYC required</p>
+          <p className="text-[10px] text-emerald-400/90 font-medium mb-2">Receive & top up — no KYC required</p>
 
           <div className="flex gap-2">
             <button
@@ -211,7 +221,6 @@ export function WalletPage({
           onClick={onTopup}
           className="relative overflow-hidden group px-5 py-2.5 rounded-full bg-black border border-neutral-700 hover:border-neutral-500 transition-all duration-300 shadow-lg"
         >
-          {/* Glare sweep */}
           <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out" />
           <span className="relative flex items-center gap-2 text-sm font-semibold text-white">
             <span className="text-emerald-400 text-base">$</span>
@@ -246,38 +255,77 @@ export function WalletPage({
         ))}
       </div>
 
-      <div className={`rounded-xl overflow-hidden border ${isDark ? "bg-neutral-900 border-neutral-800" : "bg-white border-neutral-200"}`}>
-        {filteredTransactions.map((tx, index) => {
+      {/* ---- Transactions List - 3D pop card style ---- */}
+      <div className={`space-y-2.5`}>
+        {filteredTransactions.map((tx) => {
           const display = getTransactionDisplay(tx);
+          const coinSymbol = getTxCoinSymbol(tx);
           return (
             <div
               key={tx.id}
-              className={`flex items-center gap-3 p-4 transition-colors ${
-                index !== filteredTransactions.length - 1 ? (isDark ? "border-b border-neutral-800" : "border-b border-neutral-100") : ""
-              } ${isDark ? "hover:bg-neutral-800/50" : "hover:bg-neutral-50"}`}
+              className={`group relative flex items-center gap-3 px-4 py-4 rounded-2xl transition-all duration-200 cursor-pointer
+                ${isDark
+                  ? "bg-neutral-900 hover:bg-neutral-800 border border-neutral-800/60 hover:border-neutral-700"
+                  : "bg-white hover:bg-white border border-neutral-200/80 hover:border-neutral-300"
+                }
+                shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]
+                hover:scale-[1.01] active:scale-[0.99]`}
+              style={{
+                transformStyle: "preserve-3d",
+                perspective: "800px",
+              }}
             >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${getTransactionColor(tx, display.isCredit)}`}>
-                {getTransactionIcon(tx.type)}
-              </div>
+              {/* 3D edge glow */}
+              <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none
+                ${isDark
+                  ? "shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+                  : "shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
+                }`} />
 
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className={`font-semibold text-sm truncate ${isDark ? "text-white" : "text-black"}`}>{display.title}</p>
-                    <p className={`text-xs truncate mt-0.5 ${isDark ? "text-neutral-400" : "text-gray-500"}`}>{display.subtitle}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className={`font-bold text-sm tabular-nums ${display.isCredit ? (isDark ? "text-emerald-400" : "text-emerald-600") : isDark ? "text-red-400" : "text-red-600"}`}>
-                      {display.sign}
-                      {tx.amount.toLocaleString(undefined, { maximumFractionDigits: 8 })} {tx.currency}
-                    </p>
-                    <p className={`text-[10px] font-medium mt-0.5 ${getStatusColor(tx.status)}`}>{formatTxStatus(tx.status)}</p>
-                  </div>
+              {/* Coin logo */}
+              <div className="relative shrink-0">
+                <div className="transition-transform duration-200 group-hover:scale-110 group-hover:-translate-y-0.5">
+                  <CryptoLogo symbol={coinSymbol} size={44} className="!shadow-lg" />
                 </div>
-                <p className={`text-[10px] mt-1.5 ${isDark ? "text-neutral-500" : "text-gray-400"}`}>{formatDate(tx.date ?? new Date().toISOString())}</p>
+                {/* Action badge on coin */}
+                <div className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 ${
+                  isDark ? "bg-neutral-900 border-neutral-700" : "bg-white border-neutral-200"
+                } ${display.isCredit ? "text-emerald-500" : "text-red-500"}`}
+                >
+                  {getTxArrowIcon(tx.type)}
+                </div>
               </div>
 
-              <ChevronRight className={`w-4 h-4 shrink-0 ${isDark ? "text-neutral-600" : "text-gray-300"}`} />
+              {/* Middle: title + subtitle + date */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <p className={`font-semibold text-sm truncate ${isDark ? "text-white" : "text-gray-900"}`}>
+                    {display.title}
+                  </p>
+                  <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${getStatusDot(tx.status)}`} />
+                </div>
+                <p className={`text-xs truncate mt-0.5 ${isDark ? "text-neutral-400" : "text-gray-500"}`}>
+                  {display.subtitle}
+                </p>
+                <p className={`text-[10px] mt-1 ${isDark ? "text-neutral-600" : "text-gray-400"}`}>
+                  {formatDate(tx.date ?? new Date().toISOString())}
+                </p>
+              </div>
+
+              {/* Right: amount + status */}
+              <div className="text-right shrink-0">
+                <p className={`font-bold text-sm tabular-nums tracking-tight ${
+                  display.isCredit
+                    ? (isDark ? "text-emerald-400" : "text-emerald-600")
+                    : (isDark ? "text-red-400" : "text-red-600")
+                }`}>
+                  {display.sign}
+                  {tx.amount.toLocaleString(undefined, { maximumFractionDigits: 6 })}
+                </p>
+                <p className={`text-[11px] font-medium mt-0.5 ${getStatusColor(tx.status)}`}>
+                  {coinSymbol}
+                </p>
+              </div>
             </div>
           );
         })}
