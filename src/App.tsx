@@ -40,6 +40,8 @@ import { AppLoadingSkeleton } from "./components/AppLoadingSkeleton";
 import { P2pTraderSelectModal } from "./components/P2pTraderSelectModal";
 import { P2pModal } from "./components/P2pModal";
 import { DEFAULT_P2P_TRADER, getKenyaP2pTraders, type P2pTrader } from "./lib/p2pTrader";
+import { getGoogleAvatarUrl, getGoogleDisplayName } from "./utils/googleProfile";
+import { LegacyDomainRedirect } from "./components/LegacyDomainRedirect";
 
 function AppContent() {
    const { isDark } = useTheme();
@@ -148,13 +150,19 @@ function AppContent() {
           localStorage.getItem(`wallex.onboarding:${user.id}`) === "true";
         setOnboardingComplete(done);
         setProfileCharacter(profile.avatar_character || (user.user_metadata?.avatar_character as string) || null);
-        setProfileAvatarUrl(profile.avatar_url || (user.user_metadata?.avatar_url as string) || null);
+        setProfileAvatarUrl(
+          profile.avatar_url || getGoogleAvatarUrl(user) || (user.user_metadata?.avatar_url as string) || null,
+        );
       })
       .catch(() => {
         const done =
           Boolean(user.user_metadata?.onboarding_complete) ||
           localStorage.getItem(`wallex.onboarding:${user.id}`) === "true";
         setOnboardingComplete(done);
+        setProfileAvatarUrl(getGoogleAvatarUrl(user) || null);
+        if (!profileCharacter && getGoogleAvatarUrl(user)) {
+          setProfileCharacter("custom");
+        }
       })
       .finally(() => setProfileLoading(false));
 
@@ -649,6 +657,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
+        <LegacyDomainRedirect />
         <AppContent />
       </AuthProvider>
     </ThemeProvider>

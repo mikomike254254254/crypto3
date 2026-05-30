@@ -13,6 +13,7 @@ import { useAuth } from "../context/AuthContext";
 import { CUSTOM_AVATAR_ID, getCharacter, WALLEX_CHARACTERS } from "../constants/characters";
 import { ProfileAvatarPicker } from "../components/ProfileAvatarPicker";
 import { updateProfileInBackend } from "../services/walletBackend";
+import { getGoogleAvatarUrl, getGoogleDisplayName } from "../utils/googleProfile";
 
 interface OnboardingPageProps {
   onComplete: () => void;
@@ -38,7 +39,7 @@ export function OnboardingPage({ onComplete, initialEmail = "", skipAuth = false
   const [step, setStep] = useState(characterOnly || skipAuth ? 2 : 0);
   const [email, setEmail] = useState(initialEmail || user?.email || "");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState(user?.user_metadata?.full_name || "");
+  const [name, setName] = useState(getGoogleDisplayName(user) || "");
   const [selectedCharacter, setSelectedCharacter] = useState(WALLEX_CHARACTERS[0].id);
   const [customAvatarUrl, setCustomAvatarUrl] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -51,6 +52,17 @@ export function OnboardingPage({ onComplete, initialEmail = "", skipAuth = false
       setEmail(user.email);
     }
   }, [user?.email]);
+
+  useEffect(() => {
+    if (!user) return;
+    const googleName = getGoogleDisplayName(user);
+    const googlePhoto = getGoogleAvatarUrl(user);
+    if (googleName) setName(googleName);
+    if (googlePhoto) {
+      setCustomAvatarUrl(googlePhoto);
+      setSelectedCharacter(CUSTOM_AVATAR_ID);
+    }
+  }, [user]);
 
   const displayName = () => {
     const trimmed = name.trim();
@@ -77,13 +89,15 @@ export function OnboardingPage({ onComplete, initialEmail = "", skipAuth = false
     onComplete();
   };
 
-  const handleGoogleSignup = () => {
+  const handleGoogleSignup = async () => {
     setIsLoading(true);
     setError("");
-    signInWithGoogle("/").catch((err) => {
+    try {
+      await signInWithGoogle("/");
+    } catch (err) {
       setIsLoading(false);
       setError(err instanceof Error ? err.message : "Google sign in failed");
-    });
+    }
   };
 
   const handleEmailContinue = () => {

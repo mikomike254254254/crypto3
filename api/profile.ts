@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { adminClient, ensureUserAccount, normalizeKycStatus, requireUser, toDatabaseKycStatus } from "./_supabase.js";
+import { getGoogleAvatarUrl, getGoogleDisplayName } from "./_googleProfile.js";
 
 type AuthUser = Awaited<ReturnType<typeof requireUser>>;
 type UserRow = Record<string, unknown>;
@@ -19,15 +20,16 @@ function isMissingColumnError(error: unknown) {
 
 function profileFromRow(user: AuthUser, row: UserRow) {
   const meta = user.user_metadata ?? {};
+  const googleAvatar = getGoogleAvatarUrl(user);
   return {
     ...row,
     user_id: user.id,
-    full_name: (row.full_name as string) || meta.full_name || meta.name || user.email?.split("@")[0] || "Wallet User",
+    full_name: (row.full_name as string) || getGoogleDisplayName(user),
     kyc_status: normalizeKycStatus((row.kyc_status as string) || undefined),
     onboarding_complete: Boolean(row.onboarding_complete) || Boolean(meta.onboarding_complete),
     avatar_character: (row.avatar_character as string) || (meta.avatar_character as string) || null,
     avatar_gradient: (row.avatar_gradient as string) || (meta.avatar_gradient as string) || null,
-    avatar_url: (row.avatar_url as string) || (meta.avatar_url as string) || null,
+    avatar_url: (row.avatar_url as string) || googleAvatar || (meta.avatar_url as string) || null,
   };
 }
 

@@ -169,7 +169,9 @@ export async function ensureUserAccount(user: Awaited<ReturnType<typeof requireU
   if (existing) return existing;
 
   const wallet = walletAddressForUserId(user.id);
-  const fullName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "Wallet User";
+  const { getGoogleAvatarUrl, getGoogleDisplayName } = await import("./_googleProfile.js");
+  const fullName = getGoogleDisplayName(user);
+  const avatarUrl = getGoogleAvatarUrl(user);
 
   const { data: inserted, error: insertError } = await supabase
     .from("users")
@@ -178,7 +180,7 @@ export async function ensureUserAccount(user: Awaited<ReturnType<typeof requireU
       wallet,
       email: user.email,
       full_name: fullName,
-      avatar_url: user.user_metadata?.avatar_url || null,
+      avatar_url: avatarUrl,
       kyc_status: "unverified",
       signup_bonus_awarded: false,
     })
